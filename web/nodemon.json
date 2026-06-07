@@ -1,0 +1,19 @@
+{
+  "watch": ["packages/server/src"],
+  "ext": "ts,tsx",
+  "execMap": {
+    "ts": "node -r ts-node/register"
+  },
+  "env": {
+    "NODE_ENV": "development",
+    "PORT": "8647",
+    "TS_NODE_PROJECT": "packages/server/tsconfig.json",
+    "HERMES_HOME": "C:\\Users\\Administrator\\.hermes",
+    "HERMES_AGENT_BRIDGE_PYTHON": "D:\\anaconda3\\python.exe",
+    "HERMES_AGENT_CLI_PYTHON": "D:\\anaconda3\\python.exe",
+    "HERMES_WEB_UI_STOP_GATEWAYS_ON_SHUTDOWN": "0"
+  },
+  "exec": "node -r ts-node/register packages/server/src/index.ts",
+  "nodeArgs": ["--no-warnings"],
+  "delay": "1000"
+}
