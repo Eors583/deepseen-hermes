@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${HERMES_AGENT_IMAGE:-deepseen/hermes-agent:prod}
     image: ${WEBUI_IMAGE:-hermes-web-ui-local:latest}
     container_name: ${WEBUI_CONTAINER_NAME:-hermes-webui}
     ports:
