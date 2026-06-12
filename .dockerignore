@@ -59,6 +59,9 @@ htmlcov/
 data/
 .hermes-docker/
 .notebooklm-home/
+hermes_data/
+tmp-start-logs/
+logs/
 
 # Compose/profile runtime state (bind-mounted; avoid ownership/secret issues)
 hermes-config/
