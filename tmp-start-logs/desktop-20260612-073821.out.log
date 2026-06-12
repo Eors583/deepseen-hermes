@@ -1,0 +1,44 @@
+
+> hermes@0.15.1 dev
+> concurrently -k "npm:dev:renderer" "npm:dev:electron"
+
+[dev:renderer] 
+[dev:renderer] > hermes@0.15.1 dev:renderer
+[dev:renderer] > node scripts/assert-root-install.cjs && vite --host 127.0.0.1 --port 5174
+[dev:renderer] 
+[dev:electron] 
+[dev:electron] > hermes@0.15.1 dev:electron
+[dev:electron] > wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .
+[dev:electron] 
+[dev:renderer] 
+[dev:renderer]   [32m[1mVITE[22m v8.0.10[39m  [2mready in [0m[1m7232[22m[2m[0m ms[22m
+[dev:renderer] 
+[dev:renderer]   [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5174[22m/[39m
+[dev:renderer] [2m07:38:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] scanning dependencies...
+[dev:electron] D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\node_modules\electron\index.js:17
+[dev:electron]     throw new Error('Electron failed to install correctly, please delete node_modules/electron and try installing again');
+[dev:electron]     ^
+[dev:electron] 
+[dev:electron] Error: Electron failed to install correctly, please delete node_modules/electron and try installing again
+[dev:electron]     at getElectronPath (D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\node_modules\electron\index.js:17:11)
+[dev:electron]     at Object.<anonymous> (D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\node_modules\electron\index.js:21:18)
+[dev:electron]     at Module._compile (node:internal/modules/cjs/loader:1809:14)
+[dev:electron]     at Object..js (node:internal/modules/cjs/loader:1940:10)
+[dev:electron]     at Module.load (node:internal/modules/cjs/loader:1530:32)
+[dev:electron]     at Module._load (node:internal/modules/cjs/loader:1332:12)
+[dev:electron]     at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+[dev:electron]     at Module.require (node:internal/modules/cjs/loader:1553:12)
+[dev:electron]     at require (node:internal/modules/helpers:152:16)
+[dev:electron]     at Object.<anonymous> (D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\node_modules\electron\cli.js:5:18)
+[dev:electron] 
+[dev:electron] Node.js v25.6.0
+[dev:electron] npm error Lifecycle script `dev:electron` failed with error:
+[dev:electron] npm error code 1
+[dev:electron] npm error path D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\apps\desktop
+[dev:electron] npm error workspace hermes@0.15.1
+[dev:electron] npm error location D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\apps\desktop
+[dev:electron] npm error command failed
+[dev:electron] npm error command C:\WINDOWS\system32\cmd.exe /d /s /c wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .
+[dev:electron] npm run dev:electron exited with code 1
+--> Sending SIGTERM to other processes..
+[dev:renderer] npm run dev:renderer exited with code 1

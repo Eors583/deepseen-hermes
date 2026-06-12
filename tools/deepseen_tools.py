@@ -36,8 +36,8 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_BASE_URL = "https://deepseen.ai/v1"
 _DEFAULT_POLL_INTERVAL_MS = 8_000
-_DEFAULT_TIMEOUT_IMAGE_MS = 600_000
-_DEFAULT_TIMEOUT_VIDEO_MS = 900_000
+_DEFAULT_TIMEOUT_IMAGE_MS = 3_600_000
+_DEFAULT_TIMEOUT_VIDEO_MS = 3_600_000
 _SDK_BRIDGE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "deepseen_sdk_bridge.mjs"
 _SDK_PROGRESS_PREFIX = "__DEEPSEEN_PROGRESS__"
 _DEEPSEEN_TOOL_RUNNER_SCRIPT = "scripts/deepseen_tool_runner.py"
@@ -49,6 +49,12 @@ DEEPSEEN_TOOL_NAMES = (
     "deepseen_smart_image_recreations_create_and_wait",
     "deepseen_image_recreations_create_and_wait",
     "deepseen_video_recreations_create_and_wait",
+    "deepseen_product_reports_create_and_wait",
+    "deepseen_competitors_analyze_and_wait",
+    "deepseen_competitors_analyze_multi_and_wait",
+    "deepseen_creators_analyze_and_wait",
+    "deepseen_creator_scores_create_and_wait",
+    "deepseen_video_analyses_create_and_wait",
 )
 
 
@@ -626,7 +632,7 @@ SMART_VIDEO_CREATE_AND_WAIT_SCHEMA = {
                 "default": "Veo8s",
             },
             "poll_interval_ms": {"type": "integer", "default": 8000},
-            "timeout_ms": {"type": "integer", "default": 900000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
         },
         "required": ["product_title"],
     },
@@ -734,7 +740,7 @@ SMART_IMAGE_CREATE_AND_WAIT_SCHEMA = {
                 "description": "产品附加描述，可提升出图质量",
             },
             "poll_interval_ms": {"type": "integer", "default": 8000},
-            "timeout_ms": {"type": "integer", "default": 600000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
         },
         "required": ["keywords"],
     },
@@ -849,7 +855,7 @@ IMAGE_RECREATION_CREATE_AND_WAIT_SCHEMA = {
                 "default": True,
             },
             "poll_interval_ms": {"type": "integer", "default": 8000},
-            "timeout_ms": {"type": "integer", "default": 600000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
         },
         "required": ["competitor_product_url"],
     },
@@ -973,7 +979,7 @@ VIDEO_RECREATION_CREATE_AND_WAIT_SCHEMA = {
                 "default": True,
             },
             "poll_interval_ms": {"type": "integer", "default": 8000},
-            "timeout_ms": {"type": "integer", "default": 900000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
         },
         "required": [],
     },
@@ -1082,12 +1088,286 @@ async def _handle_video_recreation_create_and_wait(
         return _format_error(exc)
 
 
+PRODUCT_REPORT_CREATE_AND_WAIT_SCHEMA = {
+    "name": "deepseen_product_reports_create_and_wait",
+    "description": (
+        _runner_hint("deepseen_product_reports_create_and_wait")
+        + "Product report: create a cross-border ecommerce product analysis report from product, market, audience, cost, price, inventory, and image URL inputs."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "product_name": {"type": "string", "description": "Product name."},
+            "target_market": {"type": "string", "description": "Target market, for example US or United States."},
+            "target_audience": {"type": "string", "description": "Target audience."},
+            "platform": {"type": "string", "description": "Sales platform, for example TikTok Shop, Amazon, or Shopify."},
+            "selling_points": {"type": "string", "description": "Core selling points."},
+            "purchase_cost": {"type": "number", "description": "Purchase cost."},
+            "expected_price": {"type": "number", "description": "Expected selling price."},
+            "weight_kg": {"type": "number", "description": "Product weight in kg."},
+            "dimensions_cm": {"type": "string", "description": "Product dimensions in cm, for example 10x8x3."},
+            "planned_stock_units": {"type": "integer", "description": "Planned stock quantity."},
+            "restock_cycle": {"type": "string", "description": "Restock cycle: lte_7, 8_14, 15_30, gt_30, lte_15, 16_30, 31_45, 46_60, gt_60, or unknown."},
+            "supplier_count": {"type": "integer", "description": "Supplier count."},
+            "enable_patent_search": {"type": "boolean", "description": "Whether to enable patent search."},
+            "product_image_urls": {"type": "array", "items": {"type": "string"}, "description": "Product image URLs."},
+            "poll_interval_ms": {"type": "integer", "default": 8000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
+        },
+        "required": ["product_name", "target_market"],
+    },
+}
+
+
+COMPETITOR_ANALYZE_AND_WAIT_SCHEMA = {
+    "name": "deepseen_competitors_analyze_and_wait",
+    "description": (
+        _runner_hint("deepseen_competitors_analyze_and_wait")
+        + "Competitor product analysis from a product URL."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "product_url": {"type": "string", "description": "Competitor product URL."},
+            "region": {"type": "string", "description": "Target region, for example US."},
+            "poll_interval_ms": {"type": "integer", "default": 8000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
+        },
+        "required": ["product_url"],
+    },
+}
+
+
+COMPETITOR_ANALYZE_MULTI_AND_WAIT_SCHEMA = {
+    "name": "deepseen_competitors_analyze_multi_and_wait",
+    "description": (
+        _runner_hint("deepseen_competitors_analyze_multi_and_wait")
+        + "Multi-competitor analysis from a product keyword and market region."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "product_keyword": {"type": "string", "description": "Product keyword."},
+            "region": {"type": "string", "description": "Target region, for example US."},
+            "poll_interval_ms": {"type": "integer", "default": 8000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
+        },
+        "required": ["product_keyword"],
+    },
+}
+
+
+CREATOR_ANALYZE_AND_WAIT_SCHEMA = {
+    "name": "deepseen_creators_analyze_and_wait",
+    "description": (
+        _runner_hint("deepseen_creators_analyze_and_wait")
+        + "Creator/influencer analysis for cross-border ecommerce products."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "product_name": {"type": "string", "description": "Product name."},
+            "target_market": {"type": "string", "description": "Target market, for example US or United States."},
+            "target_product_price": {"type": "string", "description": "Target product price or price range."},
+            "category_level1": {"type": "string", "description": "Level-1 category."},
+            "category_level2": {"type": "string", "description": "Level-2 category."},
+            "competitor_name": {"type": "string", "description": "Competitor or brand name."},
+            "target_user_age": {"type": "string", "description": "Target user age."},
+            "target_user_gender": {"type": "string", "description": "Target user gender."},
+            "sample_tier": {"type": "string", "enum": ["light", "standard", "deep"], "default": "standard", "description": "Sample tier."},
+            "poll_interval_ms": {"type": "integer", "default": 8000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
+        },
+        "required": ["product_name", "target_market"],
+    },
+}
+
+
+CREATOR_SCORE_CREATE_AND_WAIT_SCHEMA = {
+    "name": "deepseen_creator_scores_create_and_wait",
+    "description": (
+        _runner_hint("deepseen_creator_scores_create_and_wait")
+        + "Creator/influencer scoring for ecommerce collaboration prioritization."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "product_name": {"type": "string", "description": "Product name."},
+            "target_market": {"type": "string", "description": "Target market, for example US or United States."},
+            "target_product_price": {"type": "string", "description": "Target product price or price range."},
+            "category_level1": {"type": "string", "description": "Level-1 category."},
+            "category_level2": {"type": "string", "description": "Level-2 category."},
+            "uploaded_file_url": {"type": "string", "description": "Uploaded creator spreadsheet file URL."},
+            "standard_selection_mode": {"type": "string", "enum": ["AUTO", "LATEST_OWN", "RECENT_OWN", "MANUAL"], "description": "Scoring standard selection mode."},
+            "standard_id": {"type": "string", "description": "Manual scoring standard ID."},
+            "rows": {"type": "array", "items": {"type": "object"}, "description": "Creator data rows."},
+            "poll_interval_ms": {"type": "integer", "default": 8000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
+        },
+        "required": ["product_name", "target_market"],
+    },
+}
+
+
+VIDEO_ANALYSIS_CREATE_AND_WAIT_SCHEMA = {
+    "name": "deepseen_video_analyses_create_and_wait",
+    "description": (
+        _runner_hint("deepseen_video_analyses_create_and_wait")
+        + "Video analysis for TikTok or short-form ecommerce videos."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "source": {"type": "string", "enum": ["LINK", "UPLOAD"], "description": "Source type."},
+            "source_url": {"type": "string", "description": "Source video link."},
+            "video_url": {"type": "string", "description": "Uploaded video URL."},
+            "target_market": {"type": "string", "description": "Target market."},
+            "title": {"type": "string", "description": "Video title or note."},
+            "poll_interval_ms": {"type": "integer", "default": 8000},
+            "timeout_ms": {"type": "integer", "default": 3600000},
+        },
+        "required": ["source"],
+    },
+}
+
+
+def _camelize_analysis_input(tool_input: Dict[str, Any], mapping: Dict[str, str]) -> Dict[str, Any]:
+    return {
+        camel_key: tool_input[snake_key]
+        for snake_key, camel_key in mapping.items()
+        if tool_input.get(snake_key) is not None
+    }
+
+
+async def _handle_analysis_create_and_wait(
+    tool_input: Dict[str, Any],
+    *,
+    tool_name: str,
+    bridge_action: str,
+    mapping: Dict[str, str],
+) -> str:
+    try:
+        result = await _run_sdk_bridge(
+            bridge_action,
+            {
+                "createParams": _camelize_analysis_input(tool_input, mapping),
+                "pollIntervalMs": tool_input.get("poll_interval_ms", _DEFAULT_POLL_INTERVAL_MS),
+                "timeoutMs": tool_input.get("timeout_ms", _DEFAULT_TIMEOUT_VIDEO_MS),
+            },
+        )
+        return await _format_result_async(result)
+    except Exception as exc:
+        logger.exception("%s failed", tool_name)
+        return _format_error(exc)
+
+
+async def _handle_product_report_create_and_wait(tool_input: Dict[str, Any], **_: Any) -> str:
+    return await _handle_analysis_create_and_wait(
+        tool_input,
+        tool_name="deepseen_product_reports_create_and_wait",
+        bridge_action="product-report-create-and-wait",
+        mapping={
+            "product_name": "productName",
+            "target_market": "targetMarket",
+            "target_audience": "targetAudience",
+            "platform": "platform",
+            "selling_points": "sellingPoints",
+            "purchase_cost": "purchaseCost",
+            "expected_price": "expectedPrice",
+            "weight_kg": "weightKg",
+            "dimensions_cm": "dimensionsCm",
+            "planned_stock_units": "plannedStockUnits",
+            "restock_cycle": "restockCycle",
+            "supplier_count": "supplierCount",
+            "enable_patent_search": "enablePatentSearch",
+            "product_image_urls": "productImageUrls",
+        },
+    )
+
+
+async def _handle_competitor_analyze_and_wait(tool_input: Dict[str, Any], **_: Any) -> str:
+    return await _handle_analysis_create_and_wait(
+        tool_input,
+        tool_name="deepseen_competitors_analyze_and_wait",
+        bridge_action="competitor-analyze-and-wait",
+        mapping={"product_url": "productUrl", "region": "region"},
+    )
+
+
+async def _handle_competitor_analyze_multi_and_wait(tool_input: Dict[str, Any], **_: Any) -> str:
+    return await _handle_analysis_create_and_wait(
+        tool_input,
+        tool_name="deepseen_competitors_analyze_multi_and_wait",
+        bridge_action="competitor-analyze-multi-and-wait",
+        mapping={"product_keyword": "productKeyword", "region": "region"},
+    )
+
+
+async def _handle_creator_analyze_and_wait(tool_input: Dict[str, Any], **_: Any) -> str:
+    return await _handle_analysis_create_and_wait(
+        tool_input,
+        tool_name="deepseen_creators_analyze_and_wait",
+        bridge_action="creator-analyze-and-wait",
+        mapping={
+            "product_name": "productName",
+            "target_market": "targetMarket",
+            "target_product_price": "targetProductPrice",
+            "category_level1": "categoryLevel1",
+            "category_level2": "categoryLevel2",
+            "competitor_name": "competitorName",
+            "target_user_age": "targetUserAge",
+            "target_user_gender": "targetUserGender",
+            "sample_tier": "sampleTier",
+        },
+    )
+
+
+async def _handle_creator_score_create_and_wait(tool_input: Dict[str, Any], **_: Any) -> str:
+    return await _handle_analysis_create_and_wait(
+        tool_input,
+        tool_name="deepseen_creator_scores_create_and_wait",
+        bridge_action="creator-score-create-and-wait",
+        mapping={
+            "product_name": "productName",
+            "target_market": "targetMarket",
+            "target_product_price": "targetProductPrice",
+            "category_level1": "categoryLevel1",
+            "category_level2": "categoryLevel2",
+            "uploaded_file_url": "uploadedFileUrl",
+            "standard_selection_mode": "standardSelectionMode",
+            "standard_id": "standardId",
+            "rows": "rows",
+        },
+    )
+
+
+async def _handle_video_analysis_create_and_wait(tool_input: Dict[str, Any], **_: Any) -> str:
+    return await _handle_analysis_create_and_wait(
+        tool_input,
+        tool_name="deepseen_video_analyses_create_and_wait",
+        bridge_action="video-analysis-create-and-wait",
+        mapping={
+            "source": "source",
+            "source_url": "sourceUrl",
+            "video_url": "videoUrl",
+            "target_market": "targetMarket",
+            "title": "title",
+        },
+    )
+
+
 def get_deepseen_tool_manifest() -> Dict[str, Dict[str, Any]]:
     schemas = {
         "deepseen_smart_video_recreations_create_and_wait": SMART_VIDEO_CREATE_AND_WAIT_SCHEMA,
         "deepseen_smart_image_recreations_create_and_wait": SMART_IMAGE_CREATE_AND_WAIT_SCHEMA,
         "deepseen_image_recreations_create_and_wait": IMAGE_RECREATION_CREATE_AND_WAIT_SCHEMA,
         "deepseen_video_recreations_create_and_wait": VIDEO_RECREATION_CREATE_AND_WAIT_SCHEMA,
+        "deepseen_product_reports_create_and_wait": PRODUCT_REPORT_CREATE_AND_WAIT_SCHEMA,
+        "deepseen_competitors_analyze_and_wait": COMPETITOR_ANALYZE_AND_WAIT_SCHEMA,
+        "deepseen_competitors_analyze_multi_and_wait": COMPETITOR_ANALYZE_MULTI_AND_WAIT_SCHEMA,
+        "deepseen_creators_analyze_and_wait": CREATOR_ANALYZE_AND_WAIT_SCHEMA,
+        "deepseen_creator_scores_create_and_wait": CREATOR_SCORE_CREATE_AND_WAIT_SCHEMA,
+        "deepseen_video_analyses_create_and_wait": VIDEO_ANALYSIS_CREATE_AND_WAIT_SCHEMA,
     }
     manifest: Dict[str, Dict[str, Any]] = {}
     for tool_name, schema in schemas.items():
@@ -1117,6 +1397,12 @@ async def dispatch_deepseen_tool(
         "deepseen_smart_image_recreations_create_and_wait": _handle_smart_image_create_and_wait,
         "deepseen_image_recreations_create_and_wait": _handle_image_recreation_create_and_wait,
         "deepseen_video_recreations_create_and_wait": _handle_video_recreation_create_and_wait,
+        "deepseen_product_reports_create_and_wait": _handle_product_report_create_and_wait,
+        "deepseen_competitors_analyze_and_wait": _handle_competitor_analyze_and_wait,
+        "deepseen_competitors_analyze_multi_and_wait": _handle_competitor_analyze_multi_and_wait,
+        "deepseen_creators_analyze_and_wait": _handle_creator_analyze_and_wait,
+        "deepseen_creator_scores_create_and_wait": _handle_creator_score_create_and_wait,
+        "deepseen_video_analyses_create_and_wait": _handle_video_analysis_create_and_wait,
     }
     handler = handlers.get(tool_name)
     if handler is None:
@@ -1259,4 +1545,72 @@ registry.register(
     is_async=True,
     emoji="📹",
     description="视频二创：参考爆款视频 + 产品底图 → 复刻营销视频",
+)
+#
+# Additional Deepseen analysis tools from deepseen-sdk@1.0.1.
+#
+registry.register(
+    name="deepseen_product_reports_create_and_wait",
+    toolset="deepseen",
+    schema=PRODUCT_REPORT_CREATE_AND_WAIT_SCHEMA,
+    handler=_handle_product_report_create_and_wait,
+    check_fn=_check_deepseen_available,
+    is_async=True,
+    emoji="report",
+    description="Deepseen product report analysis for cross-border ecommerce.",
+)
+
+registry.register(
+    name="deepseen_competitors_analyze_and_wait",
+    toolset="deepseen",
+    schema=COMPETITOR_ANALYZE_AND_WAIT_SCHEMA,
+    handler=_handle_competitor_analyze_and_wait,
+    check_fn=_check_deepseen_available,
+    is_async=True,
+    emoji="search",
+    description="Deepseen competitor product analysis from a product URL.",
+)
+
+registry.register(
+    name="deepseen_competitors_analyze_multi_and_wait",
+    toolset="deepseen",
+    schema=COMPETITOR_ANALYZE_MULTI_AND_WAIT_SCHEMA,
+    handler=_handle_competitor_analyze_multi_and_wait,
+    check_fn=_check_deepseen_available,
+    is_async=True,
+    emoji="search",
+    description="Deepseen multi-competitor analysis from a product keyword.",
+)
+
+registry.register(
+    name="deepseen_creators_analyze_and_wait",
+    toolset="deepseen",
+    schema=CREATOR_ANALYZE_AND_WAIT_SCHEMA,
+    handler=_handle_creator_analyze_and_wait,
+    check_fn=_check_deepseen_available,
+    is_async=True,
+    emoji="creator",
+    description="Deepseen creator/influencer analysis.",
+)
+
+registry.register(
+    name="deepseen_creator_scores_create_and_wait",
+    toolset="deepseen",
+    schema=CREATOR_SCORE_CREATE_AND_WAIT_SCHEMA,
+    handler=_handle_creator_score_create_and_wait,
+    check_fn=_check_deepseen_available,
+    is_async=True,
+    emoji="score",
+    description="Deepseen creator/influencer scoring.",
+)
+
+registry.register(
+    name="deepseen_video_analyses_create_and_wait",
+    toolset="deepseen",
+    schema=VIDEO_ANALYSIS_CREATE_AND_WAIT_SCHEMA,
+    handler=_handle_video_analysis_create_and_wait,
+    check_fn=_check_deepseen_available,
+    is_async=True,
+    emoji="video",
+    description="Deepseen short-form ecommerce video analysis.",
 )

@@ -1,0 +1,23 @@
+
+> hermes@0.15.1 dev
+> concurrently -k "npm:dev:renderer" "npm:dev:electron"
+
+[dev:electron] 
+[dev:electron] > hermes@0.15.1 dev:electron
+[dev:electron] > wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .
+[dev:electron] 
+[dev:renderer] 
+[dev:renderer] > hermes@0.15.1 dev:renderer
+[dev:renderer] > node scripts/assert-root-install.cjs && vite --host 127.0.0.1 --port 5174
+[dev:renderer] 
+[dev:renderer] 
+[dev:renderer]   [32m[1mVITE[22m v8.0.10[39m  [2mready in [0m[1m518[22m[2m[0m ms[22m
+[dev:renderer] 
+[dev:renderer]   [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5174[22m/[39m
+[dev:electron] 
+[dev:renderer] [2m07:40:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] scanning dependencies...
+[dev:renderer] [2m07:40:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
+[dev:electron] (electron) 'console-message' arguments are deprecated and will be removed. Please use Event<WebContentsConsoleMessageEventParams> object instead.
+[dev:electron] npm run dev:electron exited with code 0
+--> Sending SIGTERM to other processes..
+[dev:renderer] npm run dev:renderer exited with code 1

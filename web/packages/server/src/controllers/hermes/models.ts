@@ -171,16 +171,36 @@ function profileAuthPath(profile: string): string {
   return join(getProfileDir(profile), 'auth.json')
 }
 
+const ENV_FALLBACKS: Record<string, string[]> = {
+  GEMINI_API_KEY: ['GOOGLE_API_KEY', 'GOOGLE_AI_API_KEY', 'YUNWU_GEMINI_API_KEY'],
+  GEMINI_BASE_URL: ['GOOGLE_AI_BASE_URL', 'YUNWU_GEMINI_BASE_URL'],
+}
+
+function envCandidates(key: string): string[] {
+  return [key, ...(ENV_FALLBACKS[key] || [])]
+}
+
 function envReader(envContent: string) {
-  const envHasValue = (key: string): boolean => {
-    if (!key) return false
-    const match = envContent.match(new RegExp(`^${key}\\s*=\\s*(.+)`, 'm'))
-    return !!match && match[1].trim() !== '' && !match[1].trim().startsWith('#')
-  }
-  const envGetValue = (key: string): string => {
-    if (!key) return ''
+  const readFileValue = (key: string): string => {
     const match = envContent.match(new RegExp(`^${key}\\s*=\\s*(.+)`, 'm'))
     return match?.[1]?.trim() || ''
+  }
+
+  const readValue = (key: string): string => {
+    for (const candidate of envCandidates(key)) {
+      const fileValue = readFileValue(candidate)
+      if (fileValue && !fileValue.startsWith('#')) return fileValue
+      const processValue = String(process.env[candidate] || '').trim()
+      if (processValue) return processValue
+    }
+    return ''
+  }
+
+  const envHasValue = (key: string): boolean => {
+    return !!key && readValue(key) !== ''
+  }
+  const envGetValue = (key: string): string => {
+    return key ? readValue(key) : ''
   }
   return { envHasValue, envGetValue }
 }

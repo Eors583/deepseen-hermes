@@ -112,7 +112,7 @@ function createClient(payload) {
 
 async function waitForTerminalJob(handle, options = {}) {
   const pollIntervalMs = options.pollIntervalMs ?? 8000;
-  const timeoutMs = options.timeoutMs ?? 600000;
+  const timeoutMs = options.timeoutMs ?? 3600000;
   const autoConfirm = options.autoConfirm ?? false;
   const trace = Array.isArray(options.trace) ? options.trace : [];
   const start = Date.now();
@@ -208,6 +208,25 @@ async function waitForTerminalJob(handle, options = {}) {
     });
     await sleep(pollIntervalMs);
     await handle.refresh();
+  }
+}
+
+async function createAnalysisJob(client, action, createParams) {
+  switch (action) {
+    case "product-report-create-and-wait":
+      return client.productReports.create(createParams);
+    case "competitor-analyze-and-wait":
+      return client.competitors.analyze(createParams);
+    case "competitor-analyze-multi-and-wait":
+      return client.competitors.analyzeMulti(createParams);
+    case "creator-analyze-and-wait":
+      return client.creators.analyze(createParams);
+    case "creator-score-create-and-wait":
+      return client.creatorScores.create(createParams);
+    case "video-analysis-create-and-wait":
+      return client.videos.analyses.create(createParams);
+    default:
+      throw new Error(`Unsupported analysis action: ${action}`);
   }
 }
 
@@ -348,6 +367,39 @@ async function main() {
       pollIntervalMs: payload.pollIntervalMs,
       timeoutMs: payload.timeoutMs,
       autoConfirm: payload.autoConfirm ?? true,
+      trace,
+    });
+  } else if (
+    action === "product-report-create-and-wait" ||
+    action === "competitor-analyze-and-wait" ||
+    action === "competitor-analyze-multi-and-wait" ||
+    action === "creator-analyze-and-wait" ||
+    action === "creator-score-create-and-wait" ||
+    action === "video-analysis-create-and-wait"
+  ) {
+    pushTrace(trace, "sdk.job.create.started", {
+      action,
+      createParams: payload.createParams ?? {},
+    });
+    emitProgress("sdk.job.create.started", {
+      action,
+      status: "creating",
+    });
+    const handle = await createAnalysisJob(client, action, payload.createParams ?? {});
+    pushTrace(trace, "sdk.job.create.completed", {
+      action,
+      jobId: handle.id,
+      status: handle.data?.status ?? "unknown",
+    });
+    emitProgress("sdk.job.create.completed", {
+      action,
+      jobId: handle.id,
+      status: handle.data?.status ?? "unknown",
+    });
+    result = await waitForTerminalJob(handle, {
+      pollIntervalMs: payload.pollIntervalMs,
+      timeoutMs: payload.timeoutMs,
+      autoConfirm: false,
       trace,
     });
   } else {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { mockReadFile, mockReadConfigYaml, mockReadConfigYamlForProfile, mockFetchProviderModels, mockBuildModelGroups, mockReadAppConfig, mockWriteAppConfig, mockExistsSync, mockReadFileSync, mockListProfileNamesFromDisk, mockListUserProfiles, mockReadProviderModelCatalogCache, mockGetCachedProviderModels, mockRefreshConfiguredProviderModelCatalogs, mockWriteProviderModelCatalogEntry, mockGetCopilotModelsDetailed } = vi.hoisted(() => ({
   mockReadFile: vi.fn(),
@@ -49,6 +49,7 @@ vi.mock('../../packages/server/src/services/config-helpers', () => ({
   PROVIDER_ENV_MAP: {
     'fun-codex': { api_key_env: '', base_url_env: '' },
     deepseek: { api_key_env: 'DEEPSEEK_API_KEY', base_url_env: 'DEEPSEEK_BASE_URL' },
+    gemini: { api_key_env: 'GEMINI_API_KEY', base_url_env: 'GEMINI_BASE_URL' },
     lmstudio: { api_key_env: 'LM_API_KEY', base_url_env: 'LM_BASE_URL' },
     'xai-oauth': { api_key_env: '', base_url_env: '' },
     openrouter: {},
@@ -59,6 +60,7 @@ vi.mock('../../packages/server/src/services/config-helpers', () => ({
 vi.mock('../../packages/server/src/shared/providers', () => ({
   buildProviderModelMap: () => ({
     deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+    gemini: ['gemini-3-flash-preview', 'gemini-2.5-pro'],
     'xai-oauth': ['grok-4.3', 'grok-4.20-0309-reasoning'],
     openrouter: ['openrouter/auto'],
   }),
@@ -75,6 +77,13 @@ vi.mock('../../packages/server/src/shared/providers', () => ({
       label: 'DeepSeek',
       base_url: 'https://api.deepseek.com/v1',
       models: ['deepseek-chat', 'deepseek-reasoner'],
+      builtin: true,
+    },
+    {
+      value: 'gemini',
+      label: 'Google Gemini',
+      base_url: 'https://generativelanguage.googleapis.com/v1beta',
+      models: ['gemini-3-flash-preview', 'gemini-2.5-pro'],
       builtin: true,
     },
     {
@@ -139,8 +148,32 @@ function makeCtx(body: Record<string, unknown> = {}): any {
   return { params: {}, query: {}, request: { body }, body: undefined, status: 200 }
 }
 
+const PROVIDER_ENV_KEYS = [
+  'DEEPSEEK_API_KEY',
+  'DEEPSEEK_BASE_URL',
+  'GEMINI_API_KEY',
+  'GEMINI_BASE_URL',
+  'GOOGLE_API_KEY',
+  'GOOGLE_AI_API_KEY',
+  'GOOGLE_AI_BASE_URL',
+  'YUNWU_GEMINI_API_KEY',
+  'YUNWU_GEMINI_BASE_URL',
+  'LM_API_KEY',
+  'LM_BASE_URL',
+  'GITHUB_TOKEN',
+] as const
+
+const ORIGINAL_PROVIDER_ENV = Object.fromEntries(
+  PROVIDER_ENV_KEYS.map(key => [key, process.env[key]]),
+) as Record<typeof PROVIDER_ENV_KEYS[number], string | undefined>
+
+function clearProviderEnv() {
+  for (const key of PROVIDER_ENV_KEYS) delete process.env[key]
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  clearProviderEnv()
   mockReadFile.mockResolvedValue('DEEPSEEK_API_KEY=sk-test\n')
   mockFetchProviderModels.mockResolvedValue([])
   mockReadConfigYaml.mockResolvedValue({ model: { default: 'deepseek-chat', provider: 'deepseek' } })
@@ -157,6 +190,14 @@ beforeEach(() => {
   mockRefreshConfiguredProviderModelCatalogs.mockResolvedValue(undefined)
   mockWriteProviderModelCatalogEntry.mockResolvedValue({})
   mockGetCopilotModelsDetailed.mockResolvedValue([])
+})
+
+afterAll(() => {
+  for (const key of PROVIDER_ENV_KEYS) {
+    const value = ORIGINAL_PROVIDER_ENV[key]
+    if (value === undefined) delete process.env[key]
+    else process.env[key] = value
+  }
 })
 
 describe('models controller — model visibility', () => {
@@ -390,6 +431,31 @@ describe('models controller — model visibility', () => {
     ]))
     expect(ctx.body.default).toBe('eee')
     expect(ctx.body.default_provider).toBe('lmstudio')
+  })
+
+  it('uses Gemini aliases from process env when profile .env is absent', async () => {
+    mockReadFile.mockResolvedValue('')
+    mockReadConfigYaml.mockResolvedValue({ model: { default: 'gemini-3-flash-preview', provider: 'gemini' } })
+    mockReadConfigYamlForProfile.mockResolvedValue({ model: { default: 'gemini-3-flash-preview', provider: 'gemini' } })
+    process.env.YUNWU_GEMINI_API_KEY = 'sk-env-test'
+    process.env.GOOGLE_AI_BASE_URL = 'https://yunwu.ai/v1beta'
+
+    const ctx = makeCtx()
+    await ctrl.getAvailable(ctx)
+
+    expect(ctx.status).toBe(200)
+    expect(ctx.body.groups).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        provider: 'gemini',
+        label: 'Google Gemini',
+        base_url: 'https://yunwu.ai/v1beta',
+        models: ['gemini-3-flash-preview', 'gemini-2.5-pro'],
+        available_models: ['gemini-3-flash-preview', 'gemini-2.5-pro'],
+        api_key: 'sk-env-test',
+      }),
+    ]))
+    expect(ctx.body.default).toBe('gemini-3-flash-preview')
+    expect(ctx.body.default_provider).toBe('gemini')
   })
 
   it('updates the provider model catalog cache after manual model fetch', async () => {

@@ -75,6 +75,12 @@ _HERMES_CORE_TOOLS = [
     "deepseen_smart_image_recreations_create_and_wait",
     "deepseen_image_recreations_create_and_wait",
     "deepseen_video_recreations_create_and_wait",
+    "deepseen_product_reports_create_and_wait",
+    "deepseen_competitors_analyze_and_wait",
+    "deepseen_competitors_analyze_multi_and_wait",
+    "deepseen_creators_analyze_and_wait",
+    "deepseen_creator_scores_create_and_wait",
+    "deepseen_video_analyses_create_and_wait",
 ]
 
 # Webhook events may originate from untrusted third-party content (for example,
@@ -305,6 +311,12 @@ TOOLSETS = {
             "deepseen_smart_image_recreations_create_and_wait",
             "deepseen_image_recreations_create_and_wait",
             "deepseen_video_recreations_create_and_wait",
+            "deepseen_product_reports_create_and_wait",
+            "deepseen_competitors_analyze_and_wait",
+            "deepseen_competitors_analyze_multi_and_wait",
+            "deepseen_creators_analyze_and_wait",
+            "deepseen_creator_scores_create_and_wait",
+            "deepseen_video_analyses_create_and_wait",
         ],
     },
 
@@ -418,6 +430,12 @@ TOOLSETS = {
             "deepseen_smart_image_recreations_create_and_wait",
             "deepseen_image_recreations_create_and_wait",
             "deepseen_video_recreations_create_and_wait",
+            "deepseen_product_reports_create_and_wait",
+            "deepseen_competitors_analyze_and_wait",
+            "deepseen_competitors_analyze_multi_and_wait",
+            "deepseen_creators_analyze_and_wait",
+            "deepseen_creator_scores_create_and_wait",
+            "deepseen_video_analyses_create_and_wait",
         ],
         "includes": []
     },

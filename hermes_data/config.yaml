@@ -1,0 +1,16 @@
+model:
+  provider: gemini
+  default: gemini-3-flash-preview
+  base_url: https://yunwu.ai/v1beta
+
+platform_toolsets:
+  cli: [web, file, skills, todo, clarify, deepseen]
+  telegram: [web, skills, todo, clarify, deepseen]
+  discord: [web, skills, todo, clarify, deepseen]
+  whatsapp: [web, skills, todo, clarify, deepseen]
+  slack: [web, skills, todo, clarify, deepseen]
+  signal: [web, skills, todo, clarify, deepseen]
+  qqbot: [web, skills, todo, clarify, deepseen]
+  yuanbao: [web, skills, todo, clarify, deepseen]
+  teams: [web, skills, todo, clarify, deepseen]
+  google_chat: [web, skills, todo, clarify, deepseen]

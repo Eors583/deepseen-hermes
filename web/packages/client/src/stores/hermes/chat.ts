@@ -281,15 +281,17 @@ function mapHermesMessages(msgs: HermesMessage[]): Message[] {
       // Emit a tool.started message for each tool call
       for (const tc of msg.tool_calls) {
         result.push({
-          id: String(msg.id) + '_' + tc.id,
-          role: 'tool',
-          content: '',
+          id: String(msg.id) + "_" + tc.id,
+          role: "tool",
+          content: "",
           timestamp: Math.round(msg.timestamp * 1000),
           toolName: tc.function?.name || undefined,
           toolCallId: tc.id,
           toolArgs: runtimeToolPayloadOrUndefined(tc.function?.arguments),
-          toolStatus: 'done',
-        })
+          // This assistant row represents the persisted "tool started" marker.
+          // Keep it running until a matching tool result row arrives and replaces it.
+          toolStatus: "running",
+        });
       }
       continue
     }
