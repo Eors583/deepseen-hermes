@@ -1,0 +1,45 @@
+
+> hermes-web-ui@0.6.10 dev
+> concurrently "npm run dev:server" "npm run dev:client"
+
+[1] 
+[1] > hermes-web-ui@0.6.10 dev:client
+[1] > cross-env HERMES_WEB_UI_BACKEND_PORT=8647 vite --host --port 8649 --strictPort
+[1] 
+[0] 
+[0] > hermes-web-ui@0.6.10 dev:server
+[0] > nodemon
+[0] 
+[1] 
+[1]   [32m[1mVITE[22m v8.0.16[39m  [2mready in [0m[1m715[22m[2m[0m ms[22m
+[1] 
+[1]   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m8649[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://172.23.240.1:[1m8649[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://172.27.144.1:[1m8649[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://169.254.60.192:[1m8649[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://169.254.169.121:[1m8649[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.100.115:[1m8649[22m/[39m
+[0] [33m[nodemon] 3.1.14[39m
+[0] [33m[nodemon] to restart at any time, enter `rs`[39m
+[0] [33m[nodemon] watching path(s): packages\server\src\**\*[39m
+[0] [33m[nodemon] watching extensions: ts,tsx[39m
+[0] [32m[nodemon] starting `node -r ts-node/register packages/server/src/index.ts`[39m
+[1] [2m09:29:28[22m [31m[1m[vite][22m[39m [31mws proxy error:[39m
+[1] Error: connect ECONNREFUSED 127.0.0.1:8647
+[1]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)
+[0] hermes-web-ui vdev starting...
+[0] (node:30744) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+[0] (Use `node --trace-warnings ...` to show where the warning was created)
+[0] [bootstrap] profile gateways checked
+[0] [bootstrap] agent bridge started
+[0] [bootstrap] all stores initialized
+[0] [bootstrap] cors + bodyParser registered
+[0] [bootstrap] routes registered
+[0] [bootstrap] SPA fallback registered
+[0] [bootstrap] listening on 0.0.0.0:8647
+[0] [bootstrap] app.listen called
+[0] [bootstrap] terminal + kanban websocket setup
+[0] [bootstrap] session deleter started, profile=default
+[0] Server: http://localhost:8647 (LAN: http://172.23.240.1:8647)
+[0] Log: D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\hermes_data\hermes-web-ui/logs/server.log
+[0] Update available: 0.6.10 → 0.6.14
