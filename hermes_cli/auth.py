@@ -234,7 +234,7 @@ PROVIDER_REGISTRY: Dict[str, ProviderConfig] = {
         name="Google AI Studio",
         auth_type="api_key",
         inference_base_url="https://generativelanguage.googleapis.com/v1beta",
-        api_key_env_vars=("GOOGLE_API_KEY", "GEMINI_API_KEY"),
+        api_key_env_vars=("GOOGLE_API_KEY", "GEMINI_API_KEY", "GOOGLE_AI_API_KEY", "YUNWU_GEMINI_API_KEY"),
         base_url_env_var="GEMINI_BASE_URL",
     ),
     "zai": ProviderConfig(
@@ -5878,8 +5878,15 @@ def resolve_api_key_provider_credentials(provider_id: str) -> Dict[str, Any]:
         key_source = key_source or "default"
 
     env_url = ""
-    if pconfig.base_url_env_var:
-        env_url = os.getenv(pconfig.base_url_env_var, "").strip()
+    base_url_env_vars = [pconfig.base_url_env_var] if pconfig.base_url_env_var else []
+    if provider_id == "gemini":
+        base_url_env_vars.extend(["GOOGLE_AI_BASE_URL", "YUNWU_GEMINI_BASE_URL"])
+    for env_var in base_url_env_vars:
+        if not env_var:
+            continue
+        env_url = os.getenv(env_var, "").strip()
+        if env_url:
+            break
 
     if provider_id in {"kimi-coding", "kimi-coding-cn"}:
         base_url = _resolve_kimi_base_url(api_key, pconfig.inference_base_url, env_url)

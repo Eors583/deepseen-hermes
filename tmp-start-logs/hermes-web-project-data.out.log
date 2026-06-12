@@ -138,3 +138,13 @@
 [1] [2m08:01:54[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mFailed to load session messages via resume: Error: resume timeout
 [1]     at http://127.0.0.1:8649/src/stores/hermes/chat.ts:485:45
 [0] Update available: 0.6.10 → 0.6.13
+[0] Update available: 0.6.10 → 0.6.14
+[1] npm error Lifecycle script `dev:client` failed with error:
+[1] npm error code 4294967295
+[1] npm error path D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\web
+[1] npm error workspace hermes-web-ui@0.6.10
+[1] npm error location D:\Users\Administrator\Desktop\deepseen\hermes-agent-main\web
+[1] npm error command failed
+[1] npm error command C:\WINDOWS\system32\cmd.exe /d /s /c cross-env HERMES_WEB_UI_BACKEND_PORT=8647 vite --host --port 8649 --strictPort
+[1] npm run dev:client exited with code 4294967295
+[0] [31m[nodemon] app crashed - waiting for file changes before starting...[39m
