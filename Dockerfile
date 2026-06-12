@@ -129,7 +129,8 @@ COPY ui-tui/packages/hermes-ink/ ui-tui/packages/hermes-ink/
 # guards against a future regression if the source npm version changes.
 ENV npm_config_install_links=false
 
-RUN npm install --prefer-offline --no-audit && \
+RUN npm install --prefer-offline --no-audit --ignore-scripts && \
+    npm rebuild node-pty && \
     npx playwright install --with-deps chromium --only-shell && \
     npm cache clean --force
 
