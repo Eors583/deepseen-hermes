@@ -129,6 +129,8 @@ COPY ui-tui/packages/hermes-ink/ ui-tui/packages/hermes-ink/
 # guards against a future regression if the source npm version changes.
 ENV npm_config_install_links=false
 
+RUN node -e "const fs=require('fs'); const p='web/package.json'; const pkg=JSON.parse(fs.readFileSync(p,'utf8')); pkg.scripts={...(pkg.scripts||{}), prepare: ':'}; fs.writeFileSync(p, JSON.stringify(pkg,null,2));"
+
 RUN npm install --prefer-offline --no-audit --ignore-scripts && \
     cd node_modules/node-pty && \
     (node scripts/prebuild.js || node /usr/local/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js rebuild) && \
