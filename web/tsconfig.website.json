@@ -5,10 +5,9 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.website.tsbuildinfo",
     "types": ["vite/client"],
     "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["packages/website/src/*"],
-      "@client/*": ["packages/client/src/*"]
+      "@/*": ["./packages/website/src/*"],
+      "@client/*": ["./packages/client/src/*"]
     },
     "noUnusedLocals": true,
     "noUnusedParameters": true,

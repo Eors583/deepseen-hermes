@@ -5,9 +5,8 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "types": ["vite/client", "vitest/globals"],
     "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["packages/client/src/*"]
+      "@/*": ["./packages/client/src/*"]
     },
     "noUnusedLocals": true,
     "noUnusedParameters": true,
