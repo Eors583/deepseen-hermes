@@ -137,3 +137,4 @@
 [1]     at addChunk (node:internal/streams/readable:564:12)
 [1] [2m08:01:54[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mFailed to load session messages via resume: Error: resume timeout
 [1]     at http://127.0.0.1:8649/src/stores/hermes/chat.ts:485:45
+[0] Update available: 0.6.10 → 0.6.13

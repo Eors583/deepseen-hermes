@@ -130,7 +130,9 @@ COPY ui-tui/packages/hermes-ink/ ui-tui/packages/hermes-ink/
 ENV npm_config_install_links=false
 
 RUN npm install --prefer-offline --no-audit --ignore-scripts && \
-    npm rebuild node-pty && \
+    cd node_modules/node-pty && \
+    (node scripts/prebuild.js || node /usr/local/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js rebuild) && \
+    cd /opt/hermes && \
     npx playwright install --with-deps chromium --only-shell && \
     npm cache clean --force
 
