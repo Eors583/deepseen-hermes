@@ -1,0 +1,18 @@
+name: crossborder-deepseen
+version: 0.1.0
+description: "DeepSeen SDK tools for the company cross-border commerce agent."
+author: DeepSeen
+kind: backend
+requires_env:
+  - DEEPSEEN_API_KEY
+provides_tools:
+  - deepseen_smart_image_create_and_wait
+  - deepseen_smart_video_create_and_wait
+  - deepseen_image_recreation_create_and_wait
+  - deepseen_video_recreation_create_and_wait
+  - deepseen_product_report_create_and_wait
+  - deepseen_competitor_analyze_and_wait
+  - deepseen_competitor_analyze_multi_and_wait
+  - deepseen_creator_analyze_and_wait
+  - deepseen_creator_score_and_wait
+  - deepseen_video_analysis_create_and_wait
