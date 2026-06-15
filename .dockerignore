@@ -56,7 +56,7 @@ htmlcov/
 *.md
 
 # Runtime data (bind-mounted at /opt/data; must not leak into build context)
-data/
+/data/
 .hermes/
 .hermes-docker/
 .notebooklm-home/
