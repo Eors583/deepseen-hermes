@@ -1376,6 +1376,26 @@ def _format_deepseen_creator_score(tool: str, data: dict[str, Any]) -> str:
     return "\n".join(lines).strip()
 
 
+def _format_deepseen_full_json(tool: str, payload: dict[str, Any], *, media_first: bool = False) -> str:
+    """Render the SDK payload faithfully for user-facing DeepSeen responses."""
+    lines = [_deepseen_title_for_tool(tool)]
+    if media_first:
+        outputs = _deepseen_output_items(payload)
+        if outputs:
+            lines.append("")
+            lines.append("### 生成结果")
+            for item in outputs:
+                lines.append(_deepseen_media_line(item["url"], item["label"], hint=item["hint"]))
+    body = json.dumps(payload, ensure_ascii=False, indent=2)
+    lines.append("")
+    lines.append("### SDK 结果")
+    lines.append("")
+    lines.append("```json")
+    lines.append(body)
+    lines.append("```")
+    return "\n".join(lines)
+
+
 def _deepseen_product_row(product: dict[str, Any]) -> dict[str, Any]:
     return {
         "\u5546\u54c1": _deepseen_first(product, "productName", "product_name", "title", "name"),
@@ -1619,29 +1639,13 @@ def _format_deepseen_payload(tool: str, payload: Any) -> str:
 
     result = _deepseen_result_payload(payload)
     business = _deepseen_analysis_payload(result)
-    lines: list[str] = []
 
     media_response = _format_deepseen_media_result(tool, payload, business if isinstance(business, dict) else {})
     if media_response:
-        return media_response
-
-    if isinstance(business, dict) and "video_analysis" in tool:
-        return _format_deepseen_video_analysis(tool, business)
-
-    if isinstance(business, dict) and "product_report" in tool:
-        return _format_deepseen_product_report(tool, business)
-
-    if isinstance(business, dict) and "creator_score" in tool:
-        return _format_deepseen_creator_score(tool, business)
-
-    if isinstance(business, dict) and "creator_analyze" in tool:
-        return _format_deepseen_creator_analysis(tool, business)
-
-    if isinstance(business, dict) and "competitor_analyze_multi" in tool:
-        return _format_deepseen_competitor_multi(tool, business)
+        return _format_deepseen_full_json(tool, payload, media_first=True)
 
     if isinstance(business, dict):
-        return _format_deepseen_general_analysis(tool, business)
+        return _format_deepseen_full_json(tool, payload)
 
     lines.append(_deepseen_title_for_tool(tool))
     scalar = _deepseen_scalar(result)

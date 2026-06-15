@@ -929,7 +929,7 @@ export const useChatStore = defineStore('chat', () => {
     isLoadingMessages.value = true
 
     try {
-      // Load messages via Socket.IO resume (server loads from DB if not in memory)
+      // Load messages via the native FastAPI gateway (server loads from DB if not in memory)
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('resume timeout')), 15_000)
         resumeSession(sessionId, (data) => {
@@ -2119,7 +2119,7 @@ export const useChatStore = defineStore('chat', () => {
         }
       }
 
-      // Send run via Socket.IO and listen to streamed events — all closures capture `sid`
+      // Send run via the native FastAPI gateway and listen to streamed events — all closures capture `sid`
       const ctrl = startRunViaSocket(
         runPayload,
         // onEvent
@@ -2602,7 +2602,7 @@ export const useChatStore = defineStore('chat', () => {
         },
         // onError
         (err) => {
-          console.warn('Socket.IO run stream error:', err.message)
+          console.warn('Native gateway run stream error:', err.message)
           addAgentErrorMessage(sid, err.message)
           const msgs = getSessionMsgs(sid)
           msgs.forEach((m, i) => {

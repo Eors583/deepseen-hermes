@@ -1,311 +1,259 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { NBadge, NButton, NDrawer, NDrawerContent, NInput } from 'naive-ui'
-import { useI18n } from 'vue-i18n'
-import SkillList from '@/components/hermes/skills/SkillList.vue'
-import SkillDetail from '@/components/hermes/skills/SkillDetail.vue'
-import SkillImportModal from '@/components/hermes/skills/SkillImportModal.vue'
-import SkillExternalDirsModal from '@/components/hermes/skills/SkillExternalDirsModal.vue'
-import PendingWriteApprovals from '@/components/hermes/skills/PendingWriteApprovals.vue'
-import MarkdownRenderer from '@/components/hermes/chat/MarkdownRenderer.vue'
-import { fetchSkills, type SkillCategory, type SkillSource, type SkillInfo } from '@/api/hermes/skills'
-import { fetchPendingWrites } from '@/api/hermes/write-gate'
-import { useProfilesStore } from '@/stores/hermes/profiles'
+import { computed, ref } from 'vue'
 
-type SourceFilter = SkillSource | 'modified'
+interface BusinessSkill {
+  id: string
+  name: string
+  tool: string
+  category: string
+  status: 'online' | 'long-running'
+  description: string
+  trigger: string[]
+  required: string[]
+  optional: string[]
+  output: string[]
+}
 
-const { t, locale } = useI18n()
-const profilesStore = useProfilesStore()
-const categories = ref<SkillCategory[]>([])
-const archived = ref<SkillInfo[]>([])
-const loading = ref(false)
-const selectedCategory = ref('')
-const selectedSkill = ref('')
-const searchQuery = ref('')
-const showSidebar = ref(true)
-const sourceFilter = ref<SourceFilter | null>(null)
-const recommendations = ref('')
-const showImportModal = ref(false)
-const showExternalDirsModal = ref(false)
-const showWriteApprovalDrawer = ref(false)
-const pendingWriteCount = ref(0)
-const writeApprovalSupported = ref(true)
-let mobileQuery: MediaQueryList | null = null
-let recommendationsRequestSeq = 0
+const query = ref('')
+const selectedId = ref('smart-image')
 
-const recommendationsPath = computed(() => {
-  return String(locale.value).startsWith('zh')
-    ? '/skill-recommendations.zh.md'
-    : '/skill-recommendations.en.md'
+const skills: BusinessSkill[] = [
+  {
+    id: 'smart-image',
+    name: '图片智创',
+    tool: 'deepseen_smart_image_create_and_wait',
+    category: '素材生成',
+    status: 'long-running',
+    description: '根据商品关键词和商品素材生成跨境电商主图、场景图、营销图。',
+    trigger: ['产品主图', 'Listing 图片', 'TikTok Shop 场景图', '商品关键词出图'],
+    required: ['商品关键词或简短商品标题'],
+    optional: ['商品图片或 OSS 图片地址', '卖点、材质、风格、使用场景', '目标市场'],
+    output: ['生成图片', '图片地址', '任务编号', '生成状态'],
+  },
+  {
+    id: 'smart-video',
+    name: '视频智创',
+    tool: 'deepseen_smart_video_create_and_wait',
+    category: '素材生成',
+    status: 'long-running',
+    description: '根据商品标题、卖点和素材生成 TikTok/跨境营销短视频。',
+    trigger: ['商品短视频', 'TikTok 广告视频', '带货素材视频'],
+    required: ['商品标题或核心卖点'],
+    optional: ['商品图片或 OSS 图片地址', '生成数量', '视频模型', '目标市场'],
+    output: ['生成视频', '视频地址', '任务编号', '生成状态'],
+  },
+  {
+    id: 'image-recreation',
+    name: '图片二创',
+    tool: 'deepseen_image_recreation_create_and_wait',
+    category: '竞品复刻',
+    status: 'long-running',
+    description: '参考 TikTok Shop 竞品商品链接，并结合自有商品图生成可投放的二创图片。',
+    trigger: ['竞品图片复刻', 'TikTok Shop 商品图二创', '参考爆款图生成新图'],
+    required: ['TikTok Shop 竞品商品链接'],
+    optional: ['自有商品图片或 OSS 图片地址', '画幅比例', '生成模型'],
+    output: ['二创图片', '图片地址', '任务编号', '失败原因或校验提示'],
+  },
+  {
+    id: 'video-recreation',
+    name: '视频二创',
+    tool: 'deepseen_video_recreation_create_and_wait',
+    category: '竞品复刻',
+    status: 'long-running',
+    description: '参考竞品视频或本地参考视频，并结合商品图生成二创短视频。',
+    trigger: ['爆款视频复刻', '竞品视频二创', '参考视频生成带货短片'],
+    required: ['竞品视频链接或参考视频文件'],
+    optional: ['商品图片或 OSS 图片地址', '视频组数', '视频模型'],
+    output: ['二创视频', '视频地址', '任务编号', '生成进度'],
+  },
+  {
+    id: 'product-report',
+    name: '产品报告',
+    tool: 'deepseen_product_report_create_and_wait',
+    category: '选品决策',
+    status: 'long-running',
+    description: '输出产品可行性、市场、定价、备货、供应链和专利风险分析。',
+    trigger: ['产品能不能做', '选品报告', '定价和备货建议', '专利风险'],
+    required: ['产品名称', '目标市场'],
+    optional: ['目标客群', '平台', '卖点', '采购价', '预期售价', '重量尺寸', '计划备货量', '供应商数量'],
+    output: ['市场判断', '五维评分', '利润测算', '用户反馈', '专利风险', '视频可行性'],
+  },
+  {
+    id: 'competitor-single',
+    name: '单竞品分析',
+    tool: 'deepseen_competitor_analyze_and_wait',
+    category: '竞品研究',
+    status: 'online',
+    description: '对单个 TikTok Shop 竞品链接做商品表现、素材、卖点和风险分析。',
+    trigger: ['分析这个竞品', '单个商品链接分析', '竞品卖点拆解'],
+    required: ['竞品商品链接'],
+    optional: ['目标市场'],
+    output: ['商品概览', '销量/价格线索', '素材来源', '卖点拆解', '优化建议'],
+  },
+  {
+    id: 'competitor-multi',
+    name: '多竞品分析',
+    tool: 'deepseen_competitor_analyze_multi_and_wait',
+    category: '竞品研究',
+    status: 'long-running',
+    description: '根据关键词或品类批量研究多个竞品，形成市场和代表产品对比。',
+    trigger: ['多竞品分析', '关键词竞品调研', '品类市场分析'],
+    required: ['产品关键词或品类关键词'],
+    optional: ['目标市场'],
+    output: ['市场概览', '代表产品', '价格带', '内容趋势', '机会和风险'],
+  },
+  {
+    id: 'creator-analysis',
+    name: '达人分析',
+    tool: 'deepseen_creator_analyze_and_wait',
+    category: '达人营销',
+    status: 'long-running',
+    description: '根据产品和市场定位，分析适合合作的达人画像、达人类型和投放策略。',
+    trigger: ['找什么达人', '达人画像', '达人投放策略', '达人适配分析'],
+    required: ['产品名称', '目标市场'],
+    optional: ['目标售价或价格带', '类目', '竞品名称', '目标用户年龄', '目标用户性别', '分析深度'],
+    output: ['达人画像', '五力共性', '风险补充', '样本达人', '评分标准', '直播观察'],
+  },
+  {
+    id: 'creator-score',
+    name: '达人评分',
+    tool: 'deepseen_creator_score_and_wait',
+    category: '达人营销',
+    status: 'long-running',
+    description: '对达人表格或达人名单进行评分、排序和合作优先级判断。',
+    trigger: ['达人名单评分', '达人排序', '达人合作优先级'],
+    required: ['产品名称', '目标市场', '达人表格或达人名单数据'],
+    optional: ['目标用户', '类目', '价格带', '评分口径'],
+    output: ['达人评分', '排序结果', '适配原因', '风险提示'],
+  },
+  {
+    id: 'video-analysis',
+    name: '视频分析',
+    tool: 'deepseen_video_analysis_create_and_wait',
+    category: '内容分析',
+    status: 'long-running',
+    description: '拆解视频脚本、结构、卖点表达和爆点，用于复盘或二创前分析。',
+    trigger: ['分析这个视频', '爆款视频拆解', '视频脚本分析'],
+    required: ['视频链接或可访问的视频文件'],
+    optional: ['产品背景', '目标市场', '关注点'],
+    output: ['视频结构', '脚本拆解', '卖点表达', '可复用元素', '风险提示'],
+  },
+]
+
+const categories = computed(() => Array.from(new Set(skills.map(skill => skill.category))))
+const selected = computed(() => skills.find(skill => skill.id === selectedId.value) || skills[0])
+const filteredSkills = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  if (!q) return skills
+  return skills.filter(skill => [
+    skill.name,
+    skill.tool,
+    skill.category,
+    skill.description,
+    ...skill.trigger,
+  ].some(value => value.toLowerCase().includes(q)))
 })
 
-const selectedSkillData = computed(() => {
-  if (!selectedCategory.value || !selectedSkill.value) return null
-  if (selectedCategory.value === '.archive') {
-    return archived.value.find(s => s.name === selectedSkill.value) ?? null
-  }
-  const cat = categories.value.find(c => c.name === selectedCategory.value)
-  return cat?.skills.find(s => s.name === selectedSkill.value) ?? null
-})
-
-function handleMobileChange(e: MediaQueryListEvent | MediaQueryList) {
-  showSidebar.value = !e.matches
-}
-
-onMounted(() => {
-  mobileQuery = window.matchMedia('(max-width: 768px)')
-  handleMobileChange(mobileQuery)
-  mobileQuery.addEventListener('change', handleMobileChange)
-  loadSkills()
-  loadRecommendations()
-  loadPendingWriteCount()
-})
-
-onUnmounted(() => {
-  mobileQuery?.removeEventListener('change', handleMobileChange)
-})
-
-async function loadSkills() {
-  loading.value = true
-  try {
-    if (!profilesStore.activeProfileName || profilesStore.profiles.length === 0) {
-      await profilesStore.fetchProfiles()
-    }
-    const data = await fetchSkills()
-    categories.value = data.categories
-    archived.value = data.archived
-  } catch (err: any) {
-    console.error('Failed to load skills:', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-async function loadRecommendations() {
-  const requestSeq = ++recommendationsRequestSeq
-  try {
-    const response = await fetch(recommendationsPath.value)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const text = await response.text()
-    if (/^\s*<!doctype html/i.test(text) || /^\s*<html[\s>]/i.test(text)) {
-      throw new Error('Skill recommendations file was not found')
-    }
-    if (requestSeq === recommendationsRequestSeq) {
-      recommendations.value = text
-    }
-  } catch (err) {
-    if (requestSeq === recommendationsRequestSeq) {
-      recommendations.value = ''
-    }
-    console.error('Failed to load skill recommendations:', err)
-  }
-}
-
-watch(recommendationsPath, loadRecommendations)
-
-async function loadPendingWriteCount() {
-  try {
-    const data = await fetchPendingWrites()
-    writeApprovalSupported.value = data.supported !== false
-    pendingWriteCount.value = writeApprovalSupported.value ? data.records?.length || 0 : 0
-  } catch (err) {
-    console.error('Failed to load pending write approvals:', err)
-  }
-}
-
-function toggleFilter(filter: SourceFilter) {
-  sourceFilter.value = sourceFilter.value === filter ? null : filter
-}
-
-function handleSelect(category: string, skill: string) {
-  if (selectedCategory.value === category && selectedSkill.value === skill) {
-    selectedCategory.value = ''
-    selectedSkill.value = ''
-    return
-  }
-  selectedCategory.value = category
-  selectedSkill.value = skill
-  if (window.innerWidth <= 768) {
-    showSidebar.value = false
-  }
-}
-
-function handleSkillDeleted(category: string, skillName: string) {
-  if (selectedCategory.value === category && selectedSkill.value === skillName) {
-    selectedCategory.value = ''
-    selectedSkill.value = ''
-  }
-  loadSkills()
-}
-
-function handleImported() {
-  showImportModal.value = false
-  loadSkills()
-}
-
-function handleExternalDirsSaved() {
-  showExternalDirsModal.value = false
-  loadSkills()
-}
-
-function handlePinToggled(name: string, pinned: boolean) {
-  // Update local state so the pin icon updates immediately
-  if (selectedCategory.value === '.archive') {
-    const skill = archived.value.find(s => s.name === name)
-    if (skill) skill.pinned = pinned
-  } else {
-    const cat = categories.value.find(c => c.name === selectedCategory.value)
-    const skill = cat?.skills.find(s => s.name === name)
-    if (skill) skill.pinned = pinned
-  }
+function selectFirstInCategory(category: string) {
+  const skill = filteredSkills.value.find(item => item.category === category)
+  if (skill) selectedId.value = skill.id
 }
 </script>
 
 <template>
   <div class="skills-view">
-    <header class="page-header">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <h2 class="header-title">{{ t('skills.title') }}</h2>
-        <button v-if="!showSidebar" class="sidebar-toggle" @click="showSidebar = true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
+    <header class="skills-header">
+      <div>
+        <h2>Herbound 跨境技能中心</h2>
+        <p>这些是当前智能体优先识别和调用的业务能力，底层统一接入 DeepSeen SDK 工具集。</p>
       </div>
-      <div class="source-legend">
-        <button class="legend-item" :class="{ active: sourceFilter === 'builtin' }" @click="toggleFilter('builtin')">
-          <span class="legend-dot dot-builtin" />{{ t('skills.source.builtin') }}
-        </button>
-        <button class="legend-item" :class="{ active: sourceFilter === 'hub' }" @click="toggleFilter('hub')">
-          <span class="legend-dot dot-hub" />{{ t('skills.source.hub') }}
-        </button>
-        <button class="legend-item" :class="{ active: sourceFilter === 'local' }" @click="toggleFilter('local')">
-          <span class="legend-dot dot-local" />{{ t('skills.source.local') }}
-        </button>
-        <button class="legend-item" :class="{ active: sourceFilter === 'external' }" @click="toggleFilter('external')">
-          <span class="legend-dot dot-external" />{{ t('skills.source.external') }}
-        </button>
-        <button class="legend-item" :class="{ active: sourceFilter === 'modified' }" @click="toggleFilter('modified')">
-          <span class="modified-icon">✎</span>{{ t('skills.modified') }}
-        </button>
-      </div>
-      <div class="header-actions">
-        <NButton
-          v-if="writeApprovalSupported"
-          class="header-action-btn"
-          size="small"
-          :title="t('skills.writeApprovalTitle')"
-          @click="showWriteApprovalDrawer = true"
-        >
-          <template #icon>
-            <NBadge :value="pendingWriteCount" :max="99" :show="pendingWriteCount > 0">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 11l3 3L22 4" />
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-              </svg>
-            </NBadge>
-          </template>
-          <span class="header-action-label">
-            {{ t('skills.writeApprovalButton', { count: pendingWriteCount }) }}
-          </span>
-        </NButton>
-        <NButton
-          class="header-action-btn"
-          size="small"
-          :title="t('skills.import')"
-          @click="showImportModal = true"
-        >
-          <template #icon>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-          </template>
-          <span class="header-action-label">{{ t('skills.import') }}</span>
-        </NButton>
-        <NButton
-          class="header-action-btn"
-          size="small"
-          :title="t('skills.externalDirs.manage')"
-          @click="showExternalDirsModal = true"
-        >
-          <template #icon>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-            </svg>
-          </template>
-          <span class="header-action-label">{{ t('skills.externalDirs.manage') }}</span>
-        </NButton>
-        <NInput
-          v-model:value="searchQuery"
-          :placeholder="t('skills.searchPlaceholder')"
-          size="small"
-          clearable
-          style="width: 160px"
-        />
-      </div>
+      <input v-model="query" class="skill-search" placeholder="搜索能力、工具或业务场景" />
     </header>
 
-    <SkillImportModal v-if="showImportModal" @close="showImportModal = false" @saved="handleImported" />
-    <SkillExternalDirsModal v-if="showExternalDirsModal"
-      @close="showExternalDirsModal = false" @saved="handleExternalDirsSaved" />
-    <NDrawer
-      v-model:show="showWriteApprovalDrawer"
-      width="min(960px, calc(100vw - 32px))"
-      placement="right"
-      class="write-approval-drawer"
-    >
-      <NDrawerContent :title="t('skills.writeApprovalTitle')" closable>
-        <PendingWriteApprovals
-          v-if="showWriteApprovalDrawer"
-          @count-change="(count) => pendingWriteCount = count"
-        />
-      </NDrawerContent>
-    </NDrawer>
+    <main class="skills-shell">
+      <aside class="skill-nav">
+        <button
+          v-for="category in categories"
+          :key="category"
+          class="category-row"
+          type="button"
+          @click="selectFirstInCategory(category)"
+        >
+          <span>{{ category }}</span>
+          <strong>{{ filteredSkills.filter(skill => skill.category === category).length }}</strong>
+        </button>
 
-    <div class="skills-content">
-      <div v-if="loading && categories.length === 0" class="skills-loading">{{ t('common.loading') }}</div>
-      <div v-else class="skills-layout">
-          <div class="mobile-backdrop" :class="{ active: showSidebar }" @click="showSidebar = false" />
-          <div v-if="showSidebar" class="skills-sidebar">
-            <SkillList
-              :categories="categories"
-              :archived="archived"
-              :selected-skill="selectedCategory && selectedSkill ? `${selectedCategory}/${selectedSkill}` : null"
-              :search-query="searchQuery"
-              :source-filter="sourceFilter"
-              @select="handleSelect"
-              @deleted="handleSkillDeleted"
-            />
+        <div class="skill-list">
+          <button
+            v-for="skill in filteredSkills"
+            :key="skill.id"
+            type="button"
+            class="skill-row"
+            :class="{ active: selected.id === skill.id }"
+            @click="selectedId = skill.id"
+          >
+            <span class="skill-row-name">{{ skill.name }}</span>
+            <span class="skill-row-tool">{{ skill.tool }}</span>
+          </button>
+        </div>
+      </aside>
+
+      <section class="skill-detail">
+        <div class="detail-head">
+          <div>
+            <span class="detail-category">{{ selected.category }}</span>
+            <h3>{{ selected.name }}</h3>
+            <p>{{ selected.description }}</p>
           </div>
-          <div class="skills-main">
-            <SkillDetail
-              v-if="selectedCategory && selectedSkill"
-              :category="selectedCategory"
-              :skill="selectedSkill"
-              :skill-name="selectedSkillData?.name || selectedSkill"
-              :patch-count="selectedSkillData?.patchCount"
-              :use-count="selectedSkillData?.useCount"
-              :view-count="selectedSkillData?.viewCount"
-              :pinned="selectedSkillData?.pinned"
-              @pin-toggled="handlePinToggled"
-            />
-            <div v-else class="recommendations-panel">
-              <MarkdownRenderer v-if="recommendations" :content="recommendations" />
-              <div v-else class="empty-detail">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.2">
-                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                  <polyline points="2 17 12 22 22 17" />
-                  <polyline points="2 12 12 17 22 12" />
-                </svg>
-                <span>{{ t('skills.noMatch') }}</span>
-              </div>
-            </div>
+          <span class="status-pill" :class="selected.status">
+            {{ selected.status === 'long-running' ? '长任务/有进度' : '在线调用' }}
+          </span>
+        </div>
+
+        <div class="tool-strip">
+          <span>调用工具</span>
+          <code>{{ selected.tool }}</code>
+        </div>
+
+        <div class="detail-grid">
+          <section>
+            <h4>用户会这样说</h4>
+            <ul>
+              <li v-for="item in selected.trigger" :key="item">{{ item }}</li>
+            </ul>
+          </section>
+          <section>
+            <h4>必须补齐的信息</h4>
+            <ul>
+              <li v-for="item in selected.required" :key="item">{{ item }}</li>
+            </ul>
+          </section>
+          <section>
+            <h4>可选增强信息</h4>
+            <ul>
+              <li v-for="item in selected.optional" :key="item">{{ item }}</li>
+            </ul>
+          </section>
+          <section>
+            <h4>回显给用户的核心结果</h4>
+            <ul>
+              <li v-for="item in selected.output" :key="item">{{ item }}</li>
+            </ul>
+          </section>
+        </div>
+
+        <div class="policy-band">
+          <div>
+            <h4>Herbound 执行规则</h4>
+            <p>先判断业务意图，再选择对应 DeepSeen 工具。工具调用完成后只做字段翻译、富媒体展示和结构化排版，不增加二次业务结论。</p>
+          </div>
+          <div>
+            <h4>资源上传规则</h4>
+            <p>生产环境优先使用 OSS/CDN 地址。用户上传本地图片或视频时，先由后端上传为 DeepSeen 可访问资源，再把 URL 或 file_id 交给 SDK。</p>
           </div>
         </div>
-    </div>
+      </section>
+    </main>
   </div>
 </template>
 
@@ -316,204 +264,283 @@ function handlePinToggled(name: string, pinned: boolean) {
   height: calc(100 * var(--vh));
   display: flex;
   flex-direction: column;
+  background: $bg-primary;
+  color: $text-primary;
 }
 
-.source-legend {
+.skills-header {
+  min-height: 84px;
+  padding: 18px 22px;
+  border-bottom: 1px solid $border-color;
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex: 1;
-  flex-wrap: wrap;
-  margin-left: 16px;
-}
+  justify-content: space-between;
+  gap: 20px;
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
 
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: $text-muted;
-  white-space: nowrap;
-  padding: 2px 6px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: none;
-  cursor: pointer;
-  transition: all $transition-fast;
-
-  &:hover {
+  p {
+    margin: 6px 0 0;
     color: $text-secondary;
-    background: rgba(var(--accent-primary-rgb), 0.04);
-  }
-
-  &.active {
-    color: $text-primary;
-    border-color: $border-color;
-    background: rgba(var(--accent-primary-rgb), 0.08);
+    font-size: 13px;
   }
 }
 
-.legend-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+.skill-search {
+  width: min(320px, 36vw);
+  height: 34px;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  background: $bg-secondary;
+  color: $text-primary;
+  padding: 0 11px;
+  outline: none;
 
-.legend-dot.dot-builtin { background: #888; }
-.legend-dot.dot-hub { background: #4a90d9; }
-.legend-dot.dot-local { background: #66bb6a; }
-.legend-dot.dot-external { background: #f59e0b; }
-
-.modified-icon {
-  font-size: 11px;
-  color: $warning;
-  opacity: 0.7;
-}
-
-@media (max-width: $breakpoint-mobile) {
-  .source-legend {
-    display: none;
-  }
-
-  .header-action-label {
-    display: none;
-  }
-
-  .header-action-btn {
-    width: 30px;
-    padding: 0;
-
-    :deep(.n-button__content) {
-      justify-content: center;
-    }
-
-    :deep(.n-button__icon) {
-      margin: 0;
-    }
+  &:focus {
+    border-color: rgba(var(--accent-primary-rgb), 0.7);
   }
 }
 
-.search-input {
-  width: 100px;
-
-  @media (max-width: $breakpoint-mobile) {
-    width: 100%;
-  }
-}
-
-.skills-content {
+.skills-shell {
   flex: 1;
-  overflow: hidden;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
 }
 
-.skills-loading {
+.skill-nav {
+  border-right: 1px solid $border-color;
+  overflow-y: auto;
+  padding: 14px;
+  background: $bg-secondary;
+}
+
+.category-row,
+.skill-row {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.category-row {
+  height: 32px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  font-size: 13px;
-  color: $text-muted;
-}
-
-.skills-layout {
-  display: flex;
-  height: 100%;
-}
-
-.skills-sidebar {
-  width: 280px;
-  border-right: 1px solid $border-color;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.skills-main {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
-  min-width: 0;
-}
-
-.sidebar-toggle {
-  display: none;
-  border: none;
-  background: none;
-  cursor: pointer;
+  justify-content: space-between;
+  padding: 0 8px;
+  margin-bottom: 4px;
+  background: transparent;
+  border-radius: 6px;
   color: $text-secondary;
-  padding: 4px;
-  border-radius: $radius-sm;
+  font-size: 12px;
 
   &:hover {
     background: rgba(var(--accent-primary-rgb), 0.06);
   }
+
+  strong {
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
+.skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.skill-row {
+  min-height: 58px;
+  padding: 9px 10px;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+
+  &:hover {
+    border-color: rgba(var(--accent-primary-rgb), 0.35);
+  }
+
+  &.active {
+    border-color: rgba(var(--accent-primary-rgb), 0.7);
+    background: rgba(var(--accent-primary-rgb), 0.08);
+  }
+}
+
+.skill-row-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.skill-row-tool {
+  display: block;
+  margin-top: 5px;
+  color: $text-muted;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-detail {
+  min-width: 0;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+
+  h3 {
+    margin: 6px 0;
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  p {
+    margin: 0;
+    max-width: 760px;
+    color: $text-secondary;
+    line-height: 1.7;
+  }
+}
+
+.detail-category {
+  color: $text-muted;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-pill {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid $border-color;
+
+  &.long-running {
+    color: $warning;
+    background: rgba(245, 158, 11, 0.08);
+  }
+
+  &.online {
+    color: $success;
+    background: rgba(34, 197, 94, 0.08);
+  }
+}
+
+.tool-strip {
+  margin-top: 22px;
+  padding: 12px 14px;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: $bg-secondary;
+
+  span {
+    color: $text-muted;
+    font-size: 12px;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+}
+
+.detail-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  section {
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    padding: 15px 16px;
+    background: $bg-card;
+  }
+
+  h4 {
+    margin: 0 0 10px;
+    font-size: 14px;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 18px;
+    color: $text-secondary;
+    line-height: 1.8;
+  }
+}
+
+.policy-band {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  div {
+    border-left: 3px solid rgba(var(--accent-primary-rgb), 0.7);
+    padding: 12px 14px;
+    background: $bg-secondary;
+    border-radius: 6px;
+  }
+
+  h4 {
+    margin: 0 0 6px;
+    font-size: 14px;
+  }
+
+  p {
+    margin: 0;
+    color: $text-secondary;
+    line-height: 1.7;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: $breakpoint-mobile) {
-  .sidebar-toggle {
-    display: flex;
+  .skills-header {
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  .skills-sidebar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    z-index: 10;
-    background: $bg-card;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  .skill-search {
+    width: 100%;
   }
 
-  .skills-layout {
-    position: relative;
+  .skills-shell {
+    grid-template-columns: 1fr;
   }
 
-  .mobile-backdrop {
-    display: block;
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 9;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity $transition-fast;
-
-    &.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+  .skill-nav {
+    border-right: 0;
+    border-bottom: 1px solid $border-color;
+    max-height: 280px;
   }
-}
 
-.empty-detail {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: $text-muted;
-  font-size: 13px;
-}
+  .detail-grid,
+  .policy-band {
+    grid-template-columns: 1fr;
+  }
 
-.recommendations-panel {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 4px 0 40px;
-
-  :deep(.markdown-body) {
-    font-size: 14px;
-    line-height: 1.7;
+  .detail-head {
+    flex-direction: column;
   }
 }
 </style>

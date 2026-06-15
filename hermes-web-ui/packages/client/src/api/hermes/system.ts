@@ -82,7 +82,11 @@ export interface DeepSeenKeyStatus {
   configured: boolean
   redacted_value: string
   env_var: 'DEEPSEEN_API_KEY'
-  env_path: string
+  storage?: 'database'
+  db_path?: string
+  user_key?: string
+  provider?: string
+  key_name?: string
 }
 
 export interface ModelVisibilityRule {

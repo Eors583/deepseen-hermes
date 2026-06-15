@@ -12,11 +12,12 @@ from pathlib import Path
 from typing import Any, Callable
 
 from hermes_cli.config import get_env_value
+from hermes_cli.deepseen_credentials import get_deepseen_api_key
 
 _PLUGIN_DIR = Path(__file__).resolve().parent
 _RUNNER = _PLUGIN_DIR / "deepseen_runner.mjs"
 _TOOLSET = "crossborder_deepseen"
-_DEFAULT_TIMEOUT_MS = 600000
+_DEFAULT_TIMEOUT_MS = 3600000
 _VIDEO_TIMEOUT_MS = 3600000
 _VIDEO_ACTIONS = {"smart_video", "video_recreation"}
 
@@ -25,13 +26,26 @@ def _is_deepseen_configurable() -> bool:
     return True
 
 
+def _deepseen_user_key() -> str:
+    return str(os.environ.get("HERMES_DEEPSEEN_USER_KEY") or "").strip()
+
+
+def _deepseen_api_key() -> str:
+    return get_deepseen_api_key(_deepseen_user_key())
+
+
 def _has_deepseen_key() -> bool:
-    return bool(str(os.environ.get("DEEPSEEN_API_KEY") or get_env_value("DEEPSEEN_API_KEY") or "").strip())
+    return bool(_deepseen_api_key())
 
 
 def _runner_env() -> dict[str, str]:
     env = os.environ.copy()
-    for name in ("DEEPSEEN_API_KEY", "DEEPSEEN_BASE_URL", "DEEPSEEN_SDK_PATH"):
+    api_key = _deepseen_api_key()
+    if api_key:
+        env["DEEPSEEN_API_KEY"] = api_key
+    else:
+        env.pop("DEEPSEEN_API_KEY", None)
+    for name in ("DEEPSEEN_BASE_URL", "DEEPSEEN_SDK_PATH"):
         value = str(env.get(name) or get_env_value(name) or "").strip()
         if value:
             env[name] = value
@@ -78,7 +92,7 @@ def _call_runner(action: str, args: dict[str, Any], progress_callback: Callable 
                 "ok": False,
                 "error": {
                     "code": "missing_api_key",
-                    "message": "DEEPSEEN_API_KEY is not configured in this project's Hermes environment.",
+                    "message": "DeepSeen API Key is not configured in Web Settings.",
                 },
             },
             ensure_ascii=False,
@@ -235,7 +249,7 @@ def _handler(action: str) -> Callable:
 def _schema(name: str, description: str, properties: dict[str, Any], required: list[str]) -> dict[str, Any]:
     common = {
         "poll_interval_ms": {"type": "integer", "description": "Polling interval in milliseconds. Default 8000."},
-        "timeout_ms": {"type": "integer", "description": "Task timeout in milliseconds."},
+        "timeout_ms": {"type": "integer", "description": "Task timeout in milliseconds. Default 3600000 (1 hour)."},
     }
     return {
         "name": name,
@@ -437,6 +451,6 @@ def register(ctx) -> None:
             schema=_schema(name, description, properties, required),
             handler=_handler(action),
             check_fn=_is_deepseen_configurable,
-            requires_env=["DEEPSEEN_API_KEY"],
+            requires_env=[],
             description=description,
         )

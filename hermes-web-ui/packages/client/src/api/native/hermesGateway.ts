@@ -1,4 +1,5 @@
 const REQUEST_TIMEOUT_MS = 120000
+const STALE_DASHBOARD_TOKEN_RELOAD_KEY = 'hermes_stale_dashboard_token_reload_attempted'
 
 type PendingRequest = {
   resolve: (value: unknown) => void
@@ -17,6 +18,7 @@ declare global {
   interface Window {
     __HERMES_SESSION_TOKEN__?: string
     __HERMES_AUTH_REQUIRED__?: boolean
+    __HERMES_PASSWORD_AUTH__?: boolean
     __HERMES_BASE_PATH__?: string
   }
 }
@@ -28,13 +30,19 @@ function basePath(): string {
 }
 
 export function getDashboardToken(): string {
-  return window.__HERMES_SESSION_TOKEN__ || localStorage.getItem('hermes_api_key') || ''
+  return window.__HERMES_SESSION_TOKEN__ || ''
 }
 
 export async function getWsCredential(): Promise<[key: 'token' | 'ticket', value: string]> {
-  if (window.__HERMES_AUTH_REQUIRED__) {
+  if (window.__HERMES_AUTH_REQUIRED__ || window.__HERMES_PASSWORD_AUTH__) {
+    const headers: Record<string, string> = {}
+    if (window.__HERMES_PASSWORD_AUTH__) {
+      const token = localStorage.getItem('hermes_api_key') || ''
+      if (token) headers.Authorization = `Bearer ${token}`
+    }
     const res = await fetch(`${basePath()}/api/auth/ws-ticket`, {
       method: 'POST',
+      headers,
       credentials: 'include',
     })
     if (!res.ok) throw new Error(`/api/auth/ws-ticket: HTTP ${res.status}`)
@@ -78,10 +86,28 @@ export class HermesGatewayClient {
     await new Promise<void>((resolve, reject) => {
       const onOpen = () => {
         ws.removeEventListener('error', onError)
+        if (key === 'token') {
+          try {
+            sessionStorage.removeItem(STALE_DASHBOARD_TOKEN_RELOAD_KEY)
+          } catch {
+            // best-effort only
+          }
+        }
         resolve()
       }
       const onError = () => {
         ws.removeEventListener('open', onOpen)
+        if (key === 'token') {
+          try {
+            if (!sessionStorage.getItem(STALE_DASHBOARD_TOKEN_RELOAD_KEY)) {
+              sessionStorage.setItem(STALE_DASHBOARD_TOKEN_RELOAD_KEY, '1')
+              window.location.reload()
+              return
+            }
+          } catch {
+            // Fall through to the normal error path when sessionStorage is unavailable.
+          }
+        }
         reject(new Error('Hermes gateway websocket failed'))
       }
       ws.addEventListener('open', onOpen, { once: true })

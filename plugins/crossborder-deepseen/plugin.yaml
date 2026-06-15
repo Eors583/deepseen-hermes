@@ -3,8 +3,7 @@ version: 0.1.0
 description: "DeepSeen SDK tools for the company cross-border commerce agent."
 author: DeepSeen
 kind: backend
-requires_env:
-  - DEEPSEEN_API_KEY
+requires_env: []
 provides_tools:
   - deepseen_smart_image_create_and_wait
   - deepseen_smart_video_create_and_wait

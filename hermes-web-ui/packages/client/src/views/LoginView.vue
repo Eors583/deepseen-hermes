@@ -3,16 +3,18 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { setApiKey, hasApiKey } from "@/api/client";
-import { fetchAuthStatus, loginWithPassword } from "@/api/auth";
+import { fetchAuthStatus, loginWithPassword, registerWithPassword } from "@/api/auth";
 
 const { t } = useI18n();
 const router = useRouter();
 
 const username = ref("");
 const password = ref("");
+const confirmPassword = ref("");
 const loading = ref(false);
 const errorMsg = ref("");
 const showLockResetHint = ref(false);
+const mode = ref<"login" | "register">("login");
 
 // If already has a key, try to go to main page
 if (hasApiKey()) {
@@ -28,6 +30,10 @@ onMounted(async () => {
 });
 
 async function handleLogin() {
+  if (mode.value === "register") {
+    await handleRegister();
+    return;
+  }
   await handlePasswordLogin();
 }
 
@@ -44,7 +50,7 @@ async function handlePasswordLogin() {
   try {
     const sessionToken = await loginWithPassword(username.value.trim(), password.value);
     setApiKey(sessionToken);
-    router.replace("/hermes/chat");
+    window.location.replace(`${window.location.pathname}${window.location.search}#/hermes/chat`);
   } catch (err: any) {
     if (err.status === 429 || err.status === 503) {
       errorMsg.value = t("login.tooManyAttempts");
@@ -56,6 +62,54 @@ async function handlePasswordLogin() {
     loading.value = false;
   }
 }
+
+async function handleRegister() {
+  if (!username.value.trim() || !password.value || !confirmPassword.value) {
+    errorMsg.value = t("login.registerCredentialsRequired");
+    return;
+  }
+  if (username.value.trim().length < 2) {
+    errorMsg.value = t("login.usernameTooShort");
+    return;
+  }
+  if (password.value.length < 6) {
+    errorMsg.value = t("login.passwordTooShort");
+    return;
+  }
+  if (password.value !== confirmPassword.value) {
+    errorMsg.value = t("login.passwordMismatch");
+    return;
+  }
+
+  loading.value = true;
+  errorMsg.value = "";
+  showLockResetHint.value = false;
+
+  try {
+    const sessionToken = await registerWithPassword(username.value.trim(), password.value);
+    setApiKey(sessionToken);
+    window.location.replace(`${window.location.pathname}${window.location.search}#/hermes/chat`);
+  } catch (err: any) {
+    if (err.status === 409) {
+      errorMsg.value = t("login.usernameExists");
+    } else if (err.status === 429 || err.status === 503) {
+      errorMsg.value = t("login.tooManyAttempts");
+      showLockResetHint.value = true;
+    } else {
+      errorMsg.value = err.message || t("login.registerFailed");
+    }
+  } finally {
+    loading.value = false;
+  }
+}
+
+function toggleMode(nextMode: "login" | "register") {
+  mode.value = nextMode;
+  password.value = "";
+  confirmPassword.value = "";
+  errorMsg.value = "";
+  showLockResetHint.value = false;
+}
 </script>
 
 <template>
@@ -64,9 +118,9 @@ async function handlePasswordLogin() {
       <div class="login-logo">
         <img src="/logo.png" alt="Hermes" width="80" height="80" />
       </div>
-      <h1 class="login-title">{{ t("login.title") }}</h1>
-      <p class="login-desc">{{ t("login.description") }}</p>
-      <p class="login-default-hint">{{ t("login.defaultCredentialsHint") }}</p>
+      <h1 class="login-title">{{ mode === "register" ? t("login.registerTitle") : t("login.title") }}</h1>
+      <p class="login-desc">{{ mode === "register" ? t("login.registerDescription") : t("login.description") }}</p>
+      <p v-if="mode === 'login'" class="login-default-hint">{{ t("login.defaultCredentialsHint") }}</p>
 
       <form class="login-form" @submit.prevent="handleLogin">
         <input
@@ -83,6 +137,14 @@ async function handlePasswordLogin() {
           :placeholder="t('login.passwordPlaceholder')"
           @keyup.enter="handleLogin"
         />
+        <input
+          v-if="mode === 'register'"
+          v-model="confirmPassword"
+          type="password"
+          class="login-input"
+          :placeholder="t('login.confirmPassword')"
+          @keyup.enter="handleLogin"
+        />
 
         <div v-if="errorMsg" class="login-error">{{ errorMsg }}</div>
         <div v-if="showLockResetHint" class="login-lock-hint">
@@ -92,7 +154,15 @@ async function handlePasswordLogin() {
           <code>hermes-web-ui reset-default-login</code>
         </div>
         <button type="submit" class="login-btn" :disabled="loading">
-          {{ loading ? "..." : t("login.submit") }}
+          {{ loading ? "..." : (mode === "register" ? t("login.registerSubmit") : t("login.submit")) }}
+        </button>
+        <button
+          type="button"
+          class="login-link-btn"
+          :disabled="loading"
+          @click="toggleMode(mode === 'register' ? 'login' : 'register')"
+        >
+          {{ mode === "register" ? t("login.backToLogin") : t("login.createAccount") }}
         </button>
       </form>
     </div>
@@ -216,6 +286,26 @@ async function handlePasswordLogin() {
 
   &:hover {
     opacity: 0.85;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.login-link-btn {
+  width: 100%;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $text-primary;
   }
 
   &:disabled {

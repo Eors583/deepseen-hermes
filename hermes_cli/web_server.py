@@ -63,6 +63,11 @@ from hermes_cli.config import (
     recommended_update_command_for_method,
     redact_key,
 )
+from hermes_cli.deepseen_credentials import (
+    deepseen_key_status as db_deepseen_key_status,
+    request_user_key as deepseen_request_user_key,
+    set_deepseen_api_key as db_set_deepseen_api_key,
+)
 from gateway.status import get_running_pid, read_runtime_status
 from utils import env_var_enabled
 
@@ -227,6 +232,10 @@ from hermes_cli.dashboard_auth.public_paths import (
     PUBLIC_API_PATHS as _PUBLIC_API_PATHS,
 )
 
+from hermes_cli.web_auth import authenticate_bearer_token, router as _web_auth_router
+
+app.include_router(_web_auth_router)
+
 
 def _has_valid_session_token(request: Request) -> bool:
     """True if the request carries a valid dashboard session token.
@@ -248,6 +257,18 @@ def _has_valid_session_token(request: Request) -> bool:
     return hmac.compare_digest(auth.encode(), expected.encode())
 
 
+def _authenticate_user_jwt(request: Request) -> bool:
+    auth = request.headers.get("authorization", "")
+    if not auth.startswith("Bearer "):
+        return False
+    token = auth.removeprefix("Bearer ").strip()
+    user = authenticate_bearer_token(token)
+    if not user:
+        return False
+    request.state.user = user
+    return True
+
+
 def _require_token(request: Request) -> None:
     """Authorize a sensitive endpoint, raising 401 if the caller isn't allowed.
 
@@ -267,6 +288,10 @@ def _require_token(request: Request) -> None:
       making plugin install/enable/disable and the other ``_require_token``
       endpoints permanently unreachable behind the gate. Defer to the gate.
     """
+    if getattr(request.app.state, "password_auth_required", False):
+        if _authenticate_user_jwt(request):
+            return
+        raise HTTPException(status_code=401, detail="Unauthorized")
     if getattr(request.app.state, "auth_required", False):
         # Gate is authoritative. It attaches ``request.state.session`` on
         # success and 401s otherwise, so a request that reached us is already
@@ -274,7 +299,7 @@ def _require_token(request: Request) -> None:
         if getattr(request.state, "session", None) is not None:
             return
         raise HTTPException(status_code=401, detail="Unauthorized")
-    if not _has_valid_session_token(request):
+    if not _has_valid_session_token(request) and not _authenticate_user_jwt(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
@@ -404,7 +429,14 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
     path = request.url.path
     if path.startswith("/api/") and path not in _PUBLIC_API_PATHS:
-        if not _has_valid_session_token(request):
+        if getattr(request.app.state, "password_auth_required", False):
+            if not _authenticate_user_jwt(request):
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Unauthorized"},
+                )
+            return await call_next(request)
+        if not _has_valid_session_token(request) and not _authenticate_user_jwt(request):
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Unauthorized"},
@@ -3681,35 +3713,21 @@ async def set_env_var(body: EnvVarUpdate, profile: Optional[str] = None):
 
 
 @app.get("/api/hermes/deepseen-key")
-async def get_deepseen_key_status(profile: Optional[str] = None):
-    with _profile_scope(profile):
-        value = get_env_value("DEEPSEEN_API_KEY")
-        env_path = get_env_path()
-    return {
-        "configured": bool(value),
-        "redacted_value": redact_key(value) if value else "",
-        "env_var": "DEEPSEEN_API_KEY",
-        "env_path": str(env_path),
-    }
+async def get_deepseen_key_status(request: Request, profile: Optional[str] = None):
+    return db_deepseen_key_status(deepseen_request_user_key(request))
 
 
 @app.put("/api/hermes/deepseen-key")
-async def set_deepseen_key(body: DeepSeenKeyUpdate, profile: Optional[str] = None):
+async def set_deepseen_key(body: DeepSeenKeyUpdate, request: Request, profile: Optional[str] = None):
     value = (body.api_key or "").strip()
     if not value:
         raise HTTPException(status_code=400, detail="DEEPSEEN_API_KEY is required")
     try:
-        with _profile_scope(body.profile or profile):
-            save_env_value("DEEPSEEN_API_KEY", value)
-            saved = get_env_value("DEEPSEEN_API_KEY")
-            env_path = get_env_path()
-        return {
-            "ok": True,
-            "configured": bool(saved),
-            "redacted_value": redact_key(saved) if saved else "",
-            "env_var": "DEEPSEEN_API_KEY",
-            "env_path": str(env_path),
-        }
+        user_key = deepseen_request_user_key(request)
+        status = db_set_deepseen_api_key(value, user_key)
+        if user_key != "local":
+            db_set_deepseen_api_key(value, "local")
+        return {"ok": True, **status}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception:
@@ -10351,7 +10369,8 @@ def _ws_auth_reason(ws: "WebSocket") -> tuple[Optional[str], str]:
     issues from the log.
     """
     auth_required = bool(getattr(app.state, "auth_required", False))
-    if auth_required:
+    password_auth_required = bool(getattr(app.state, "password_auth_required", False))
+    if auth_required or password_auth_required:
         # Lazy import — keeps this function importable in test harnesses
         # that don't bring in the dashboard_auth layer.
         from hermes_cli.dashboard_auth.audit import AuditEvent, audit_log
@@ -10903,13 +10922,25 @@ def mount_spa(application: FastAPI):
         html = _index_path.read_text()
         chat_js = "true" if _DASHBOARD_EMBEDDED_CHAT_ENABLED else "false"
         gated = bool(getattr(app.state, "auth_required", False))
+        password_auth = bool(getattr(app.state, "password_auth_required", False))
         gated_js = "true" if gated else "false"
+        password_auth_js = "true" if password_auth else "false"
         if gated:
             bootstrap_script = (
                 f"<script>"
                 f"window.__HERMES_DASHBOARD_EMBEDDED_CHAT__={chat_js};"
                 f'window.__HERMES_BASE_PATH__="{prefix}";'
                 f"window.__HERMES_AUTH_REQUIRED__={gated_js};"
+                f"window.__HERMES_PASSWORD_AUTH__={password_auth_js};"
+                f"</script>"
+            )
+        elif password_auth:
+            bootstrap_script = (
+                f"<script>"
+                f"window.__HERMES_DASHBOARD_EMBEDDED_CHAT__={chat_js};"
+                f'window.__HERMES_BASE_PATH__="{prefix}";'
+                f"window.__HERMES_AUTH_REQUIRED__={gated_js};"
+                f"window.__HERMES_PASSWORD_AUTH__={password_auth_js};"
                 f"</script>"
             )
         else:
@@ -10918,6 +10949,7 @@ def mount_spa(application: FastAPI):
                 f"window.__HERMES_DASHBOARD_EMBEDDED_CHAT__={chat_js};"
                 f'window.__HERMES_BASE_PATH__="{prefix}";'
                 f"window.__HERMES_AUTH_REQUIRED__={gated_js};"
+                f"window.__HERMES_PASSWORD_AUTH__={password_auth_js};"
                 f"</script>"
             )
         if prefix:
@@ -11655,6 +11687,84 @@ async def get_plugins_hub(request: Request):
         raise HTTPException(status_code=500, detail="Failed to build plugins hub.") from exc
 
 
+@app.get("/api/hermes/plugins")
+async def get_hermes_plugins(request: Request):
+    """Return real Hermes agent plugin metadata for the Herbound web UI."""
+    _require_token(request)
+    try:
+        from hermes_cli.plugins import (
+            PluginManager,
+            _get_disabled_plugins,
+            _get_enabled_plugins,
+        )
+        from hermes_constants import get_hermes_home
+
+        manager = PluginManager()
+        manager.discover_and_load(force=True)
+
+        disabled = _get_disabled_plugins()
+        enabled = _get_enabled_plugins()
+        enabled_set = enabled if enabled is not None else set()
+        rows: List[Dict[str, Any]] = []
+
+        for key, loaded in sorted(
+            manager._plugins.items(),
+            key=lambda item: str(item[0]).lower(),
+        ):
+            manifest = loaded.manifest
+            lookup_key = manifest.key or manifest.name or key
+            disabled_match = lookup_key in disabled or manifest.name in disabled
+            enabled_match = lookup_key in enabled_set or manifest.name in enabled_set
+
+            if disabled_match:
+                config_status = "disabled"
+                effective_status = "disabled"
+            elif manifest.kind in {"exclusive", "model-provider"}:
+                config_status = "provider-managed"
+                effective_status = "provider-managed"
+            elif manifest.source == "bundled" and manifest.kind in {"backend", "platform"}:
+                config_status = "auto"
+                effective_status = "auto-active"
+            elif enabled_match:
+                config_status = "enabled"
+                effective_status = "enabled" if loaded.enabled else "inactive"
+            else:
+                config_status = "not-enabled"
+                effective_status = "inactive"
+
+            rows.append({
+                "key": lookup_key,
+                "name": manifest.name or lookup_key,
+                "kind": manifest.kind or "standalone",
+                "source": manifest.source or "",
+                "configStatus": config_status,
+                "effectiveStatus": effective_status,
+                "version": manifest.version or "",
+                "description": manifest.description or "",
+                "author": manifest.author or "",
+                "path": manifest.path or "",
+                "providesTools": manifest.provides_tools or [],
+                "providesHooks": manifest.provides_hooks or [],
+                "requiresEnv": manifest.requires_env or [],
+            })
+
+        return {
+            "plugins": rows,
+            "warnings": [],
+            "metadata": {
+                "hermesAgentRoot": str(PROJECT_ROOT),
+                "pythonExecutable": sys.executable,
+                "cwd": str(Path.cwd()),
+                "projectPluginsEnabled": str(os.getenv("HERMES_ENABLE_PROJECT_PLUGINS", "")).strip().lower()
+                in {"1", "true", "yes", "on"},
+                "hermesHome": str(get_hermes_home()),
+            },
+        }
+    except Exception as exc:
+        _log.warning("/api/hermes/plugins failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to discover Hermes plugins.") from exc
+
+
 @app.post("/api/dashboard/agent-plugins/install")
 async def post_agent_plugin_install(request: Request, body: _AgentPluginInstallBody):
     _require_token(request)
@@ -11953,11 +12063,13 @@ def start_server(
     """
     import uvicorn
 
+    password_auth_required = env_var_enabled("HERMES_WEB_PASSWORD_AUTH")
     # Phase 0: stash the auth-gate flag on app.state so middleware / SPA-token
     # injection / WS-auth paths can branch on it consistently.  Phase 3.5
     # uses this to decide whether to refuse the bind, log the gate-on
     # banner, and enable uvicorn proxy_headers.
-    app.state.auth_required = should_require_auth(host, allow_public)
+    app.state.password_auth_required = password_auth_required
+    app.state.auth_required = False if password_auth_required else should_require_auth(host, allow_public)
 
     if app.state.auth_required:
         # Phase 3.5: the gate engages on non-loopback binds.  The legacy
@@ -12009,6 +12121,11 @@ def start_server(
             "Providers: %s",
             host,
             ", ".join(p.name for p in list_providers()),
+        )
+    elif password_auth_required:
+        _log.info(
+            "Dashboard binding to %s with username/password auth enabled.",
+            host,
         )
     elif host not in _LOOPBACK_HOST_VALUES and allow_public:
         # --insecure path — no auth, loud warning.

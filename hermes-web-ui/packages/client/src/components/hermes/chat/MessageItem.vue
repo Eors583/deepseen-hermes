@@ -22,12 +22,12 @@ import { useGlobalSpeech } from "@/composables/useSpeech";
 import { useVoiceSettings } from "@/composables/useVoiceSettings";
 import { speedToEdgeRate, hzToEdgePitch } from "@/utils/ttsHelpers";
 
-const TOOL_PAYLOAD_DISPLAY_LIMIT = 1000;
-const JSON_STRING_DISPLAY_LIMIT = 200;
-const JSON_MAX_DEPTH = 6;
-const JSON_MAX_NODES = 1000;
-const JSON_MAX_KEYS_PER_OBJECT = 50;
-const JSON_MAX_ITEMS_PER_ARRAY = 50;
+const TOOL_PAYLOAD_DISPLAY_LIMIT = 50000;
+const JSON_STRING_DISPLAY_LIMIT = 5000;
+const JSON_MAX_DEPTH = 12;
+const JSON_MAX_NODES = 10000;
+const JSON_MAX_KEYS_PER_OBJECT = 500;
+const JSON_MAX_ITEMS_PER_ARRAY = 500;
 const JSON_TRUNCATED_KEY = "__truncated__";
 
 const props = defineProps<{ message: Message; highlight?: boolean; headingIdPrefix?: string }>();

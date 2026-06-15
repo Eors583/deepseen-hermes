@@ -46,4 +46,9 @@ PUBLIC_API_PATHS: frozenset[str] = frozenset({
     # Read-only theme + plugin manifests for the dashboard skin engine.
     "/api/dashboard/themes",
     "/api/dashboard/plugins",
+    # Herbound web UI username/password login. These are public by necessity;
+    # all other /api/auth/* routes require a valid user JWT or dashboard token.
+    "/api/auth/status",
+    "/api/auth/login",
+    "/api/auth/register",
 })

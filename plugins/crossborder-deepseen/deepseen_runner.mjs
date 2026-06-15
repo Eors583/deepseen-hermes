@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const DEFAULT_TIMEOUT_MS = 600000
+const DEFAULT_TIMEOUT_MS = 3600000
 const VIDEO_TIMEOUT_MS = 3600000
 const EMPTY_TEXT_VALUES = new Set([
   '无',

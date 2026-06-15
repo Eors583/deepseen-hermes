@@ -15,7 +15,8 @@ function getBaseUrl(): string {
 }
 
 export function getApiKey(): string {
-  return localStorage.getItem('hermes_api_key') || getDashboardToken()
+  const token = localStorage.getItem('hermes_api_key') || ''
+  return token.split('.').length === 3 ? token : ''
 }
 
 export function setServerUrl(url: string) {
@@ -71,29 +72,11 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
     } as T
   }
 
-  if (pathname === '/api/auth/me') {
-    return {
-      user: {
-        id: 1,
-        username: 'Herbound',
-        role: 'super_admin',
-        status: 'active',
-        created_at: nowSeconds(),
-        updated_at: nowSeconds(),
-        last_login_at: nowSeconds(),
-      },
-    } as T
-  }
-
-  if (pathname === '/api/auth/avatar') {
-    return { avatar: JSON.stringify({ type: 'default', seed: 'Herbound' }) } as T
-  }
-
   if (pathname === '/api/hermes/profiles') {
     if (method === 'GET') {
       return {
         profiles: [{
-          name: 'herbound',
+          name: 'default',
           active: true,
           model: 'gpt-4o-mini',
           alias: 'Herbound',
@@ -111,18 +94,18 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
 
   if (pathname.startsWith('/api/hermes/profiles/') && pathname.endsWith('/runtime-status')) {
     return {
-      profile: 'herbound',
-      bridge: { running: true, profile: 'herbound', reachable: true },
-      gateway: { profile: 'herbound', running: true, host: window.location.hostname, url: window.location.origin },
+      profile: 'default',
+      bridge: { running: true, profile: 'default', reachable: true },
+      gateway: { profile: 'default', running: true, host: window.location.hostname, url: window.location.origin },
     } as T
   }
 
   if (pathname === '/api/hermes/profiles/runtime-statuses') {
     return {
       profiles: [{
-        profile: 'herbound',
-        bridge: { running: true, profile: 'herbound', reachable: true },
-        gateway: { profile: 'herbound', running: true, host: window.location.hostname, url: window.location.origin },
+        profile: 'default',
+        bridge: { running: true, profile: 'default', reachable: true },
+        gateway: { profile: 'default', running: true, host: window.location.hostname, url: window.location.origin },
       }],
     } as T
   }
@@ -130,7 +113,7 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
   if (pathname.startsWith('/api/hermes/profiles/')) {
     return {
       profile: {
-        name: 'herbound',
+        name: 'default',
         path: '.hermes',
         model: 'gpt-4o-mini',
         provider: 'custom',
@@ -159,7 +142,7 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
       groups: [group],
       allProviders: [group],
       profiles: [{
-        profile: 'herbound',
+        profile: 'default',
         default: 'gpt-4o-mini',
         default_provider: 'custom',
         groups: [group],
@@ -230,7 +213,6 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
   if (pathname === '/api/hermes/skills') {
     return { categories: [], sources: [], skills: [] } as T
   }
-  if (pathname === '/api/hermes/plugins') return { plugins: [] } as T
   if (pathname === '/api/hermes/memory') return { memories: [], profile: '' } as T
   if (pathname === '/api/hermes/jobs') return { jobs: [] } as T
   if (pathname === '/api/hermes/kanban') return { tasks: [], boards: [], stats: {} } as T
@@ -273,7 +255,8 @@ export function getStoredUsername(): string | null {
 }
 
 export function getActiveProfileName(): string | null {
-  return localStorage.getItem('hermes_active_profile_name')
+  const profile = localStorage.getItem('hermes_active_profile_name')
+  return profile === 'herbound' ? 'default' : profile
 }
 
 function bodyHasProfileSelector(body: BodyInit | null | undefined): boolean {

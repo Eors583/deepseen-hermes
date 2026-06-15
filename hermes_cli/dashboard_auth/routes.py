@@ -604,18 +604,25 @@ async def api_auth_ws_ticket(request: Request):
     """
     sess = getattr(request.state, "session", None)
     if sess is None:
-        # Middleware should already have rejected, but check defensively.
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        user = getattr(request.state, "user", None)
+        if not isinstance(user, dict) or user.get("id") is None:
+            # Middleware should already have rejected, but check defensively.
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        user_id = str(user["id"])
+        provider = "password"
+    else:
+        user_id = sess.user_id
+        provider = sess.provider
 
     # Import here so the routes module stays usable in test contexts that
     # don't load the ticket store.
     from hermes_cli.dashboard_auth.ws_tickets import TTL_SECONDS, mint_ticket
 
-    ticket = mint_ticket(user_id=sess.user_id, provider=sess.provider)
+    ticket = mint_ticket(user_id=user_id, provider=provider)
     audit_log(
         AuditEvent.WS_TICKET_MINTED,
-        provider=sess.provider,
-        user_id=sess.user_id,
+        provider=provider,
+        user_id=user_id,
         ip=_client_ip(request),
     )
     return {"ticket": ticket, "ttl_seconds": TTL_SECONDS}

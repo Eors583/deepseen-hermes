@@ -1,0 +1,30 @@
+services:
+  hermes:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: deepseen-hermes:prod
+    container_name: deepseen-hermes
+    restart: unless-stopped
+    env_file:
+      - path: .env.prod
+        required: false
+    environment:
+      HERMES_HOME: /opt/data
+      HERMES_WEB_DIST: /app/hermes_cli/web_dist
+      HERMES_ENABLE_PROJECT_PLUGINS: "1"
+      HERMES_WEB_PASSWORD_AUTH: "1"
+      DEEPSEEN_BASE_URL: ${DEEPSEEN_BASE_URL:-https://deepseen.ai/v1}
+    ports:
+      - "${HERMES_WEB_BIND:-0.0.0.0}:${HERMES_WEB_PORT:-9119}:9119"
+    volumes:
+      - hermes_data:/opt/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9119/api/auth/status"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+volumes:
+  hermes_data:
