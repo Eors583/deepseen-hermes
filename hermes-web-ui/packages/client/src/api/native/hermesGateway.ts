@@ -34,11 +34,12 @@ export function getDashboardToken(): string {
 }
 
 export async function getWsCredential(): Promise<[key: 'token' | 'ticket', value: string]> {
-  if (window.__HERMES_AUTH_REQUIRED__ || window.__HERMES_PASSWORD_AUTH__) {
+  const passwordToken = localStorage.getItem('hermes_api_key') || ''
+  const shouldUseTicket = window.__HERMES_AUTH_REQUIRED__ || window.__HERMES_PASSWORD_AUTH__ || passwordToken.split('.').length === 3
+  if (shouldUseTicket) {
     const headers: Record<string, string> = {}
-    if (window.__HERMES_PASSWORD_AUTH__) {
-      const token = localStorage.getItem('hermes_api_key') || ''
-      if (token) headers.Authorization = `Bearer ${token}`
+    if (passwordToken) {
+      headers.Authorization = `Bearer ${passwordToken}`
     }
     const res = await fetch(`${basePath()}/api/auth/ws-ticket`, {
       method: 'POST',

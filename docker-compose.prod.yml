@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+      target: runtime
     image: deepseen-hermes:prod
     container_name: deepseen-hermes
     restart: unless-stopped
@@ -15,8 +16,8 @@ services:
       HERMES_ENABLE_PROJECT_PLUGINS: "1"
       HERMES_WEB_PASSWORD_AUTH: "1"
       DEEPSEEN_BASE_URL: ${DEEPSEEN_BASE_URL:-https://deepseen.ai/v1}
-    ports:
-      - "${HERMES_WEB_BIND:-0.0.0.0}:${HERMES_WEB_PORT:-9119}:9119"
+    expose:
+      - "9119"
     volumes:
       - hermes_data:/opt/data
     healthcheck:
@@ -24,6 +25,26 @@ services:
       interval: 30s
       timeout: 10s
       start_period: 60s
+      retries: 3
+
+  hermes-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      target: web
+    image: deepseen-hermes-web:prod
+    container_name: deepseen-hermes-web
+    restart: unless-stopped
+    depends_on:
+      hermes:
+        condition: service_healthy
+    ports:
+      - "${HERMES_WEB_BIND:-0.0.0.0}:${HERMES_WEB_PORT:-9119}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
       retries: 3
 
 volumes:

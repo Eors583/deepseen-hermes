@@ -23,5 +23,6 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml ps
 
 echo
-echo "Hermes production web is listening on the port configured by HERMES_WEB_PORT (default 9119)."
+echo "Hermes production web is served by the hermes-web Nginx container."
+echo "It is listening on the port configured by HERMES_WEB_PORT (default 9119)."
 echo "Open it, register the first account, then enter the DeepSeen API Key in Settings > Models."

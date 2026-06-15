@@ -20,6 +20,17 @@ COPY hermes-web-ui/ hermes-web-ui/
 RUN cd hermes-web-ui && npm run build
 
 
+FROM nginx:1.27-alpine AS web
+
+COPY deploy/nginx/hermes-web.conf /etc/nginx/conf.d/default.conf
+COPY --from=frontend /app/hermes_cli/web_dist /usr/share/nginx/html
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1
+
+
 FROM python:3.12-slim-bookworm AS runtime
 
 ENV PYTHONUNBUFFERED=1
