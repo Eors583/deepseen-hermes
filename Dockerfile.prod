@@ -13,7 +13,8 @@ RUN apt-get update && \
 COPY package.json package-lock.json ./
 COPY hermes-web-ui/package.json hermes-web-ui/package.json
 COPY hermes-web-ui/package-lock.json hermes-web-ui/package-lock.json
-RUN npm install --no-audit && cd hermes-web-ui && npm install --no-audit
+RUN npm install --no-audit --ignore-scripts && \
+    cd hermes-web-ui && npm install --no-audit --ignore-scripts
 
 COPY hermes-web-ui/ hermes-web-ui/
 RUN cd hermes-web-ui && npm run build
