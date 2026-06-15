@@ -21,14 +21,10 @@ import { NButton, NInput } from "naive-ui";
 import VirtualMessageList from "./VirtualMessageList.vue";
 import MessageItem from "./MessageItem.vue";
 import { useChatStore } from "@/stores/hermes/chat";
-import thinkingImageLight from "@/assets/thinking-light.gif";
-import thinkingImageDark from "@/assets/thinking-dark.gif";
-import { useTheme } from "@/composables/useTheme";
 import { useToolTraceVisibility } from "@/composables/useToolTraceVisibility";
 
 const chatStore = useChatStore();
 const { t } = useI18n();
-const { isDark } = useTheme();
 const { toolTraceVisible } = useToolTraceVisibility();
 const listRef = ref<InstanceType<typeof VirtualMessageList> | null>(null);
 const pendingInitialScrollSessionId = ref<string | null>(null);
@@ -337,12 +333,12 @@ defineExpose({
       <template #after>
         <Transition name="fade">
         <div v-if="chatStore.isRunActive || chatStore.abortState" class="streaming-indicator">
-          <img
-            :src="isDark ? thinkingImageDark : thinkingImageLight"
-            alt=""
-            aria-hidden="true"
-            class="thinking-video"
-          >
+          <div class="thinking-loader" aria-hidden="true">
+            <span class="thinking-loader-ring"></span>
+            <span class="thinking-loader-dot dot-one"></span>
+            <span class="thinking-loader-dot dot-two"></span>
+            <span class="thinking-loader-dot dot-three"></span>
+          </div>
           <div v-if="visibleToolCalls.length > 0 || chatStore.compressionState || chatStore.abortState" class="tool-calls-panel">
             <!-- Abort indicator -->
             <div v-if="chatStore.abortState" class="tool-call-item compression-item">
@@ -1054,13 +1050,60 @@ defineExpose({
   align-items: flex-start;
   gap: 12px;
   padding: 4px;
-  .thinking-video {
-    width: 120px;
-    height: 213px;
-    border-radius: $radius-md;
-    object-fit: contain;
-    flex-shrink: 0;
+}
+
+.thinking-loader {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(var(--accent-primary-rgb), 0.16), transparent 60%),
+    rgba(var(--accent-primary-rgb), 0.06);
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.18);
+  display: grid;
+  place-items: center;
+
+  .dark & {
+    background:
+      radial-gradient(circle at 50% 50%, rgba(var(--accent-primary-rgb), 0.24), transparent 62%),
+      rgba(255, 255, 255, 0.04);
   }
+}
+
+.thinking-loader-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--accent-primary-rgb), 0.18);
+  border-top-color: var(--accent-primary);
+  animation: spin 0.9s linear infinite;
+}
+
+.thinking-loader-dot {
+  position: absolute;
+  bottom: 20px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  opacity: 0.42;
+  animation: thinking-pulse 1.1s ease-in-out infinite;
+}
+
+.dot-one {
+  left: 34px;
+}
+
+.dot-two {
+  left: 45px;
+  animation-delay: 0.14s;
+}
+
+.dot-three {
+  left: 56px;
+  animation-delay: 0.28s;
 }
 
 .tool-calls-panel {
@@ -1154,6 +1197,18 @@ defineExpose({
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes thinking-pulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.38;
+  }
+  50% {
+    transform: translateY(-5px);
+    opacity: 1;
   }
 }
 </style>

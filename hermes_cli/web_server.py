@@ -74,6 +74,7 @@ from utils import env_var_enabled
 try:
     from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
     from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.middleware.gzip import GZipMiddleware
     from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
     from fastapi.staticfiles import StaticFiles
     from pydantic import BaseModel
@@ -86,6 +87,7 @@ except ImportError:
         _lazy_ensure("tool.dashboard", prompt=False)
         from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
         from fastapi.middleware.cors import CORSMiddleware
+        from fastapi.middleware.gzip import GZipMiddleware
         from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
         from fastapi.staticfiles import StaticFiles
         from pydantic import BaseModel
@@ -179,6 +181,7 @@ def _get_event_state(app: "FastAPI"):
 
 
 app = FastAPI(title="Hermes Agent", version=__version__, lifespan=_lifespan)
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 # ---------------------------------------------------------------------------
 # Session token for protecting sensitive endpoints (reveal).
@@ -10882,6 +10885,15 @@ def _normalise_prefix(raw: Optional[str]) -> str:
     return normalise_prefix(raw)
 
 
+class CachedStaticFiles(StaticFiles):
+    """Serve hashed Vite assets with browser cache headers."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
+        return response
+
+
 def mount_spa(application: FastAPI):
     """Mount the built SPA. Falls back to index.html for client-side routing.
 
@@ -10988,9 +11000,13 @@ def mount_spa(application: FastAPI):
                 css = css.replace(f"url({asset_dir}", f"url({prefix}{asset_dir}")
                 css = css.replace(f"url(\"{asset_dir}", f"url(\"{prefix}{asset_dir}")
                 css = css.replace(f"url('{asset_dir}", f"url('{prefix}{asset_dir}")
-        return Response(content=css, media_type="text/css")
+        return Response(
+            content=css,
+            media_type="text/css",
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
 
-    application.mount("/assets", StaticFiles(directory=WEB_DIST / "assets"), name="assets")
+    application.mount("/assets", CachedStaticFiles(directory=WEB_DIST / "assets"), name="assets")
 
     @application.get("/{full_path:path}")
     async def serve_spa(full_path: str, request: Request):
@@ -11014,7 +11030,10 @@ def mount_spa(application: FastAPI):
             and file_path.exists()
             and file_path.is_file()
         ):
-            return FileResponse(file_path)
+            return FileResponse(
+                file_path,
+                headers={"Cache-Control": "public, max-age=31536000, immutable"},
+            )
         return _serve_index(prefix)
 
 

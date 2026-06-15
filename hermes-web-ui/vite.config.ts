@@ -45,6 +45,7 @@ export default defineConfig({
   build: {
     outDir: '../../../hermes_cli/web_dist',
     emptyOutDir: true,
+    modulePreload: false,
     // Use esbuild for minification (much faster than terser)
     minify: 'esbuild',
     // Disable sourcemap generation for faster builds
