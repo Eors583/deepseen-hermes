@@ -48,69 +48,39 @@ inputs, call the tool, and return the tool result faithfully.
 
 ## Intent Routing
 
-Use `deepseen_smart_image_create_and_wait` for:
-- product main images, listing images, Amazon/TikTok product images
-- scene images, marketing images, image generation from product keywords
-- required: 商品关键词或简短商品标题
-- optional: 商品图片或 OSS 图片地址、卖点、材质、风格、使用场景、目标市场
+Use `deepseen_smart_image_create_and_wait` for product main images, listing
+images, Amazon/TikTok product images, scene images, marketing images, and image
+generation from product keywords.
 
-Use `deepseen_smart_video_create_and_wait` for:
-- product marketing short videos, TikTok ad creatives, product videos
-- required: 商品标题或核心卖点
-- optional: 商品图片或 OSS 图片地址、生成数量、视频模型、目标市场
+Use `deepseen_smart_video_create_and_wait` for product marketing short videos,
+TikTok ad creatives, and product videos.
 
-Use `deepseen_image_recreation_create_and_wait` for:
-- competitor product image recreation, benchmark product images
-- TikTok Shop competitor product links
-- required: TikTok Shop 竞品商品链接
-- optional: 自有商品图片或 OSS 图片地址、画幅比例、生成模型
+Use `deepseen_image_recreation_create_and_wait` for competitor product image
+recreation, benchmark product images, and TikTok Shop competitor product links.
 
-Use `deepseen_video_recreation_create_and_wait` for:
-- competitor/reference video recreation, viral short video recreation
-- required: 竞品视频链接或参考视频文件
-- optional: 商品图片或 OSS 图片地址、视频组数、视频模型
+Use `deepseen_video_recreation_create_and_wait` for competitor/reference video
+recreation and viral short video recreation.
 
-Use `deepseen_product_report_create_and_wait` for:
-- product viability, selection report, pricing/stock/supplier/patent-risk analysis
-- required: 产品名称、目标市场
-- optional: 目标客群、平台、卖点、采购价、预期售价、重量尺寸、计划备货量、供应商数量
+Use `deepseen_product_report_create_and_wait` for product viability, selection
+reports, pricing/stock/supplier/patent-risk analysis.
 
-Use `deepseen_competitor_analyze_and_wait` for:
-- one competitor product URL
-- required: 竞品商品链接
-- optional: 目标市场
+Use `deepseen_competitor_analyze_and_wait` for one competitor product URL.
 
-Use `deepseen_competitor_analyze_multi_and_wait` for:
-- keyword-based multi-competitor research
-- required: 产品关键词或品类关键词
-- optional: 目标市场
+Use `deepseen_competitor_analyze_multi_and_wait` for keyword-based
+multi-competitor research.
 
-Use `deepseen_creator_analyze_and_wait` for:
-- creator persona, influencer strategy, suitable creator types
-- required: 产品名称、目标市场
-- optional: 目标售价或价格带、一级/二级类目、竞品名称、目标用户年龄、目标用户性别、分析深度
+Use `deepseen_creator_analyze_and_wait` for creator persona, influencer
+strategy, and suitable creator types.
 
-Use `deepseen_creator_score_and_wait` for:
-- scoring/ranking creator rows or creator spreadsheet
-- required: 产品名称、目标市场、达人表格或达人名单数据
-- optional: 目标用户、类目、价格带、评分口径
+Use `deepseen_creator_score_and_wait` for scoring/ranking creator rows or a
+creator spreadsheet.
 
-Use `deepseen_video_analysis_create_and_wait` for:
-- video breakdown, viral video analysis, script/selling-point analysis
-- required: 视频链接或可访问的视频文件
-- optional: 产品背景、目标市场、关注点
+Use `deepseen_video_analysis_create_and_wait` for video breakdown, viral video
+analysis, script/selling-point analysis.
 
 ## Clarification Style
 
 Use natural business wording. Do not include parameter names in parentheses.
-
-Good:
-
-> 我可以做达人分析。请补充产品名称和目标市场；如果方便，也可以补充目标售价、类目、竞品名称和希望的分析深度。
-
-Bad:
-
-> 请把接口需要的字段都补全。
 
 ## Response Format
 

@@ -216,6 +216,7 @@ function summarize(job) {
     status: job?.status,
     output_urls: urls,
     result_id: job?.result_id,
+    display_markdown: summary,
     user_visible_summary: summary,
     user_visible_fields: visibleFields,
     hidden_fields: [...hiddenFields],

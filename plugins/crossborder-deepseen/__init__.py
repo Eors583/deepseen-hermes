@@ -227,7 +227,7 @@ def _call_runner(action: str, args: dict[str, Any], progress_callback: Callable 
     if final_payload is not None:
         if status != 0:
             final_payload.setdefault("ok", False)
-        return json.dumps(final_payload, ensure_ascii=False)
+        return _format_runner_payload(final_payload)
     stdout = "\n".join(raw_lines).strip()
     return json.dumps(
         {
@@ -240,6 +240,50 @@ def _call_runner(action: str, args: dict[str, Any], progress_callback: Callable 
         },
         ensure_ascii=False,
     )
+
+
+def _format_runner_payload(payload: dict[str, Any]) -> str:
+    """Return the model-facing DeepSeen result.
+
+    The SDK may return large nested business objects. The runner already
+    converts those objects into a readable Markdown view; expose that as the
+    primary tool result so the assistant does not paste raw SDK JSON back to
+    the user.
+    """
+    if payload.get("ok") is False:
+        return json.dumps(
+            {
+                "ok": False,
+                "error": payload.get("error") or {
+                    "code": "deepseen_failed",
+                    "message": "DeepSeen SDK call failed",
+                },
+            },
+            ensure_ascii=False,
+        )
+
+    markdown = str(
+        payload.get("display_markdown")
+        or payload.get("user_visible_summary")
+        or ""
+    ).strip()
+    output_urls = payload.get("output_urls")
+    if isinstance(output_urls, list) and output_urls:
+        url_lines = [str(url).strip() for url in output_urls if str(url).strip()]
+        if url_lines:
+            urls_md = "\n".join(f"- {url}" for url in url_lines)
+            markdown = f"{markdown}\n\n输出链接:\n{urls_md}".strip() if markdown else f"输出链接:\n{urls_md}"
+
+    if markdown:
+        return markdown
+
+    slim = {
+        "ok": True,
+        "status": payload.get("status"),
+        "result_id": payload.get("result_id"),
+        "output_urls": output_urls,
+    }
+    return json.dumps({k: v for k, v in slim.items() if v}, ensure_ascii=False)
 
 
 def _handler(action: str) -> Callable:

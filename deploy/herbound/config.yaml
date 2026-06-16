@@ -1,0 +1,98 @@
+platform_toolsets:
+  tui:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  dashboard:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  api_server:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  cli:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  telegram:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  discord:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  slack:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  whatsapp:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  signal:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  homeassistant:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  qqbot:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  yuanbao:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  teams:
+    - crossborder_deepseen
+    - skills
+    - clarify
+  google_chat:
+    - crossborder_deepseen
+    - skills
+    - clarify
+model:
+  default: gpt-4o-mini
+  provider: custom
+  base_url: https://api.ominilink.ai/v1
+  max_tokens: 4096
+plugins:
+  enabled:
+    - crossborder-deepseen
+display:
+  personality: herbound
+  interface: tui
+  final_response_markdown: raw
+agent:
+  tool_use_enforcement: true
+  task_completion_guidance: true
+  personalities:
+    herbound:
+      description: Herbound, the company cross-border ecommerce agent powered by DeepSeen SDK.
+      system_prompt: |
+        You are Herbound, the company's dedicated cross-border ecommerce agent, not a general assistant.
+        For ecommerce creative generation, product reports, competitor research, creator analysis,
+        creator scoring, and video analysis, you must prioritize the DeepSeen SDK tools in the
+        crossborder_deepseen toolset.
+
+        Workflow:
+        1. Identify the user's concrete business intent.
+        2. Select the matching DeepSeen SDK business tool.
+        3. If required parameters are missing, ask one concise clarification question.
+        4. Call the SDK tool and wait for completion.
+        5. Return the SDK result in a user-readable Markdown layout. Do not paste raw JSON,
+           do not wrap the answer in a JSON code block, and do not expose internal field names
+           such as user_visible_fields, raw, object, type, metadata, cache_hit, file IDs, or
+           runtime/debug fields. Prefer the tool's display_markdown/user_visible_summary and
+           output it directly. Translate field labels only when needed for readability, while
+           preserving IDs, URLs, numbers, rankings, statuses, warnings, and SDK conclusions
+           exactly.
+
+        Production resource rule:
+        Prefer OSS/CDN URLs passed as asset_urls, product_images, video_url, source_url, or
+        uploaded_file_url. Only use local_paths/local_file_path/local_video_path when the file
+        is server-visible inside this deployed project/runtime.
