@@ -53,7 +53,8 @@ function readStdin() {
 
 function clean(value) {
   if (Array.isArray(value)) {
-    return value.map(clean).filter(item => item !== undefined)
+    const items = value.map(clean).filter(item => item !== undefined)
+    return items.length ? items : undefined
   }
   if (value && typeof value === 'object') {
     const out = {}
@@ -113,6 +114,12 @@ const HIDDEN_FIELD_NAMES = new Set([
   'data_quota_units',
   'data_charge_credits',
   'creatorKey',
+  'userId',
+  'user_id',
+  'product_id',
+  'productId',
+  'shop_id',
+  'shopId',
   'variant_id',
   'index'
 ])
@@ -142,6 +149,156 @@ function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
+const FIELD_LABELS = {
+  output_urls: '生成结果链接',
+  outputs: '生成结果',
+  url: '链接',
+  urls: '链接',
+  file: '文件',
+  files: '文件',
+  filename: '文件名',
+  result: '',
+  analysisResult: '分析结果',
+  analysis_result: '分析结果',
+  report: '报告',
+  conclusion: '结论',
+  final_verdict: '最终判断',
+  marketVerdict: '市场判断',
+  outlook: '市场展望',
+  recommendation: '建议',
+  recommendations: '建议',
+  action_items: '行动建议',
+  summary: '摘要',
+  title: '标题',
+  name: '名称',
+  productName: '产品名称',
+  product_name: '产品名称',
+  productUrl: '商品链接',
+  product_url: '商品链接',
+  competitorProductUrl: '竞品链接',
+  competitor_product_url: '竞品链接',
+  source_url: '来源链接',
+  sourceUrl: '来源链接',
+  fastmoss_url: '商品来源链接',
+  creator_url: '达人主页',
+  creatorUrl: '达人主页',
+  video_url: '视频链接',
+  videoUrl: '视频链接',
+  image_url: '图片链接',
+  imageUrl: '图片链接',
+  region: '地区',
+  targetMarket: '目标市场',
+  target_market: '目标市场',
+  platform: '平台',
+  category: '类目',
+  categoryLevel1: '一级类目',
+  category_level1: '一级类目',
+  categoryLevel2: '二级类目',
+  category_level2: '二级类目',
+  keywords: '关键词',
+  productKeyword: '产品关键词',
+  product_keyword: '产品关键词',
+  product_details: '产品信息',
+  productDetails: '产品信息',
+  selling_points: '卖点',
+  sellingPoints: '卖点',
+  price: '价格',
+  targetProductPrice: '目标价格',
+  target_product_price: '目标价格',
+  purchaseCost: '采购成本',
+  purchase_cost: '采购成本',
+  expectedPrice: '预期售价',
+  expected_price: '预期售价',
+  rating: '评分',
+  review_count: '评论数',
+  reviewCount: '评论数',
+  sold_count: '销量',
+  soldCount: '销量',
+  video_count: '视频数',
+  videoCount: '视频数',
+  shop_name: '店铺名称',
+  shopName: '店铺名称',
+  brand: '品牌',
+  top_products: '热门商品',
+  topProducts: '热门商品',
+  products: '商品',
+  competitors: '竞品',
+  source_notes: '数据来源说明',
+  sourceNotes: '数据来源说明',
+  evidence: '依据',
+  evidence_level: '依据完整度',
+  evidenceLevel: '依据完整度',
+  evidence_confidence: '依据可信度',
+  evidenceConfidence: '依据可信度',
+  dataReliability: '数据可靠性',
+  reliability: '可靠性',
+  score: '分数',
+  scoreTotal: '总分',
+  score_total: '总分',
+  scoreTier: '等级',
+  score_tier: '等级',
+  tierLabel: '等级说明',
+  tier_label: '等级说明',
+  dimensions: '评分维度',
+  items: '明细',
+  comment: '说明',
+  comments: '说明',
+  analysis: '分析',
+  intelligence_analysis: '综合分析',
+  pitfall_guide: '避坑提示',
+  opportunity_window: '机会窗口',
+  pain: '痛点',
+  opportunity: '机会',
+  risk: '风险',
+  risks: '风险',
+  audience: '人群',
+  targetAudience: '目标人群',
+  target_audience: '目标人群',
+  ideal_creator_profile: '理想达人画像',
+  creator_name: '达人名称',
+  creatorName: '达人名称',
+  handle: '账号',
+  followers: '粉丝数',
+  likes: '点赞数',
+  engagement_rate: '互动率',
+  engagementRate: '互动率',
+  script: '脚本',
+  hooks: '开场钩子',
+  scenes: '场景',
+  scene: '场景',
+  copywriting: '文案',
+  revised_prompt: '生成提示',
+  revisedPrompt: '生成提示',
+  strategy: '方案说明',
+  kind: '类型',
+  model: '模型',
+  aspectRatio: '画面比例',
+  aspect_ratio: '画面比例',
+  count: '数量',
+}
+
+const THIRD_PARTY_SOURCE_NAMES = [
+  /\bFastMoss\b/gi,
+  /\bPerplexity\b/gi,
+  /\bExa\b/gi,
+  /\bOpenAI\b/gi,
+  /\bClaude\b/gi,
+  /\bGemini\b/gi,
+]
+
+function sanitizeDisplayString(value) {
+  let text = String(value)
+  for (const pattern of THIRD_PARTY_SOURCE_NAMES) {
+    text = text.replace(pattern, '数据来源')
+  }
+  return text.replace(/数据来源\s*数据来源/g, '数据来源').trim()
+}
+
+function labelForKey(key) {
+  if (!key) return ''
+  return FIELD_LABELS[key] !== undefined ? FIELD_LABELS[key] : '补充信息'
+}
+
 function toUserVisibleValue(value, hiddenFields, path = '') {
   if (value === undefined || value === null || value === '') return undefined
   if (Array.isArray(value)) {
@@ -166,16 +323,17 @@ function toUserVisibleValue(value, hiddenFields, path = '') {
 }
 
 function stringifyScalar(value) {
-  if (typeof value === 'string') return value
+  if (typeof value === 'string') return sanitizeDisplayString(value)
   if (typeof value === 'number' || typeof value === 'boolean') return String(value)
   return JSON.stringify(value)
 }
 
 function appendMarkdown(lines, key, value, indent = 0) {
   const pad = '  '.repeat(indent)
+  const label = labelForKey(key)
   if (value === undefined || value === null || value === '') return
   if (Array.isArray(value)) {
-    if (key) lines.push(`${pad}- ${key}:`)
+    if (label) lines.push(`${pad}- ${label}:`)
     value.forEach((item, index) => {
       if (isPlainObject(item) || Array.isArray(item)) {
         lines.push(`${pad}  ${index + 1}.`)
@@ -187,13 +345,13 @@ function appendMarkdown(lines, key, value, indent = 0) {
     return
   }
   if (isPlainObject(value)) {
-    if (key) lines.push(`${pad}- ${key}:`)
+    if (label) lines.push(`${pad}- ${label}:`)
     for (const [childKey, childValue] of Object.entries(value)) {
-      appendMarkdown(lines, childKey, childValue, key ? indent + 1 : indent)
+      appendMarkdown(lines, childKey, childValue, label ? indent + 1 : indent)
     }
     return
   }
-  if (key) lines.push(`${pad}- ${key}: ${stringifyScalar(value)}`)
+  if (label) lines.push(`${pad}- ${label}: ${stringifyScalar(value)}`)
   else lines.push(`${pad}${stringifyScalar(value)}`)
 }
 

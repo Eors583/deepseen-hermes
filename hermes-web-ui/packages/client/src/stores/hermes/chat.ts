@@ -888,11 +888,17 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  function syncSessionAfterBackendActivity(sessionId: string, delays = [500, 1500, 3500, 7000]): void {
+    for (const delay of delays) {
+      window.setTimeout(() => {
+        if (activeSessionId.value !== sessionId) return
+        void refreshActiveSession()
+      }, delay)
+    }
+  }
+
   function syncSessionAfterRunCompleted(sessionId: string): void {
-    window.setTimeout(() => {
-      if (activeSessionId.value !== sessionId) return
-      void refreshActiveSession()
-    }, 500)
+    syncSessionAfterBackendActivity(sessionId)
   }
 
 
@@ -1098,6 +1104,7 @@ export const useChatStore = defineStore('chat', () => {
                     toolResult: output,
                   })
                 }
+                syncSessionAfterBackendActivity(sessionId, [800, 2000, 5000])
               } else if (e.event === 'tool.progress') {
                 handleToolProgress(sessionId, e as RunEvent)
               } else if (String(e.event || '').startsWith('subagent.')) {
@@ -2408,6 +2415,7 @@ export const useChatStore = defineStore('chat', () => {
                   toolResult: output,
                 })
               }
+              syncSessionAfterBackendActivity(sid, [800, 2000, 5000])
 
               break
             }
@@ -2981,6 +2989,7 @@ export const useChatStore = defineStore('chat', () => {
               toolResult: output,
             })
           }
+          syncSessionAfterBackendActivity(sid, [800, 2000, 5000])
 
           break
         }

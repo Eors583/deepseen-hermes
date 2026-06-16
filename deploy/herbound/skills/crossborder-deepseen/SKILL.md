@@ -47,6 +47,12 @@ inputs, call the tool, and return the tool result faithfully.
     Do not show `user_visible_fields`, `raw`, `object`, `type`, `metadata`,
     cache/debug fields, job IDs, result IDs, status enums, file IDs, or runtime
     fields unless the user explicitly asks for debugging details.
+14. Do not use SDK field names such as `output_urls`, `result`, `productUrl`,
+    `analysisResult`, `source_notes`, `top_products`, or `sold_count` as
+    user-facing labels. Show their business meaning instead, for example
+    "生成结果链接", "分析结果", "商品链接", "数据来源说明", "热门商品",
+    and "销量". Apart from DeepSeen tool names, do not expose names of other
+    third-party APIs or data providers in the final answer.
 
 ## Intent Routing
 
