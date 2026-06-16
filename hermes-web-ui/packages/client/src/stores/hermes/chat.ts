@@ -10,6 +10,7 @@ import { useSettingsStore } from './settings'
 import { primeCompletionSound, playCompletionSound } from '@/utils/completion-sound'
 import { showCompletionNotification } from '@/utils/completion-notification'
 import { detectThinkingBoundary } from '@/utils/thinking-parser'
+import { normalizeProfileFilter, normalizeProfileName } from '@/shared/profiles'
 
 // Re-export ContentBlock for convenience
 export type ContentBlock = ContentBlockImport
@@ -290,6 +291,41 @@ function runtimePayloadText(value: unknown): string {
   return String(value)
 }
 
+function stripJsonFence(text: string): string {
+  const trimmed = text.trim()
+  const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)
+  return match ? match[1].trim() : trimmed
+}
+
+function readUserVisibleSummary(value: unknown): string {
+  if (!value || typeof value !== 'object') return ''
+  const record = value as Record<string, unknown>
+  if (typeof record.user_visible_summary === 'string' && record.user_visible_summary.trim()) {
+    return record.user_visible_summary.trim()
+  }
+  const result = record.result
+  if (result && typeof result === 'object') {
+    const nested = result as Record<string, unknown>
+    if (typeof nested.user_visible_summary === 'string' && nested.user_visible_summary.trim()) {
+      return nested.user_visible_summary.trim()
+    }
+  }
+  return ''
+}
+
+function normalizeAssistantDisplayContent(content: string): string {
+  if (!content.trim()) return content
+  const candidate = stripJsonFence(content)
+  if (!/^\{[\s\S]*\}$/.test(candidate)) return content
+  try {
+    const parsed = JSON.parse(candidate)
+    const summary = readUserVisibleSummary(parsed)
+    return summary || content
+  } catch {
+    return content
+  }
+}
+
 function runtimeToolOutputHasError(value: unknown): boolean {
   return isToolOutputError(value)
 }
@@ -468,7 +504,7 @@ function mapHermesMessages(msgs: HermesMessage[]): Message[] {
     result.push({
       id: String(msg.id),
       role: msg.role,
-      content: msg.content || '',
+      content: msg.role === 'assistant' ? normalizeAssistantDisplayContent(msg.content || '') : msg.content || '',
       timestamp: Math.round(msg.timestamp * 1000),
       reasoning: msg.reasoning ? msg.reasoning : undefined,
       systemType: msg.role === 'command' ? 'command' : undefined,
@@ -487,7 +523,7 @@ function mapHermesSession(s: SessionSummary): Session {
     : undefined
   return {
     id: s.id,
-    profile: s.profile || 'default',
+    profile: normalizeProfileName(s.profile),
     title: s.title || '',
     source: s.source || undefined,
     agent: s.agent || undefined,
@@ -519,7 +555,7 @@ const LEGACY_STORAGE_KEY = 'hermes_active_session'
 // 避免异步加载导致 chat store 初始化时拿到 null。
 function getProfileName(): string {
   try {
-    return useProfilesStore().activeProfileName || 'default'
+    return normalizeProfileName(useProfilesStore().activeProfileName)
   } catch {
     return 'default'
   }
@@ -713,7 +749,7 @@ export const useChatStore = defineStore('chat', () => {
   async function loadSessions(profile?: string | null, preferredSessionId?: string | null) {
     isLoadingSessions.value = true
     try {
-      const list = await fetchSessions(undefined, undefined, profile || undefined)
+      const list = await fetchSessions(undefined, undefined, normalizeProfileFilter(profile) || undefined)
       const fresh = list.map(mapHermesSession)
       // Preserve already-loaded messages for sessions that are still present,
       // so we don't blow away the active session's messages on refresh.
@@ -771,7 +807,7 @@ export const useChatStore = defineStore('chat', () => {
     if (isStreaming.value) return
     if (isLoadingSessions.value) return
     try {
-      const list = await fetchSessions(undefined, undefined, profile ?? sessionProfileFilter.value ?? undefined)
+      const list = await fetchSessions(undefined, undefined, normalizeProfileFilter(profile ?? sessionProfileFilter.value) || undefined)
       const incoming = list.map(mapHermesSession)
       const existingById = new Map(sessions.value.map(s => [s.id, s]))
       const incomingIds = new Set(incoming.map(s => s.id))
@@ -785,6 +821,7 @@ export const useChatStore = defineStore('chat', () => {
           // Update scalar metadata in-place; never touch runtime/scroll state
           // (messages, loadedMessageCount, hasMoreBefore, contextTokens).
           existing.title = fresh.title
+          existing.profile = fresh.profile
           existing.source = fresh.source
           existing.updatedAt = fresh.updatedAt
           existing.lastActiveAt = fresh.lastActiveAt
@@ -870,7 +907,7 @@ export const useChatStore = defineStore('chat', () => {
     const codingAgentMode = source === 'coding_agent' ? (options.codingAgentMode || 'scoped') : undefined
     const session: Session = {
       id: uid(),
-      profile: options.profile || useProfilesStore().activeProfileName || 'default',
+      profile: normalizeProfileName(options.profile || useProfilesStore().activeProfileName),
       title: '',
       source,
       agent: options.agent || (source === 'coding_agent' ? (codingAgentId === 'codex' ? 'codex' : 'claude') : 'hermes'),
@@ -1903,7 +1940,7 @@ export const useChatStore = defineStore('chat', () => {
       await appStore.waitForModelsForRun()
       const sessionModel = activeSession.value?.model || appStore.selectedModel
       const sessionProvider = activeSession.value?.provider || appStore.selectedProvider
-      const sessionProfile = activeSession.value?.profile || useProfilesStore().activeProfileName || undefined
+      const sessionProfile = normalizeProfileName(activeSession.value?.profile || useProfilesStore().activeProfileName)
       const profileModelGroups = sessionProfile
         ? appStore.profileModelGroups.find(entry => entry.profile === sessionProfile)?.groups
         : undefined
@@ -2455,12 +2492,13 @@ export const useChatStore = defineStore('chat', () => {
                 const parsedContent = typeof (evt as any).parsed_content === 'string'
                   ? (evt as any).parsed_content
                   : ''
-                const parsedContentTrimmed = parsedContent.trim()
+                const displayParsedContent = normalizeAssistantDisplayContent(parsedContent)
+                const parsedContentTrimmed = displayParsedContent.trim()
                 if (lastAssistant) {
                   const existingContentTrimmed = lastAssistant.content?.trim() ?? ''
                   if (parsedContentTrimmed || !existingContentTrimmed) {
                     updateMessage(sid, lastAssistant.id, {
-                      content: parsedContent,
+                      content: displayParsedContent,
                     })
                     finalOutputTrimmed = parsedContentTrimmed
                     if (parsedContentTrimmed) {
@@ -2480,7 +2518,7 @@ export const useChatStore = defineStore('chat', () => {
                   addMessage(sid, {
                     id: uid(),
                     role: 'assistant',
-                    content: parsedContent,
+                    content: displayParsedContent,
                     reasoning: typeof (evt as any).parsed_reasoning === 'string' ? (evt as any).parsed_reasoning : undefined,
                     timestamp: Date.now(),
                   })
@@ -2492,12 +2530,13 @@ export const useChatStore = defineStore('chat', () => {
                 // Fallback to output field (legacy behavior)
                 const finalOutput =
                   typeof evt.output === 'string' ? evt.output : ''
-                finalOutputTrimmed = finalOutput.trim()
+                const displayFinalOutput = normalizeAssistantDisplayContent(finalOutput)
+                finalOutputTrimmed = displayFinalOutput.trim()
                 if (!runProducedAssistantText && finalOutputTrimmed !== '') {
                   addMessage(sid, {
                     id: uid(),
                     role: 'assistant',
-                    content: finalOutput,
+                    content: displayFinalOutput,
                     timestamp: Date.now(),
                   })
                   runProducedAssistantText = true
@@ -3025,12 +3064,13 @@ export const useChatStore = defineStore('chat', () => {
             const parsedContent = typeof (evt as any).parsed_content === 'string'
               ? (evt as any).parsed_content
               : ''
-            const parsedContentTrimmed = parsedContent.trim()
+            const displayParsedContent = normalizeAssistantDisplayContent(parsedContent)
+            const parsedContentTrimmed = displayParsedContent.trim()
             if (lastAssistant) {
               const existingContentTrimmed = lastAssistant.content?.trim() ?? ''
               if (parsedContentTrimmed || !existingContentTrimmed) {
                 updateMessage(sid, lastAssistant.id, {
-                  content: parsedContent,
+                  content: displayParsedContent,
                 })
                 finalOutputTrimmed = parsedContentTrimmed
                 if (parsedContentTrimmed) {
@@ -3050,7 +3090,7 @@ export const useChatStore = defineStore('chat', () => {
               addMessage(sid, {
                 id: uid(),
                 role: 'assistant',
-                content: parsedContent,
+                content: displayParsedContent,
                 reasoning: typeof (evt as any).parsed_reasoning === 'string' ? (evt as any).parsed_reasoning : undefined,
                 timestamp: Date.now(),
               })
@@ -3061,12 +3101,13 @@ export const useChatStore = defineStore('chat', () => {
           } else {
             // Fallback to output field (legacy behavior)
             const finalOutput = typeof evt.output === 'string' ? evt.output : ''
-            finalOutputTrimmed = finalOutput.trim()
+            const displayFinalOutput = normalizeAssistantDisplayContent(finalOutput)
+            finalOutputTrimmed = displayFinalOutput.trim()
             if (!runProducedAssistantText && finalOutputTrimmed !== '') {
               addMessage(sid, {
                 id: uid(),
                 role: 'assistant',
-                content: finalOutput,
+                content: displayFinalOutput,
                 timestamp: Date.now(),
               })
               runProducedAssistantText = true

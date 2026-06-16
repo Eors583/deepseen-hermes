@@ -3,13 +3,16 @@ import { ref } from 'vue'
 import * as profilesApi from '@/api/hermes/profiles'
 import type { HermesProfile, HermesProfileDetail } from '@/api/hermes/profiles'
 import { useAppStore } from './app'
+import { normalizeProfileName } from '@/shared/profiles'
 
 const ACTIVE_PROFILE_STORAGE_KEY = 'hermes_active_profile_name'
 
 export const useProfilesStore = defineStore('profiles', () => {
   const profiles = ref<HermesProfile[]>([])
   // 初始化时同步读 localStorage，确保其他 store（如 chat）在启动时能拿到 profile name
-  const activeProfileName = ref<string | null>(localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY))
+  const activeProfileName = ref<string | null>(
+    normalizeProfileName(localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY)),
+  )
   const activeProfile = ref<HermesProfile | null>(null)
   const detailMap = ref<Record<string, HermesProfileDetail>>({})
   const loading = ref(false)
@@ -19,7 +22,9 @@ export const useProfilesStore = defineStore('profiles', () => {
     loading.value = true
     try {
       profiles.value = await profilesApi.fetchProfiles()
-      const storedName = activeProfileName.value || localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY)
+      const storedName = normalizeProfileName(
+        activeProfileName.value || localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY),
+      )
       let selected = profiles.value.find(p => p.name === storedName) ?? null
       if (!selected && profiles.value.length > 0) {
         selected = profiles.value[0]
@@ -128,17 +133,18 @@ export const useProfilesStore = defineStore('profiles', () => {
   }
 
   async function switchProfile(name: string) {
+    const normalizedName = normalizeProfileName(name)
     switching.value = true
     try {
-      const ok = await profilesApi.switchProfile(name)
+      const ok = await profilesApi.switchProfile(normalizedName)
       if (ok) {
-        activeProfileName.value = name
-        localStorage.setItem(ACTIVE_PROFILE_STORAGE_KEY, name)
+        activeProfileName.value = normalizedName
+        localStorage.setItem(ACTIVE_PROFILE_STORAGE_KEY, normalizedName)
         profiles.value = profiles.value.map(profile => ({
           ...profile,
-          active: profile.name === name,
+          active: profile.name === normalizedName,
         }))
-        activeProfile.value = profiles.value.find(profile => profile.name === name) ?? null
+        activeProfile.value = profiles.value.find(profile => profile.name === normalizedName) ?? null
         await useAppStore().reloadModels()
       }
       return ok

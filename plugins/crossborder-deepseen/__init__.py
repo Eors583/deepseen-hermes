@@ -295,7 +295,7 @@ def _media_common() -> dict[str, Any]:
 _TOOLS: tuple[tuple[str, str, dict[str, Any], list[str], str], ...] = (
     (
         "deepseen_smart_image_create_and_wait",
-        "Generate cross-border ecommerce listing/product/marketing images with DeepSeen SDK. Use for main images, listing images, scene images, and product image generation. Return the SDK JSON result without creative rewriting.",
+        "Generate cross-border ecommerce listing/product/marketing images with DeepSeen SDK. Use for main images, listing images, scene images, and product image generation. Return user_visible_summary/user_visible_fields to the user; do not paste raw SDK JSON.",
         {
             **_media_common(),
             "keywords": {"type": "string", "description": "English product keywords or concise product title."},
@@ -379,21 +379,21 @@ _TOOLS: tuple[tuple[str, str, dict[str, Any], list[str], str], ...] = (
     ),
     (
         "deepseen_competitor_analyze_and_wait",
-        "Analyze one competitor product URL with DeepSeen SDK.",
+        "Analyze one competitor product URL with DeepSeen SDK. Present user_visible_summary/user_visible_fields in a readable layout; do not paste raw SDK JSON.",
         {"product_url": {"type": "string"}, "region": {"type": "string"}},
         ["product_url"],
         "competitor_single",
     ),
     (
         "deepseen_competitor_analyze_multi_and_wait",
-        "Run multi-competitor research by product keyword with DeepSeen SDK.",
+        "Run multi-competitor research by product keyword with DeepSeen SDK. Present user_visible_summary/user_visible_fields in a readable layout; do not paste raw SDK JSON.",
         {"product_keyword": {"type": "string"}, "region": {"type": "string"}},
         ["product_keyword"],
         "competitor_multi",
     ),
     (
         "deepseen_creator_analyze_and_wait",
-        "Analyze creator persona and collaboration strategy for a product and target market.",
+        "Analyze creator persona and collaboration strategy for a product and target market. Present user_visible_summary/user_visible_fields in a readable layout; do not paste raw SDK JSON.",
         {
             "product_name": {"type": "string", "description": "产品名称。Ask the user as '产品名称', not as this parameter name."},
             "target_market": {"type": "string", "description": "目标市场，例如 US/美国/欧洲。Ask the user as '目标市场'."},
@@ -410,7 +410,7 @@ _TOOLS: tuple[tuple[str, str, dict[str, Any], list[str], str], ...] = (
     ),
     (
         "deepseen_creator_score_and_wait",
-        "Score and rank creators for a product. Provide rows or an uploaded/OSS file URL.",
+        "Score and rank creators for a product. Provide rows or an uploaded/OSS file URL. Present user_visible_summary/user_visible_fields in a readable layout; do not paste raw SDK JSON.",
         {
             "product_name": {"type": "string"},
             "target_market": {"type": "string"},
@@ -428,7 +428,7 @@ _TOOLS: tuple[tuple[str, str, dict[str, Any], list[str], str], ...] = (
     ),
     (
         "deepseen_video_analysis_create_and_wait",
-        "Analyze a video for structure, selling points, script, reusable ecommerce creative elements, and reasons for virality.",
+        "Analyze a video for structure, selling points, script, reusable ecommerce creative elements, and reasons for virality. Present user_visible_summary/user_visible_fields in a readable layout; do not paste raw SDK JSON.",
         {
             "source": {"type": "string", "enum": ["LINK", "UPLOAD"]},
             "source_url": {"type": "string"},

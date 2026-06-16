@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { defineAsyncComponent, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import TerminalPanel from './TerminalPanel.vue'
-import FilesPanel from './FilesPanel.vue'
+
+const TerminalPanel = defineAsyncComponent(() => import('./TerminalPanel.vue'))
+const FilesPanel = defineAsyncComponent(() => import('./FilesPanel.vue'))
 
 interface Props {
   show: boolean
@@ -59,10 +60,10 @@ function handleClose() {
       </div>
 
       <div class="drawer-content">
-        <div v-show="activeTab === 'files'" class="drawer-pane">
+        <div v-if="show && activeTab === 'files'" class="drawer-pane">
           <FilesPanel />
         </div>
-        <div v-show="activeTab === 'terminal'" class="drawer-pane">
+        <div v-if="show && activeTab === 'terminal'" class="drawer-pane">
           <TerminalPanel :visible="activeTab === 'terminal' && show" />
         </div>
       </div>

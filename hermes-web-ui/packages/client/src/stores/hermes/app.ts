@@ -16,6 +16,7 @@ import {
   type ModelVisibilityRule,
 } from '@/api/hermes/system'
 import { hasApiKey } from '@/api/client'
+import { normalizeProfileName } from '@/shared/profiles'
 
 const WEB_UI_VERSION = __APP_VERSION__
 
@@ -90,7 +91,7 @@ export const useAppStore = defineStore('app', () => {
     modelVisibility.value = res.model_visibility || {}
     customModels.value = res.custom_models || {}
 
-    const activeProfileName = localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY) || ''
+    const activeProfileName = normalizeProfileName(localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY))
     const activeProfileModels = activeProfileName
       ? profileModelGroups.value.find(entry => entry.profile === activeProfileName)
       : undefined

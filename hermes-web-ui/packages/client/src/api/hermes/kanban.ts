@@ -1,4 +1,5 @@
 import { request, getApiKey, getBaseUrlValue } from '../client'
+import { normalizeProfileName } from '@/shared/profiles'
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -235,7 +236,8 @@ function normalizedBoard(board?: string): string {
 
 function activeProfileName(): string | null {
   try {
-    return localStorage.getItem('hermes_active_profile_name')
+    const profile = localStorage.getItem('hermes_active_profile_name')
+    return profile ? normalizeProfileName(profile) : profile
   } catch {
     return null
   }

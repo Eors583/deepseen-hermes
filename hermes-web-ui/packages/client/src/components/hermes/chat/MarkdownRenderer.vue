@@ -6,6 +6,7 @@ import type MarkdownIt from 'markdown-it'
 import MarkdownItConstructor from 'markdown-it'
 import katex from 'katex'
 import markdownItKatex from '@vscode/markdown-it-katex'
+import 'katex/dist/katex.min.css'
 import { handleCodeBlockCopyClick, renderHighlightedCodeBlock } from './highlight'
 import { repairNestedMarkdownFences } from './markdownFenceRepair'
 import {

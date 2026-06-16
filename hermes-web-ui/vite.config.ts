@@ -59,16 +59,9 @@ export default defineConfig({
       output: {
         // Manual chunk splitting to speed up rendering
         manualChunks(id) {
-          // Separate large heavy packages to avoid blocking other chunks
-          if (id.includes('node_modules/monaco-editor')) {
-            return 'monaco-editor'
-          }
-          if (id.includes('node_modules/mermaid')) {
-            return 'mermaid'
-          }
-          if (id.includes('node_modules/@xterm')) {
-            return 'xterm'
-          }
+          // Keep route-only heavy packages on their async import path. With Rolldown,
+          // forcing manual chunks for Monaco/Mermaid/Xterm can make the entry chunk
+          // import those large bundles for shared helpers.
           if (id.includes('node_modules')) {
             if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) {
               return 'vue-vendor'
@@ -76,7 +69,19 @@ export default defineConfig({
             if (id.includes('naive-ui')) {
               return 'ui-vendor'
             }
-            return 'vendor'
+            if (
+              id.includes('markdown-it') ||
+              id.includes('katex') ||
+              id.includes('highlight.js')
+            ) {
+              return 'markdown-vendor'
+            }
+            if (id.includes('@vicons') || id.includes('lucide-vue-next')) {
+              return 'icon-vendor'
+            }
+            if (id.includes('socket.io-client') || id.includes('engine.io-client')) {
+              return 'realtime-vendor'
+            }
           }
         },
         // Optimize chunk file names for better caching

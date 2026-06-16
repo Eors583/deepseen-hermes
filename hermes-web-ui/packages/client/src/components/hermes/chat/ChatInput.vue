@@ -17,6 +17,7 @@ import { transcribeSpeech } from '@/api/hermes/stt'
 import type { StoredSttProvider } from '@/api/hermes/stt-settings'
 import { useSttSettings } from '@/composables/useSttSettings'
 import { useBrowserSpeechRecognition } from '@/composables/useBrowserSpeechRecognition'
+import { normalizeProfileName } from '@/shared/profiles'
 
 const chatStore = useChatStore()
 const appStore = useAppStore()
@@ -383,7 +384,7 @@ async function saveContextLimit() {
 function currentContextLengthParams() {
   const activeSession = chatStore.activeSession
   return {
-    profile: activeSession?.profile || profilesStore.activeProfileName || undefined,
+    profile: normalizeProfileName(activeSession?.profile || profilesStore.activeProfileName),
     provider: activeSession?.provider || undefined,
     model: activeSession?.model || undefined,
   }

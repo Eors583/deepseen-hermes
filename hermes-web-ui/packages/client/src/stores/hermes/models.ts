@@ -5,6 +5,7 @@ import type { AvailableModelGroup, CustomProvider } from '@/api/hermes/system'
 import { hasApiKey } from '@/api/client'
 import { useAppStore } from './app'
 import { useProfilesStore } from './profiles'
+import { normalizeProfileName } from '@/shared/profiles'
 
 export const useModelsStore = defineStore('models', () => {
   const providers = ref<AvailableModelGroup[]>([])
@@ -38,7 +39,7 @@ export const useModelsStore = defineStore('models', () => {
     if (!hasApiKey()) return
     loading.value = true
     try {
-      const profile = useProfilesStore().activeProfileName || 'default'
+      const profile = normalizeProfileName(useProfilesStore().activeProfileName)
       const res = await systemApi.fetchAvailableModelsForProfile(profile)
       providers.value = res.groups
       allProviders.value = res.allProviders

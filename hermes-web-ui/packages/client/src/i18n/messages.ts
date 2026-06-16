@@ -1,13 +1,5 @@
 import en from './locales/en'
 import zh from './locales/zh'
-import zhTW from './locales/zh-TW'
-import ja from './locales/ja'
-import ko from './locales/ko'
-import fr from './locales/fr'
-import es from './locales/es'
-import de from './locales/de'
-import pt from './locales/pt'
-import ru from './locales/ru'
 
 export type LocaleMessages = Record<string, any>
 
@@ -34,11 +26,29 @@ export function mergeMessagesWithFallback(
   return merged
 }
 
-const rawMessages: Record<string, LocaleMessages> = { en, zh, 'zh-TW': zhTW, ja, ko, fr, es, de, pt, ru }
+const localeLoaders: Partial<Record<SupportedLocale, () => Promise<{ default: LocaleMessages }>>> = {
+  'zh-TW': () => import('./locales/zh-TW'),
+  ja: () => import('./locales/ja'),
+  ko: () => import('./locales/ko'),
+  fr: () => import('./locales/fr'),
+  es: () => import('./locales/es'),
+  de: () => import('./locales/de'),
+  pt: () => import('./locales/pt'),
+  ru: () => import('./locales/ru'),
+}
 
-export const messages: Record<string, LocaleMessages> = {}
-for (const [locale, msg] of Object.entries(rawMessages)) {
-  messages[locale] = locale === 'en' ? msg : mergeMessagesWithFallback({ ...en }, { ...msg })
+export const messages: Record<string, LocaleMessages> = {
+  en,
+  zh: mergeMessagesWithFallback({ ...en }, { ...zh }),
+}
+
+export async function loadLocaleMessages(locale: SupportedLocale): Promise<LocaleMessages> {
+  if (messages[locale]) return messages[locale]
+  const loader = localeLoaders[locale]
+  if (!loader) return messages.en
+  const loaded = (await loader()).default
+  messages[locale] = mergeMessagesWithFallback({ ...en }, { ...loaded })
+  return messages[locale]
 }
 
 export { en }

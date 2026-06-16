@@ -32,6 +32,7 @@ import MessageList from "./MessageList.vue";
 import SessionListItem from "./SessionListItem.vue";
 import DrawerPanel from "./DrawerPanel.vue";
 import OutlinePanel from "./OutlinePanel.vue";
+import { normalizeProfileFilter, normalizeProfileName } from "@/shared/profiles";
 
 const chatStore = useChatStore();
 const appStore = useAppStore();
@@ -125,7 +126,7 @@ const profileFilterOptions = computed(() => [
 ]);
 
 async function handleProfileFilterChange(value: string) {
-  chatStore.sessionProfileFilter = value === "__all__" ? null : value;
+  chatStore.sessionProfileFilter = normalizeProfileFilter(value);
   await chatStore.loadSessions(chatStore.sessionProfileFilter);
 }
 
@@ -257,8 +258,9 @@ const newChatAgentModeOptions = computed(() => [
 ]);
 
 function getModelGroupsForProfile(profile: string) {
+  const normalizedProfile = normalizeProfileName(profile);
   const profileModels = appStore.profileModelGroups.find(
-    (entry) => entry.profile === profile,
+    (entry) => entry.profile === normalizedProfile,
   );
   return profileModels?.groups || [];
 }
@@ -277,9 +279,10 @@ function getSelectableModelGroupsForProfile(profile: string) {
 }
 
 function getDefaultModelForProfile(profile: string) {
+  const normalizedProfile = normalizeProfileName(profile);
   const groups = getSelectableModelGroupsForProfile(profile);
   const profileModels = appStore.profileModelGroups.find(
-    (entry) => entry.profile === profile,
+    (entry) => entry.profile === normalizedProfile,
   );
   const defaultProvider = profileModels?.default_provider || "";
   const defaultModel = profileModels?.default || "";
@@ -410,11 +413,12 @@ async function openNewChatModal() {
       await appStore.loadModels();
     }
     newChatWorkspace.value = "";
-    newChatProfile.value =
+    newChatProfile.value = normalizeProfileName(
       profilesStore.activeProfileName ||
       profilesStore.profiles.find((profile) => profile.active)?.name ||
       profilesStore.profiles[0]?.name ||
-      "default";
+      "default",
+    );
     syncNewChatModelSelection();
   } finally {
     newChatLoading.value = false;
@@ -422,7 +426,7 @@ async function openNewChatModal() {
 }
 
 function handleNewChatProfileChange(value: string) {
-  newChatProfile.value = value;
+  newChatProfile.value = normalizeProfileName(value);
   syncNewChatModelSelection();
 }
 
@@ -465,7 +469,7 @@ async function confirmNewChat() {
       ? "claude"
       : "hermes";
   const session = chatStore.newChat({
-    profile: newChatProfile.value,
+    profile: normalizeProfileName(newChatProfile.value),
     provider: isGlobalCodingAgent ? undefined : newChatProvider.value,
     model: isGlobalCodingAgent ? undefined : newChatModel.value,
     source,
@@ -485,7 +489,8 @@ async function confirmNewChat() {
 }
 
 function sessionProfile(sessionId: string): string | null {
-  return chatStore.sessions.find((session) => session.id === sessionId)?.profile || null;
+  const profile = chatStore.sessions.find((session) => session.id === sessionId)?.profile;
+  return profile ? normalizeProfileName(profile) : null;
 }
 
 function buildSessionUrl(sessionId: string, profile?: string | null): string {
@@ -535,7 +540,7 @@ function toggleBatchMode() {
 }
 
 function sessionSelectionKey(session: Pick<Session, "id" | "profile">): string {
-  return `${session.profile || "default"}\u0000${session.id}`;
+  return `${normalizeProfileName(session.profile)}\u0000${session.id}`;
 }
 
 function toggleSessionSelection(session: Session) {
@@ -563,7 +568,7 @@ async function handleBatchDelete() {
   const targets = Array.from(selectedSessionKeys.value)
     .map((key) => sessionsByKey.get(key))
     .filter((session): session is Session => Boolean(session))
-    .map((session) => ({ id: session.id, profile: session.profile || null }));
+    .map((session) => ({ id: session.id, profile: normalizeProfileName(session.profile) }));
   if (targets.length === 0) return;
   isBatchDeleting.value = true;
   try {

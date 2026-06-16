@@ -19,7 +19,7 @@ const options = [
 ]
 
 function handleChange(val: string) {
-  switchLocale(val)
+  void switchLocale(val)
   localStorage.setItem('hermes_locale', val)
 }
 </script>

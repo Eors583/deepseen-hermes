@@ -1,5 +1,6 @@
 import router from '@/router'
 import { getDashboardToken } from '@/api/native/hermesGateway'
+import { normalizeProfileName } from '@/shared/profiles'
 
 const DEFAULT_BASE_URL = ''
 
@@ -256,7 +257,7 @@ export function getStoredUsername(): string | null {
 
 export function getActiveProfileName(): string | null {
   const profile = localStorage.getItem('hermes_active_profile_name')
-  return profile === 'herbound' ? 'default' : profile
+  return profile ? normalizeProfileName(profile) : profile
 }
 
 function bodyHasProfileSelector(body: BodyInit | null | undefined): boolean {

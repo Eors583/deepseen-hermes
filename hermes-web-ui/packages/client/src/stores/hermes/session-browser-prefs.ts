@@ -1,16 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { useProfilesStore } from './profiles'
+import { normalizeProfileName } from '@/shared/profiles'
 
 const PIN_KEY_PREFIX = 'hermes_session_pins_v1_'
 const HUMAN_ONLY_KEY_PREFIX = 'hermes_human_only_v1_'
 
 function currentProfileName(): string {
   try {
-    return useProfilesStore().activeProfileName || 'default'
+    return normalizeProfileName(useProfilesStore().activeProfileName)
   } catch {
     // Fallback during store initialization
-    return localStorage.getItem('hermes_active_profile_name') || 'default'
+    return normalizeProfileName(localStorage.getItem('hermes_active_profile_name'))
   }
 }
 

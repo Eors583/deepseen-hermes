@@ -7,6 +7,7 @@ import { useAppStore } from '@/stores/hermes/app'
 import { useProfilesStore } from '@/stores/hermes/profiles'
 import ProfileAvatar from '@/components/hermes/profiles/ProfileAvatar.vue'
 import { formatTimestampMs } from '@/shared/session-display'
+import { normalizeProfileName } from '@/shared/profiles'
 
 const props = withDefaults(defineProps<{
   session: Session
@@ -37,14 +38,18 @@ const sessionModelName = computed(() =>
     ? appStore.displayModelName(props.session.model, props.session.provider)
     : '',
 )
-const profileName = computed(() => props.session.profile || 'default')
+const profileName = computed(() => normalizeProfileName(props.session.profile))
 const profileAvatar = computed(() => profilesStore.profiles.find(profile => profile.name === profileName.value)?.avatar)
+const profileExists = computed(() =>
+  profileName.value === 'default' ||
+  profilesStore.profiles.some(profile => profile.name === profileName.value),
+)
 const profileHasModels = computed(() => {
   const profileModels = appStore.profileModelGroups.find(profile => profile.profile === profileName.value)
   return !!profileModels?.groups?.some(group => group.models.length > 0)
 })
 const profileModelsMissing = computed(() =>
-  appStore.profileModelGroups.length > 0 && !profileHasModels.value,
+  profileExists.value && appStore.profileModelGroups.length > 0 && !profileHasModels.value,
 )
 const sessionAgentLogo = computed(() => {
   if (props.session.source === 'coding_agent') {

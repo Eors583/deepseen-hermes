@@ -21,6 +21,7 @@ import {
 import { useGlobalSpeech } from "@/composables/useSpeech";
 import { useVoiceSettings } from "@/composables/useVoiceSettings";
 import { speedToEdgeRate, hzToEdgePitch } from "@/utils/ttsHelpers";
+import { normalizeProfileName } from "@/shared/profiles";
 
 const TOOL_PAYLOAD_DISPLAY_LIMIT = 50000;
 const JSON_STRING_DISPLAY_LIMIT = 5000;
@@ -185,7 +186,7 @@ const profilesStore = useProfilesStore();
 const settingsStore = useSettingsStore();
 const speech = useGlobalSpeech();
 const voiceSettings = useVoiceSettings();
-const assistantProfileName = computed(() => chatStore.activeSession?.profile || profilesStore.activeProfileName || "default");
+const assistantProfileName = computed(() => normalizeProfileName(chatStore.activeSession?.profile || profilesStore.activeProfileName));
 const assistantProfileAvatar = computed(() => profilesStore.profiles.find(profile => profile.name === assistantProfileName.value)?.avatar);
 
 // Copy entire bubble content

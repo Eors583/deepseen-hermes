@@ -92,16 +92,134 @@ function outputUrls(job) {
   return Array.isArray(job?.outputs) ? job.outputs.map(item => item?.url).filter(Boolean) : []
 }
 
+const HIDDEN_FIELD_NAMES = new Set([
+  'object',
+  'type',
+  'raw',
+  'original',
+  'standardSnapshot',
+  'inputRows',
+  'scoredRows',
+  'productFileIds',
+  'product_file_ids',
+  'idempotencyKey',
+  'idempotency_key',
+  'webhookUrl',
+  'webhook_url',
+  'metadata',
+  'cache_hit',
+  'cached_from_analysis_id',
+  'data_request_count',
+  'data_quota_units',
+  'data_charge_credits',
+  'creatorKey',
+  'variant_id',
+  'index'
+])
+
+const OPTIONAL_RUNTIME_FIELDS = new Set([
+  'id',
+  'job_id',
+  'jobId',
+  'progress',
+  'current_step',
+  'currentStep',
+  'created_at',
+  'createdAt',
+  'completed_at',
+  'completedAt',
+  'updated_at',
+  'updatedAt',
+  'logs'
+])
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function toUserVisibleValue(value, hiddenFields, path = '') {
+  if (value === undefined || value === null || value === '') return undefined
+  if (Array.isArray(value)) {
+    const items = value
+      .map((item, index) => toUserVisibleValue(item, hiddenFields, `${path}[${index}]`))
+      .filter(item => item !== undefined)
+    return items.length ? items : undefined
+  }
+  if (!isPlainObject(value)) return value
+
+  const out = {}
+  for (const [key, item] of Object.entries(value)) {
+    const fieldPath = path ? `${path}.${key}` : key
+    if (HIDDEN_FIELD_NAMES.has(key) || OPTIONAL_RUNTIME_FIELDS.has(key)) {
+      hiddenFields.add(fieldPath)
+      continue
+    }
+    const visible = toUserVisibleValue(item, hiddenFields, fieldPath)
+    if (visible !== undefined) out[key] = visible
+  }
+  return Object.keys(out).length ? out : undefined
+}
+
+function stringifyScalar(value) {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return JSON.stringify(value)
+}
+
+function appendMarkdown(lines, key, value, indent = 0) {
+  const pad = '  '.repeat(indent)
+  if (value === undefined || value === null || value === '') return
+  if (Array.isArray(value)) {
+    if (key) lines.push(`${pad}- ${key}:`)
+    value.forEach((item, index) => {
+      if (isPlainObject(item) || Array.isArray(item)) {
+        lines.push(`${pad}  ${index + 1}.`)
+        appendMarkdown(lines, '', item, indent + 2)
+      } else {
+        lines.push(`${pad}  ${index + 1}. ${stringifyScalar(item)}`)
+      }
+    })
+    return
+  }
+  if (isPlainObject(value)) {
+    if (key) lines.push(`${pad}- ${key}:`)
+    for (const [childKey, childValue] of Object.entries(value)) {
+      appendMarkdown(lines, childKey, childValue, key ? indent + 1 : indent)
+    }
+    return
+  }
+  if (key) lines.push(`${pad}- ${key}: ${stringifyScalar(value)}`)
+  else lines.push(`${pad}${stringifyScalar(value)}`)
+}
+
+function userVisibleMarkdown(fields) {
+  const lines = []
+  appendMarkdown(lines, '', fields, 0)
+  return lines.join('\n').trim()
+}
+
 function summarize(job) {
+  const hiddenFields = new Set()
+  const urls = outputUrls(job)
+  const resultValue = job?.result !== undefined ? job.result : job
+  const visibleResult = toUserVisibleValue(resultValue, hiddenFields)
+  const visibleFields = clean({
+    status: job?.status,
+    output_urls: urls,
+    result_id: job?.result_id,
+    result: visibleResult
+  })
+  const summary = userVisibleMarkdown(visibleFields)
   return clean({
     ok: !job?.error && job?.status !== 'failed' && job?.status !== 'cancelled',
     job_id: job?.id,
     status: job?.status,
-    output_urls: outputUrls(job),
+    output_urls: urls,
     result_id: job?.result_id,
-    result: job?.result,
+    user_visible_summary: summary,
+    user_visible_fields: visibleFields,
+    hidden_fields: [...hiddenFields],
     error: job?.error,
-    raw: job
   })
 }
 
