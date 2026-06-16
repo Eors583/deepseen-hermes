@@ -606,6 +606,15 @@ async def api_auth_ws_ticket(request: Request):
     if sess is None:
         user = getattr(request.state, "user", None)
         if not isinstance(user, dict) or user.get("id") is None:
+            auth = request.headers.get("authorization", "")
+            if auth.lower().startswith("bearer "):
+                try:
+                    from hermes_cli.web_auth import authenticate_bearer_token
+
+                    user = authenticate_bearer_token(auth.split(" ", 1)[1].strip())
+                except Exception:
+                    user = None
+        if not isinstance(user, dict) or user.get("id") is None:
             # Middleware should already have rejected, but check defensively.
             raise HTTPException(status_code=401, detail="Unauthorized")
         user_id = str(user["id"])

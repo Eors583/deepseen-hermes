@@ -33,26 +33,32 @@ export function getDashboardToken(): string {
   return window.__HERMES_SESSION_TOKEN__ || ''
 }
 
+async function fetchWsTicket(passwordToken: string): Promise<string> {
+  const headers: Record<string, string> = {}
+  if (passwordToken) {
+    headers.Authorization = `Bearer ${passwordToken}`
+  }
+  const res = await fetch(`${basePath()}/api/auth/ws-ticket`, {
+    method: 'POST',
+    headers,
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(`/api/auth/ws-ticket: HTTP ${res.status}`)
+  const data = await res.json() as { ticket?: string }
+  if (!data.ticket) throw new Error('Hermes websocket ticket missing')
+  return data.ticket
+}
+
 export async function getWsCredential(): Promise<[key: 'token' | 'ticket', value: string]> {
   const passwordToken = localStorage.getItem('hermes_api_key') || ''
   const shouldUseTicket = window.__HERMES_AUTH_REQUIRED__ || window.__HERMES_PASSWORD_AUTH__ || passwordToken.split('.').length === 3
   if (shouldUseTicket) {
-    const headers: Record<string, string> = {}
-    if (passwordToken) {
-      headers.Authorization = `Bearer ${passwordToken}`
-    }
-    const res = await fetch(`${basePath()}/api/auth/ws-ticket`, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-    })
-    if (!res.ok) throw new Error(`/api/auth/ws-ticket: HTTP ${res.status}`)
-    const data = await res.json() as { ticket?: string }
-    if (!data.ticket) throw new Error('Hermes websocket ticket missing')
-    return ['ticket', data.ticket]
+    return ['ticket', await fetchWsTicket(passwordToken)]
   }
   const token = getDashboardToken()
-  if (!token) throw new Error('Hermes dashboard token unavailable')
+  if (!token) {
+    return ['ticket', await fetchWsTicket(passwordToken)]
+  }
   return ['token', token]
 }
 

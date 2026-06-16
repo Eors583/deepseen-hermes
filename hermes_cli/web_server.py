@@ -10539,7 +10539,7 @@ def _build_gateway_ws_url() -> Optional[str]:
         else f"{host}:{port}"
     )
 
-    if getattr(app.state, "auth_required", False):
+    if getattr(app.state, "auth_required", False) or getattr(app.state, "password_auth_required", False):
         from hermes_cli.dashboard_auth.ws_tickets import internal_ws_credential
 
         qs = urllib.parse.urlencode({"internal": internal_ws_credential()})
@@ -10571,7 +10571,7 @@ def _build_sidecar_url(channel: str) -> Optional[str]:
 
     netloc = f"[{host}]:{port}" if ":" in host and not host.startswith("[") else f"{host}:{port}"
 
-    if getattr(app.state, "auth_required", False):
+    if getattr(app.state, "auth_required", False) or getattr(app.state, "password_auth_required", False):
         # Gated mode — use the internal credential so the WS upgrade survives
         # _ws_auth_ok and the child can reconnect.
         from hermes_cli.dashboard_auth.ws_tickets import internal_ws_credential

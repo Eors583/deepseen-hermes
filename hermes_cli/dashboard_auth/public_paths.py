@@ -51,4 +51,8 @@ PUBLIC_API_PATHS: frozenset[str] = frozenset({
     "/api/auth/status",
     "/api/auth/login",
     "/api/auth/register",
+    # The route validates either a dashboard cookie session or a Herbound Web UI
+    # bearer JWT itself. Keeping it out of the outer gate lets split frontend
+    # deployments mint WebSocket tickets without requiring dashboard cookies.
+    "/api/auth/ws-ticket",
 })
