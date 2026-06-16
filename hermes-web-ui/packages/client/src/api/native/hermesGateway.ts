@@ -33,6 +33,22 @@ export function getDashboardToken(): string {
   return window.__HERMES_SESSION_TOKEN__ || ''
 }
 
+function expirePasswordSession(): void {
+  try {
+    localStorage.removeItem('hermes_api_key')
+    sessionStorage.removeItem(STALE_DASHBOARD_TOKEN_RELOAD_KEY)
+  } catch {
+    // Storage can be unavailable in private browsing or strict sandbox modes.
+  }
+  if (!window.location.hash.startsWith('#/')) {
+    window.location.hash = '#/'
+    return
+  }
+  if (window.location.hash !== '#/') {
+    window.location.hash = '#/'
+  }
+}
+
 async function fetchWsTicket(passwordToken: string): Promise<string> {
   const headers: Record<string, string> = {}
   if (passwordToken) {
@@ -43,7 +59,12 @@ async function fetchWsTicket(passwordToken: string): Promise<string> {
     headers,
     credentials: 'include',
   })
-  if (!res.ok) throw new Error(`/api/auth/ws-ticket: HTTP ${res.status}`)
+  if (!res.ok) {
+    if (res.status === 401 && passwordToken) {
+      expirePasswordSession()
+    }
+    throw new Error(`/api/auth/ws-ticket: HTTP ${res.status}`)
+  }
   const data = await res.json() as { ticket?: string }
   if (!data.ticket) throw new Error('Hermes websocket ticket missing')
   return data.ticket

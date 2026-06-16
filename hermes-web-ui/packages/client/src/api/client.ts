@@ -17,7 +17,21 @@ function getBaseUrl(): string {
 
 export function getApiKey(): string {
   const token = localStorage.getItem('hermes_api_key') || ''
-  return token.split('.').length === 3 ? token : ''
+  if (token.split('.').length !== 3) return ''
+  const payload = token.split('.')[1]
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const decoded = JSON.parse(atob(padded)) as { exp?: number }
+    if (typeof decoded.exp === 'number' && decoded.exp <= nowSeconds()) {
+      clearApiKey()
+      return ''
+    }
+  } catch {
+    clearApiKey()
+    return ''
+  }
+  return token
 }
 
 export function setServerUrl(url: string) {
