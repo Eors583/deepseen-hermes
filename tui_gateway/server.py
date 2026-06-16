@@ -3611,8 +3611,11 @@ def _inflight_snapshot(session: dict) -> dict | None:
 
 @method("session.create")
 def _(rid, params: dict) -> dict:
-    sid = uuid.uuid4().hex[:8]
-    key = _new_session_key()
+    requested_session_id = str(
+        params.get("session_id") or params.get("session_key") or ""
+    ).strip()
+    key = requested_session_id or _new_session_key()
+    sid = key
     cols = int(params.get("cols", 80))
     history = _coerce_seed_history(params.get("messages"))
     title = str(params.get("title") or "").strip()
@@ -3637,6 +3640,27 @@ def _(rid, params: dict) -> dict:
 
     ready = threading.Event()
     now = time.time()
+    with _sessions_lock:
+        existing = _sessions.get(sid)
+        if existing is not None:
+            return _ok(
+                rid,
+                {
+                    "session_id": sid,
+                    "message_count": len(existing.get("history") or []),
+                    "messages": _history_to_messages(existing.get("history") or []),
+                    "info": {
+                        "model": _resolve_model(),
+                        "tools": {},
+                        "skills": {},
+                        "cwd": existing.get("cwd") or resolved_cwd,
+                        "branch": _git_branch_for_cwd(existing.get("cwd") or resolved_cwd),
+                        "lazy": True,
+                        "desktop_contract": DESKTOP_BACKEND_CONTRACT,
+                        "profile_name": _current_profile_name(),
+                    },
+                },
+            )
     lease, limit_message = _claim_active_session_slot(key, live_session_id=sid)
     if limit_message is not None:
         return _err(rid, 4090, limit_message)
@@ -3695,7 +3719,6 @@ def _(rid, params: dict) -> dict:
         rid,
         {
             "session_id": sid,
-            "stored_session_id": key,
             "message_count": len(history),
             "messages": _history_to_messages(history),
             "info": {

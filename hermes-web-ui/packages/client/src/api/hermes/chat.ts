@@ -204,49 +204,32 @@ const sessionEventHandlers = new Map<string, SessionHandlers>()
 const peerUserMessageHandlers = new Set<(event: RunEvent) => void>()
 const sessionCommandHandlers = new Set<(event: RunEvent) => void>()
 const sessionTitleUpdatedHandlers = new Set<(event: RunEvent) => void>()
-const nativeSessionByUiSession = new Map<string, string>()
-const uiSessionByNativeSession = new Map<string, string>()
 
 let activeProfile: string | null = null
 let listenersBound = false
 const completedOutputs = new Map<string, string>()
-const NATIVE_SESSION_MAP_STORAGE_KEY = 'hermes_native_session_map_v1'
 
 function isNativeSessionId(sessionId: string): boolean {
   return /^\d{8}_\d{6}_[a-z0-9]{6}$/i.test(sessionId)
 }
 
-function persistNativeSessionMap(): void {
-  try {
-    localStorage.setItem(
-      NATIVE_SESSION_MAP_STORAGE_KEY,
-      JSON.stringify(Array.from(nativeSessionByUiSession.entries())),
-    )
-  } catch {
-    // best-effort only
-  }
+export function resolveNativeSessionId(sessionId: string): string {
+  return sessionId
 }
 
-function restoreNativeSessionMap(): void {
-  try {
-    const raw = localStorage.getItem(NATIVE_SESSION_MAP_STORAGE_KEY)
-    if (!raw) return
-    const entries = JSON.parse(raw)
-    if (!Array.isArray(entries)) return
-    for (const item of entries) {
-      if (!Array.isArray(item) || item.length !== 2) continue
-      const uiSessionId = typeof item[0] === 'string' ? item[0] : ''
-      const nativeSessionId = typeof item[1] === 'string' ? item[1] : ''
-      if (!uiSessionId || !nativeSessionId) continue
-      nativeSessionByUiSession.set(uiSessionId, nativeSessionId)
-      uiSessionByNativeSession.set(nativeSessionId, uiSessionId)
-    }
-  } catch {
-    // ignore stale/corrupt browser storage
-  }
+export function createNativeSessionId(): string {
+  const now = new Date()
+  const ts = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+    '_',
+    String(now.getHours()).padStart(2, '0'),
+    String(now.getMinutes()).padStart(2, '0'),
+    String(now.getSeconds()).padStart(2, '0'),
+  ].join('')
+  return `${ts}_${Math.random().toString(16).slice(2, 8).padEnd(6, '0').slice(0, 6)}`
 }
-
-restoreNativeSessionMap()
 
 function inputToText(input: string | ContentBlock[]): string {
   if (typeof input === 'string') return input
@@ -407,9 +390,6 @@ function bindGatewayListeners(): void {
   listenersBound = true
   for (const type of ['message.delta', 'message.complete', 'tool.start', 'tool.complete', 'tool.started', 'tool.completed', 'tool.progress', 'error']) {
     gateway.on(type, event => {
-      if (event.session_id && uiSessionByNativeSession.has(event.session_id)) {
-        event = { ...event, session_id: uiSessionByNativeSession.get(event.session_id) }
-      }
       const runEvent = toRunEvent(event, type)
       if (runEvent.event === 'message.delta' && event.session_id) {
         completedOutputs.set(event.session_id, (completedOutputs.get(event.session_id) || '') + (runEvent.delta || ''))
@@ -420,25 +400,28 @@ function bindGatewayListeners(): void {
 }
 
 async function nativeSessionFor(uiSessionId: string): Promise<string> {
-  const existing = nativeSessionByUiSession.get(uiSessionId)
-  if (existing) return existing
-  if (isNativeSessionId(uiSessionId)) {
-    nativeSessionByUiSession.set(uiSessionId, uiSessionId)
-    uiSessionByNativeSession.set(uiSessionId, uiSessionId)
-    persistNativeSessionMap()
-    return uiSessionId
+  if (!isNativeSessionId(uiSessionId)) {
+    throw new Error('Invalid Hermes native session id')
   }
-  const created = await gateway.request<{ session_id: string; stored_session_id?: string }>('session.create', {
+  const created = await gateway.request<{ session_id: string }>('session.create', {
+    session_id: uiSessionId,
+    session_key: uiSessionId,
     title: 'Herbound',
     close_on_disconnect: false,
   })
-  nativeSessionByUiSession.set(uiSessionId, created.session_id)
-  uiSessionByNativeSession.set(created.session_id, uiSessionId)
-  if (created.stored_session_id) {
-    nativeSessionByUiSession.set(created.stored_session_id, created.session_id)
-    uiSessionByNativeSession.set(created.stored_session_id, uiSessionId)
+  return created.session_id
+}
+
+async function recreateNativeSessionFor(uiSessionId: string): Promise<string> {
+  if (!isNativeSessionId(uiSessionId)) {
+    throw new Error('Invalid Hermes native session id')
   }
-  persistNativeSessionMap()
+  const created = await gateway.request<{ session_id: string }>('session.create', {
+    session_id: uiSessionId,
+    session_key: uiSessionId,
+    title: 'Herbound',
+    close_on_disconnect: false,
+  })
   return created.session_id
 }
 
@@ -530,7 +513,7 @@ export function resumeSession(
   profile?: string | null,
 ): NativeChatSocket {
   void ensureConnected(profile).then(() => {
-    return fetchSessionMessagesPage(sessionId, 0, 300, profile)
+    return fetchSessionMessagesPage(resolveNativeSessionId(sessionId), 0, 300, profile)
   }).then(page => {
     if (!page) {
       onResumed(makeEmptyResume(sessionId))
@@ -612,12 +595,23 @@ export function startRunViaSocket(
       const started: RunEvent = { event: 'run.started', session_id: sid, run_id: runId }
       onEvent(started)
       onStarted?.(runId)
-      const nativeSid = await nativeSessionFor(sid)
-
-      await gateway.request('prompt.submit', {
-        session_id: nativeSid,
-        text: inputToText(body.input),
-      })
+      let nativeSid = await nativeSessionFor(sid)
+      const text = inputToText(body.input)
+      try {
+        await gateway.request('prompt.submit', {
+          session_id: nativeSid,
+          text,
+        })
+      } catch (submitError) {
+        if (!/session not found/i.test(String((submitError as Error)?.message || submitError))) {
+          throw submitError
+        }
+        nativeSid = await recreateNativeSessionFor(sid)
+        await gateway.request('prompt.submit', {
+          session_id: nativeSid,
+          text,
+        })
+      }
     } catch (error) {
       if (closed) return
       closed = true

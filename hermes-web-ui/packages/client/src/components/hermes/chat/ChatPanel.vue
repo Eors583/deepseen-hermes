@@ -33,6 +33,7 @@ import SessionListItem from "./SessionListItem.vue";
 import DrawerPanel from "./DrawerPanel.vue";
 import OutlinePanel from "./OutlinePanel.vue";
 import { normalizeProfileFilter, normalizeProfileName } from "@/shared/profiles";
+import { resolveNativeSessionId } from "@/api/hermes/chat";
 
 const chatStore = useChatStore();
 const appStore = useAppStore();
@@ -746,7 +747,7 @@ function handleClickOutside() {
 async function handleRenameConfirm() {
   if (!renameSessionId.value || !renameValue.value.trim()) return;
   const ok = await renameSession(
-    renameSessionId.value,
+    resolveNativeSessionId(renameSessionId.value),
     renameValue.value.trim(),
   );
   if (ok) {
@@ -771,7 +772,7 @@ const workspaceSessionId = ref<string | null>(null);
 async function handleWorkspaceConfirm() {
   if (!workspaceSessionId.value) return;
   const ok = await setSessionWorkspace(
-    workspaceSessionId.value,
+    resolveNativeSessionId(workspaceSessionId.value),
     workspaceValue.value || null,
   );
   if (ok) {

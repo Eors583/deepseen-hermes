@@ -13,6 +13,7 @@ import HistoryMessageList from '@/components/hermes/chat/HistoryMessageList.vue'
 import SessionListItem from '@/components/hermes/chat/SessionListItem.vue'
 import OutlinePanel from '@/components/hermes/chat/OutlinePanel.vue'
 import { batchDeleteSessions, deleteSession, fetchHermesSessions, fetchHermesSession, fetchSessionMessagesPage, importHermesSession, type HermesMessage, type SessionSummary } from '@/api/hermes/sessions'
+import { resolveNativeSessionId } from '@/api/hermes/chat'
 
 const appStore = useAppStore()
 const profilesStore = useProfilesStore()
@@ -161,7 +162,8 @@ function sessionFromSummary(summary: SessionSummary, messages: Session['messages
 async function loadHistorySession(sessionId: string, profile?: string | null) {
   const summary = findHistorySession(sessionId)
   const sessionProfile = profile || summary?.profile || null
-  const page = await fetchSessionMessagesPage(sessionId, 0, HISTORY_PAGE_SIZE, sessionProfile)
+  const backendSessionId = resolveNativeSessionId(sessionId)
+  const page = await fetchSessionMessagesPage(backendSessionId, 0, HISTORY_PAGE_SIZE, sessionProfile)
   let sessionData: Session | null = null
 
   if (page) {
@@ -175,7 +177,7 @@ async function loadHistorySession(sessionId: string, profile?: string | null) {
   } else {
     // Some imported/legacy Hermes sessions may only exist in Hermes state.db.
     // Keep the old full-detail path as a compatibility fallback.
-    const sessionDetail = await fetchHermesSession(sessionId, sessionProfile)
+    const sessionDetail = await fetchHermesSession(backendSessionId, sessionProfile)
     if (!sessionDetail) {
       message.error(t('chat.sessionNotFound'))
       return
@@ -216,7 +218,7 @@ async function loadOlderHistoryMessages(sessionId: string): Promise<boolean> {
   const offset = target.loadedMessageCount || 0
   target.isLoadingOlderMessages = true
   try {
-    const page = await fetchSessionMessagesPage(sessionId, offset, HISTORY_PAGE_SIZE, target.profile)
+    const page = await fetchSessionMessagesPage(resolveNativeSessionId(sessionId), offset, HISTORY_PAGE_SIZE, target.profile)
     if (!page || page.messages.length === 0) {
       target.hasMoreBefore = false
       return false

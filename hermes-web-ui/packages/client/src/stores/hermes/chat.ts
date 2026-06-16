@@ -1,4 +1,4 @@
-import { startRunViaSocket, resumeSession, registerSessionHandlers, unregisterSessionHandlers, getChatRunSocket, respondToolApproval, onPeerUserMessage, onSessionCommand, onSessionTitleUpdated, respondClarify, type RunEvent, type ResumeSessionPayload, type StartRunRequest, type ContentBlock as ContentBlockImport } from '@/api/hermes/chat'
+import { startRunViaSocket, resumeSession, registerSessionHandlers, unregisterSessionHandlers, getChatRunSocket, respondToolApproval, onPeerUserMessage, onSessionCommand, onSessionTitleUpdated, respondClarify, resolveNativeSessionId, createNativeSessionId, type RunEvent, type ResumeSessionPayload, type StartRunRequest, type ContentBlock as ContentBlockImport } from '@/api/hermes/chat'
 import { deleteSession as deleteSessionApi, fetchSessionMessagesPage, fetchSessions, setSessionModel, type HermesMessage, type SessionSummary } from '@/api/hermes/sessions'
 import { getActiveProfileName } from '@/api/client'
 import { getDownloadUrl } from '@/api/hermes/download'
@@ -872,7 +872,7 @@ export const useChatStore = defineStore('chat', () => {
       const target = sessions.value.find(s => s.id === sid)
       if (!target) return false
       const limit = Math.max(target.loadedMessageCount || 300, 300)
-      const detail = await fetchSessionMessagesPage(sid, 0, limit, activeSession.value?.profile)
+      const detail = await fetchSessionMessagesPage(resolveNativeSessionId(sid), 0, limit, activeSession.value?.profile)
       if (!detail) return false
       const mapped = mapHermesMessages(detail.messages || [])
       target.messages = mapped
@@ -913,7 +913,7 @@ export const useChatStore = defineStore('chat', () => {
     const codingAgentId = options.codingAgentId || (options.agent === 'codex' ? 'codex' : options.agent === 'claude' ? 'claude-code' : undefined)
     const codingAgentMode = source === 'coding_agent' ? (options.codingAgentMode || 'scoped') : undefined
     const session: Session = {
-      id: uid(),
+      id: createNativeSessionId(),
       profile: normalizeProfileName(options.profile || useProfilesStore().activeProfileName),
       title: '',
       source,
@@ -935,19 +935,8 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   function newCliSession(): Session {
-    const now = new Date()
-    const ts = [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, '0'),
-      String(now.getDate()).padStart(2, '0'),
-      '_',
-      String(now.getHours()).padStart(2, '0'),
-      String(now.getMinutes()).padStart(2, '0'),
-      String(now.getSeconds()).padStart(2, '0'),
-    ].join('')
-    const hex = Math.random().toString(16).slice(2, 8)
     const session: Session = {
-      id: `${ts}_${hex}`,
+      id: createNativeSessionId(),
       title: '',
       source: 'cli',
       agent: 'hermes',
@@ -1139,7 +1128,7 @@ export const useChatStore = defineStore('chat', () => {
     const limit = 300
     target.isLoadingOlderMessages = true
     try {
-      const page = await fetchSessionMessagesPage(sessionId, offset, limit, target.profile)
+      const page = await fetchSessionMessagesPage(resolveNativeSessionId(sessionId), offset, limit, target.profile)
       if (!page || page.messages.length === 0) {
         target.hasMoreBefore = false
         return false
@@ -1197,7 +1186,7 @@ export const useChatStore = defineStore('chat', () => {
   async function switchSessionModel(modelId: string, provider?: string, sessionId?: string): Promise<boolean> {
     const targetId = sessionId || activeSession.value?.id
     if (!targetId) return false
-    const ok = await setSessionModel(targetId, modelId, provider || '')
+    const ok = await setSessionModel(resolveNativeSessionId(targetId), modelId, provider || '')
     if (!ok) return false
     const target = sessions.value.find(s => s.id === targetId)
     if (target) {
@@ -1213,7 +1202,7 @@ export const useChatStore = defineStore('chat', () => {
 
   async function deleteSession(sessionId: string): Promise<boolean> {
     const target = sessions.value.find(s => s.id === sessionId)
-    const ok = await deleteSessionApi(sessionId, target?.profile)
+    const ok = await deleteSessionApi(resolveNativeSessionId(sessionId), target?.profile)
     if (!ok) return false
     sessions.value = sessions.value.filter(s => s.id !== sessionId)
     if (activeSessionId.value === sessionId) {
