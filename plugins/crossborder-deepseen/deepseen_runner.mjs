@@ -431,7 +431,7 @@ const VALUE_LABELS = {
   medium: '中',
   low: '低',
   partial: '部分证据',
-  insufficient: '样本不足',
+  insufficient: '数据有待考究',
   sufficient: '证据充分',
   queued: '排队中',
   processing: '处理中',
