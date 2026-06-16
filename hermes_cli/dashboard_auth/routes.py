@@ -51,6 +51,10 @@ _log = logging.getLogger(__name__)
 router = APIRouter()
 
 
+class WsTicketBody(BaseModel):
+    token: str | None = None
+
+
 def _redirect_uri(request: Request) -> str:
     """Reconstruct the absolute callback URL the IDP redirects back to.
 
@@ -591,7 +595,7 @@ async def api_auth_me(request: Request):
 
 
 @router.post("/api/auth/ws-ticket", name="auth_ws_ticket")
-async def api_auth_ws_ticket(request: Request):
+async def api_auth_ws_ticket(request: Request, body: WsTicketBody | None = None):
     """Mint a short-lived single-use ticket for the authenticated session.
 
     Browsers cannot set ``Authorization`` on a WebSocket upgrade, so in
@@ -607,11 +611,18 @@ async def api_auth_ws_ticket(request: Request):
         user = getattr(request.state, "user", None)
         if not isinstance(user, dict) or user.get("id") is None:
             auth = request.headers.get("authorization", "")
+            bearer = ""
             if auth.lower().startswith("bearer "):
+                bearer = auth.split(" ", 1)[1].strip()
+            if not bearer and body is not None and body.token:
+                bearer = body.token.strip()
+            if not bearer:
+                bearer = request.query_params.get("token", "").strip()
+            if bearer:
                 try:
                     from hermes_cli.web_auth import authenticate_bearer_token
 
-                    user = authenticate_bearer_token(auth.split(" ", 1)[1].strip())
+                    user = authenticate_bearer_token(bearer)
                 except Exception:
                     user = None
         if not isinstance(user, dict) or user.get("id") is None:
