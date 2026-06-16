@@ -108,6 +108,15 @@ const HIDDEN_FIELD_NAMES = new Set([
   'webhookUrl',
   'webhook_url',
   'metadata',
+  'analysis_mode',
+  'source_notes',
+  'sourceNotes',
+  'promptData',
+  'reference_images',
+  'referenceImages',
+  'key',
+  '__dataSource',
+  '__apifyEnriched',
   'cache_hit',
   'cached_from_analysis_id',
   'data_request_count',
@@ -120,6 +129,11 @@ const HIDDEN_FIELD_NAMES = new Set([
   'productId',
   'shop_id',
   'shopId',
+  'creator_id',
+  'creatorId',
+  'creatorKey',
+  'file_id',
+  'fileId',
   'variant_id',
   'index'
 ])
@@ -275,7 +289,123 @@ const FIELD_LABELS = {
   aspectRatio: '画面比例',
   aspect_ratio: '画面比例',
   count: '数量',
+  productImage: '商品图',
+  product_image: '商品图',
+  sales_analysis: '销量表现',
+  core_selling_points: '核心卖点',
+  consumer_persona: '用户画像',
+  user_pain_points: '用户痛点',
+  viral_video_url: '爆款视频链接',
+  video_style: '视觉风格',
+  script_structure: '脚本结构',
+  viral_script: '爆款脚本',
+  breakthrough_guide: '突破指南',
+  intelligence_findings: '情报发现',
+  opportunity_windows: '机会窗口',
+  cross_product_summary: '多竞品总结',
+  battlefield_summary: '竞争战场总结',
+  priority_angle: '优先切入角度',
+  execution_order: '执行顺序',
+  risk_boundary: '风险边界',
+  six_p_common_analysis: '6P 共性分析',
+  competitor_6p_table: '竞品 6P 横向对比',
+  single_competitor_6p: '单竞品 6P 分析',
+  product: '产品基因',
+  profile: '用户画像',
+  path: '流量路径',
+  pitch: '内容打法',
+  category_level1: '一级类目',
+  category_level2: '二级类目',
+  competitor_name: '竞品名称',
+  sample_creators: '样本达人',
+  sample_target: '目标样本量',
+  five_force_commonality: '五力共性',
+  scoring_standard: '评分标准',
+  persona_risk_supplement: '达人画像与风险补充',
+  live_observation: '直播与画像观察',
+  data_availability_notes: '数据可用性说明',
+  personaFit: '人设匹配',
+  creatorPositioning: '达人定位',
+  contentStyle: '内容风格',
+  marketLanguage: '市场语言',
+  brandSafety: '品牌安全',
+  activitySignal: '活跃迹象',
+  productFit: '商品适配',
+  confidence: '可信度',
+  validation: '验证结果',
+  highPerformerDefinition: '高绩效定义',
+  highPerformerAvgScore: '高绩效平均分',
+  otherPerformerAvgScore: '其他达人平均分',
+  separation: '区分度',
+  notes: '说明',
+  dimensionWeights: '维度权重',
+  sampleSize: '样本数',
+  metrics: '指标阈值',
+  indicators: '指标',
+  weight: '权重',
+  sampleCount: '样本覆盖数',
+  inactiveReason: '未入权重原因',
+  insight: '指标洞察',
+  audienceFit: '产品适配',
+  contentPower: '内容触发',
+  growthMomentum: '带货活跃',
+  commerceEfficiency: '合作风险',
+  transactionProof: '成交验证',
+  creatorName: '达人名称',
+  prefilterStatus: '预筛状态',
+  totalScore: '总分',
+  scoreFormula: '总分公式',
+  tier: '档位',
+  starRating: '星级',
+  commissionRate: '佣金率',
+  commission_rate: '佣金率',
+  categoryName: '类目名称',
+  category_name: '类目名称',
+  day28_units_sold: '28 天销量',
+  day28UnitsSold: '28 天销量',
+  creator_count: '达人数',
+  creatorCount: '达人数',
+  day28LiveCountSample: '28 天直播场次样本',
+  day28LiveGmvSample: '28 天直播 GMV 样本',
+  liveGpmSample: '直播 GPM 样本',
+  audiencePersonaSample: '人群画像样本',
+  avgDay28LiveCount: '平均 28 天直播场次',
+  avgDay28LiveGmv: '平均 28 天直播 GMV',
+  avgLiveGpm: '平均直播 GPM',
+  avgAudiencePersonaMatch: '平均人群画像匹配分',
+  dimensionScores: '维度得分',
+  diagnosis: '诊断',
+  disqualifyReasons: '不合作原因',
+  missingFields: '缺失字段',
+  homepageUrl: '达人主页',
+  monthlyGmv: '月 GMV',
+  gpm: 'GPM',
+  videoCr: '视频转化率',
+  meta: '视频信息',
+  source: '来源类型',
+  sourceUrl: '原视频链接',
+  thumbnailUrl: '缩略图',
+  duration: '时长',
+  highlights: '可复制亮点',
+  improvements: '可优化短板',
+  visualStyle: '视觉风格',
+  scriptStructure: '脚本结构',
+  viralScript: '爆款脚本',
+  selectionScore: '选品评分',
+  listingAdvice: 'Listing 建议',
+  patentRisk: '专利风险',
+  riskLevel: '风险等级',
+  advice: '处理建议',
+  aiVideoFeasibility: 'AI 视频可行性',
+  opportunityScore: '机会分',
+  marketPhase: '市场阶段',
+  keyDriver: '增长驱动力',
+  veto: '否决原因',
 }
+
+const EMBEDDED_FIELD_LABELS = Object.fromEntries(
+  Object.entries(FIELD_LABELS).filter(([, label]) => label)
+)
 
 const THIRD_PARTY_SOURCE_NAMES = [
   /\bFastMoss\b/gi,
@@ -291,7 +421,56 @@ function sanitizeDisplayString(value) {
   for (const pattern of THIRD_PARTY_SOURCE_NAMES) {
     text = text.replace(pattern, '数据来源')
   }
+  text = replaceEmbeddedFieldNames(text)
+  text = replaceEmbeddedScalarValues(text)
   return text.replace(/数据来源\s*数据来源/g, '数据来源').trim()
+}
+
+const VALUE_LABELS = {
+  high: '高',
+  medium: '中',
+  low: '低',
+  partial: '部分证据',
+  insufficient: '样本不足',
+  sufficient: '证据充分',
+  queued: '排队中',
+  processing: '处理中',
+  analyzing: '分析中',
+  generating: '生成中',
+  completed: '已完成',
+  failed: '失败',
+  cancelled: '已取消',
+  LINK: '外链',
+  UPLOAD: '上传视频',
+}
+
+function translateScalarValue(value) {
+  if (typeof value !== 'string') return value
+  return VALUE_LABELS[value] || VALUE_LABELS[value.toLowerCase()] || value
+}
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function replaceEmbeddedFieldNames(text) {
+  let next = text
+  const entries = Object.entries(EMBEDDED_FIELD_LABELS).sort((a, b) => b[0].length - a[0].length)
+  for (const [field, label] of entries) {
+    const pattern = new RegExp(`(^|[\\s,，;；。\\n\\r\\t\\-•*\\[\\]()（）])${escapeRegex(field)}\\s*:`, 'g')
+    next = next.replace(pattern, `$1${label}:`)
+  }
+  return next
+}
+
+function replaceEmbeddedScalarValues(text) {
+  let next = text
+  const entries = Object.entries(VALUE_LABELS).sort((a, b) => b[0].length - a[0].length)
+  for (const [raw, label] of entries) {
+    const pattern = new RegExp(`(:\\s*)${escapeRegex(raw)}(?=$|[\\s,，;；。\\n\\r\\t\\)）\\]\\}])`, 'gi')
+    next = next.replace(pattern, `$1${label}`)
+  }
+  return next
 }
 
 function labelForKey(key) {
@@ -323,7 +502,7 @@ function toUserVisibleValue(value, hiddenFields, path = '') {
 }
 
 function stringifyScalar(value) {
-  if (typeof value === 'string') return sanitizeDisplayString(value)
+  if (typeof value === 'string') return sanitizeDisplayString(translateScalarValue(value))
   if (typeof value === 'number' || typeof value === 'boolean') return String(value)
   return JSON.stringify(value)
 }
