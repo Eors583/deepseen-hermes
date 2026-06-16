@@ -29,8 +29,10 @@ inputs, call the tool, and return the tool result faithfully.
    confirmed unless the user explicitly asks to inspect variants first.
 8. After a tool succeeds, do not rewrite, polish, summarize creatively, or add
    new claims. Translate labels and format the result only.
-9. Preserve IDs, URLs, numbers, rankings, statuses, warnings, and SDK
-   conclusions exactly.
+9. Preserve business URLs, product names, prices, numbers, rankings, warnings,
+   and SDK conclusions exactly. Do not show internal job IDs, result IDs,
+   status enums, file IDs, or runtime/debug fields unless the user explicitly
+   asks for debugging details.
 10. If the tool returns `output_urls`, show those URLs exactly and let the UI
     render them as images or videos.
 11. If the tool returns `error`, report the error code/message and the exact
@@ -43,8 +45,8 @@ inputs, call the tool, and return the tool result faithfully.
 13. Never paste the full SDK JSON to the user. If the tool returns
     `display_markdown` or `user_visible_summary`, output that content directly.
     Do not show `user_visible_fields`, `raw`, `object`, `type`, `metadata`,
-    cache/debug fields, file IDs, or runtime fields unless the user explicitly
-    asks for debugging details.
+    cache/debug fields, job IDs, result IDs, status enums, file IDs, or runtime
+    fields unless the user explicitly asks for debugging details.
 
 ## Intent Routing
 

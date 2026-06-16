@@ -17,7 +17,14 @@ RUN npm install --no-audit --ignore-scripts && \
     cd hermes-web-ui && npm install --no-audit --ignore-scripts
 
 COPY hermes-web-ui/ hermes-web-ui/
-RUN cd hermes-web-ui && npm run build
+RUN cd hermes-web-ui && npm run build && \
+    find /app/hermes_cli/web_dist -type f \( \
+      -name '*.js' -o \
+      -name '*.css' -o \
+      -name '*.html' -o \
+      -name '*.json' -o \
+      -name '*.svg' \
+    \) -exec gzip -k -9 {} \;
 
 
 FROM nginx:1.27-alpine AS web

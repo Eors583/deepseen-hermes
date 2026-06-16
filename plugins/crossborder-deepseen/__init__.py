@@ -69,17 +69,13 @@ def _emit_progress(
             preview,
             None,
             action=action,
-            job_id=frame.get("job_id"),
             status=status,
             phase=frame.get("phase"),
             progress=frame.get("progress"),
             stage=frame.get("stage"),
             message=message,
             output_urls=frame.get("output_urls"),
-            result_id=frame.get("result_id"),
             error=frame.get("error"),
-            elapsed_seconds=frame.get("elapsed_seconds"),
-            raw=frame.get("raw"),
         )
     except Exception:
         pass
@@ -277,13 +273,7 @@ def _format_runner_payload(payload: dict[str, Any]) -> str:
     if markdown:
         return markdown
 
-    slim = {
-        "ok": True,
-        "status": payload.get("status"),
-        "result_id": payload.get("result_id"),
-        "output_urls": output_urls,
-    }
-    return json.dumps({k: v for k, v in slim.items() if v}, ensure_ascii=False)
+    return "DeepSeen 已完成，但没有返回可展示的业务内容。"
 
 
 def _handler(action: str) -> Callable:

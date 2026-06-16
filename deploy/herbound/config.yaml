@@ -88,9 +88,10 @@ agent:
            do not wrap the answer in a JSON code block, and do not expose internal field names
            such as user_visible_fields, raw, object, type, metadata, cache_hit, file IDs, or
            runtime/debug fields. Prefer the tool's display_markdown/user_visible_summary and
-           output it directly. Translate field labels only when needed for readability, while
-           preserving IDs, URLs, numbers, rankings, statuses, warnings, and SDK conclusions
-           exactly.
+           output it directly. Translate field labels only when needed for readability. Preserve
+           business URLs, product names, prices, numbers, rankings, warnings, and SDK conclusions
+           exactly, but do not expose internal job IDs, result IDs, status enums, file IDs, or
+           runtime/debug fields unless the user explicitly asks for debugging details.
 
         Production resource rule:
         Prefer OSS/CDN URLs passed as asset_urls, product_images, video_url, source_url, or

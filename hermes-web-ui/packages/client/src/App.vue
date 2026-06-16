@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, watch } from 'vue'
+import { defineAsyncComponent, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { darkTheme, NConfigProvider, NMessageProvider, NDialogProvider, NNotificationProvider } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { getThemeOverrides } from '@/styles/theme'
 import { useTheme } from '@/composables/useTheme'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import DesktopTitleBar from '@/components/layout/DesktopTitleBar.vue'
 import { useKeyboard } from '@/composables/useKeyboard'
 import { useAppStore } from '@/stores/hermes/app'
-import SessionSearchModal from '@/components/hermes/chat/SessionSearchModal.vue'
 import AuthEventListener from '@/components/auth/AuthEventListener.vue'
-import DefaultCredentialPrompt from '@/components/auth/DefaultCredentialPrompt.vue'
+
+const AppSidebar = defineAsyncComponent(() => import('@/components/layout/AppSidebar.vue'))
+const DesktopTitleBar = defineAsyncComponent(() => import('@/components/layout/DesktopTitleBar.vue'))
+const SessionSearchModal = defineAsyncComponent(() => import('@/components/hermes/chat/SessionSearchModal.vue'))
+const DefaultCredentialPrompt = defineAsyncComponent(() => import('@/components/auth/DefaultCredentialPrompt.vue'))
 
 const { isDark, isComic } = useTheme()
 const { t } = useI18n()

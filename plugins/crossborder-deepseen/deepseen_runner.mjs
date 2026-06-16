@@ -121,6 +121,11 @@ const OPTIONAL_RUNTIME_FIELDS = new Set([
   'id',
   'job_id',
   'jobId',
+  'result_id',
+  'resultId',
+  'status',
+  'status_text',
+  'statusText',
   'progress',
   'current_step',
   'currentStep',
@@ -204,9 +209,7 @@ function summarize(job) {
   const resultValue = job?.result !== undefined ? job.result : job
   const visibleResult = toUserVisibleValue(resultValue, hiddenFields)
   const visibleFields = clean({
-    status: job?.status,
     output_urls: urls,
-    result_id: job?.result_id,
     result: visibleResult
   })
   const summary = userVisibleMarkdown(visibleFields)

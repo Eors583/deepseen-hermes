@@ -888,6 +888,13 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  function syncSessionAfterRunCompleted(sessionId: string): void {
+    window.setTimeout(() => {
+      if (activeSessionId.value !== sessionId) return
+      void refreshActiveSession()
+    }, 500)
+  }
+
 
   function createSession(options: {
     profile?: string
@@ -2589,6 +2596,7 @@ export const useChatStore = defineStore('chat', () => {
               reasoningAssistantMessageId = null
               activeRunMarker = null
               updateSessionTitle(sid)
+              syncSessionAfterRunCompleted(sid)
               break
             }
 
@@ -3150,6 +3158,7 @@ export const useChatStore = defineStore('chat', () => {
             activeRunMarker = null
           }
           updateSessionTitle(sid)
+          syncSessionAfterRunCompleted(sid)
           break
         }
 
