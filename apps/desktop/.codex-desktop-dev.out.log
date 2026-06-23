@@ -747,3 +747,29 @@
 [dev:renderer] 12:09:01 [vite] (client) hmr update /src/components/assistant-ui/tool-fallback.tsx
 [dev:renderer] 12:09:01 [vite] (client) hmr invalidate /src/app/profiles/create-profile-dialog.tsx Could not Fast Refresh ("isValidProfileName" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
 [dev:renderer] 12:09:01 [vite] (client) hmr update /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/rename-profile-dialog.tsx
+[dev:renderer] 14:25:30 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:30 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:31 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:32 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:32 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:33 [vite] (client) page reload release/win-unpacked/resources/app.asar.unpacked/dist/index.html
+[dev:renderer] 14:25:36 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:37 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:37 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:37 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:38 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:38 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:38 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:38 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:38 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
+[dev:renderer] 14:25:38 [vite] (client) page reload release/win-unpacked/LICENSES.chromium.html
