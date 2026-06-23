@@ -603,6 +603,13 @@ class SessionDB:
     # Attempt a PASSIVE WAL checkpoint every N successful writes.
     _CHECKPOINT_EVERY_N_WRITES = 50
 
+    def __new__(cls, *args, **kwargs):
+        if cls is SessionDB:
+            from hermes_cli.postgres_session_db import PostgresSessionDB
+
+            return PostgresSessionDB(*args, **kwargs)
+        return super().__new__(cls)
+
     def __init__(self, db_path: Path = None, read_only: bool = False):
         self.db_path = db_path or DEFAULT_DB_PATH
         self.read_only = read_only

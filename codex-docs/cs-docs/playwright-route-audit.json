@@ -1,0 +1,359 @@
+{
+  "pages": [
+    {
+      "route": "/",
+      "role": "anonymous",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Web UI 输入用户名和密码以继续。 默认登录名：admin，默认密码：123456 登录"
+    },
+    {
+      "route": "/hermes/chat",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/chat",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 会话 全部配置 暂无会话 新建对话 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 大小 修改时间 📁 audio_cache — 2026/6/12 10:34:29 📁 cache — 2026/6/15 12:13:41 📁 cron — 2026/6/15 11:14:40 📁 enterprise-skills — 2026/6/18 15:41:44 📁 hooks — 2026/6/12 10:34:29 📁 image_cache — 2026/6/12 10:34:29 📁 logs — 2026/6/15 14:23:10 📁 memories — 2026/6/12 10:34:29 📁 pairing — 2026/6/12 10:34:29 📁 runt"
+    },
+    {
+      "route": "/hermes/history",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/history/session/20260618_155831_ff2216?profile=default",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 HERMES 历史 这里按来源只读查看当前 profile 的 Hermes 历史会话。 CLI 3 只回复：OK Hermes gpt-4o-mini 15:58 只回复：OK Hermes gpt-4o-mini 15:11 只回复：OK Hermes gpt-4o-mini 15:02 只回复：OK CLI 只回复：OK 15:58 OK 15:58 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/jobs",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/jobs",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 定时任务 创建任务 暂无定时任务，创建一个开始吧。 运行历史 0 次运行 暂无运行历史。 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/kanban",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/kanban?board=default",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 看板 看板: Default · 任务数: 0 添加 归档看板 调度 全部状态 全部负责人 新建任务 0 待分拣 0 待办 0 已调度 0 就绪 0 进行中 0 阻塞 0 待审查 0 已完成 0 已归档 0 总计 待分拣 (0) 暂无任务 待办 (0) 暂无任务 已调度 (0) 暂无任务 就绪 (0) 暂无任务 进行中 (0) 暂无任务 阻塞 (0) 暂无任务 待审查 (0) 暂无任务 已完成 (0) 暂无任务 已归档 (0) 暂无任务 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/models",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/models",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 模型 刷新模型缓存 添加 Provider 辅助模型 为压缩、视觉、审批、MCP 和后台维护等辅助任务单独指定模型。 刷新 任务 PROVIDER / 默认模型 超时 操作 视觉 自动 120s / 下载 30s 编辑 清除 网页提取 自动 360s 编辑 清除 压缩 自动 120s 编辑 清除 技能中心 自动 30s 编辑 清除 审批 自动 30s 编辑 清除 MCP 自动 30s 编辑 清除 标题生成 自动 30s 编辑 清除 Triage 扩写 自动 120s 编辑 清除 看板拆解 自动 180s 编辑 清除 Profile 描述 自动 60s 编辑 清除 策展 自动 600s 编辑 清除 会话搜索 自动 30s 编辑 清除 写入记忆 自动 30s 编辑 清除 Google AI Studio 内置 Provider gemini Base URL https://api.ominilink.ai 模型列表 4 个模型 gemini-3.1-pro-preview gemini-3-pro-preview gemini-3-flash-preview gemini-3.1-flash-lite-preview 显示名 管理可见模型 删除 OpenAI AP"
+    },
+    {
+      "route": "/hermes/logs",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/logs",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 日志 agent (334.1KB) 全部 100 刷新 2026-06-18 15:58:11,934 INFO hermes_cli.plugins: Plugin discovery complete: 39 found, 33 enabled 2026-06-18 15:58:05,730 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai 2026-06-18 15:58:05,701 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily 2026-06-18 15:58:05,696 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng 2026-06-18 15:58:05,064 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel 2026-06-1"
+    },
+    {
+      "route": "/hermes/usage",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/usage",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 用量统计 7d 30d 90d 365d 刷新 总 Token 数 34.6K 34.5K 输入 / 9 输出 总会话数 3 日均 ~3.0 预估费用 $0.00 缓存命中率 10.6% 4.1K Token 模型分布 输入 输出 缓存读取 gpt-4o-mini 34.6K +4.1K 每日用量 05-20 06-18 输入 输出 缓存读取 日期 输入 输出 缓存读取 缓存写入 缓存命中率 会话 费用 2026-06-18 34.5K 9 4.1K 0 10.6% 3 $0.00 2026-06-17 0 0 0 0 -- 0 $0.00 2026-06-16 0 0 0 0 -- 0 $0.00 2026-06-15 0 0 0 0 -- 0 $0.00 2026-06-14 0 0 0 0 -- 0 $0.00 2026-06-13 0 0 0 0 -- 0 $0.00 2026-06-12 0 0 0 0 -- 0 $0.00 2026-06-11 0 0 0 0 -- 0 $0.00 2026-06-10 0 0 0 0 -- 0 $0.00 2026-06-09 0 0 0 0 -- 0 $0.00 2026-06-08 0 0 0 0 -- 0 $"
+    },
+    {
+      "route": "/hermes/skills-usage",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/skills-usage",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 技能用量 跟踪 Hermes 会话中的技能加载和编辑 7天 30天 90天 365天 刷新 趋势 最近 7 天 暂无技能用量数据 操作 0 加载 0 编辑 0 技能数 0 热门 最近 7 天 暂无技能用量数据 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/skills",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/skills",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 技能 内置 Hub 安装 本地安装 外部目录 ✎ 用户已修改 待审核 0 导入 外部目录 搜索技能... APPLE 5 apple-notes Use `memo` to manage Apple Notes directly from the terminal. Notes sync across a apple-reminders Use `remindctl` to manage Apple Reminders directly from the terminal. Tasks sync findmy Track Apple devices and AirTags via the FindMy.app on macOS. Since Apple doesn't imessage Use `imsg` to read and send iMessage/SMS via macOS Messages.app. macos-computer-use You have a `computer_use` tool that drives the Mac in the **background**. AUTONOMOUS-AI-AGENTS 4 claude-cod"
+    },
+    {
+      "route": "/hermes/enterprise-skills",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/enterprise-skills",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/plugins",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/plugins",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 插件 刷新 只读展示可发现的 Hermes 插件 manifest。发现元数据读取不会加载插件代码。v1 管理动作仍保留在 CLI，新 Hermes 会话生效。 总数 75 已启用 / 自动 33 未启用 6 已禁用 0 PROVIDER 管理 36 搜索 key、名称、描述、路径... 来源 类型 状态 插件 状态 来源 类型 能力 路径 / 入口 CLI browser/browser_use browser-browser-use Browser Use (https://browser-use.com) cloud browser backend. Supports both direct BROWSER_USE_API_KEY and the managed Nous tool gateway. Also powers the 'Nous Subscription' UX flow that bills usage to a Nous subscription. v1.0.0 NousResearch 自动启用 配置：自动 bundled backend 0 个工具 0 个 hook 0 个环境变量 D:\\Users\\Administrator\\Des"
+    },
+    {
+      "route": "/hermes/memory",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/memory",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 记忆 刷新 我的笔记 编辑 暂无笔记。 用户画像 编辑 暂无画像。 灵魂 6月16日 10:41 编辑 Herbound You are Herbound, the company’s dedicated cross-border ecommerce intelligent agent. Your default behavior is not general chat. Your default behavior is: Understand the user’s ecommerce business need. Map the need to the correct DeepSeen SDK tool. Ask for missing required inputs instead of guessing. Call the SDK tool. Return the SDK result through deterministic field translation only, as a user-readable Markdown layout. Do not paste raw JSON or expose internal SDK/debug fiel"
+    },
+    {
+      "route": "/hermes/settings",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/settings",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 设置 当前账户 账户管理 显示 代理 记忆 上下文压缩 会话 隐私 模型 语音 管理用于登录的用户名和密码。 用户头像 支持 PNG、JPEG、WebP，最大 1MB，会自动压缩到 500KB 以下 上传图片 随机生成 恢复默认 当前账户：admin 修改密码 修改用户名 锁定 IP 管理 0 个 IP 被锁定 重试 暂无锁定 IP 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/channels",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/channels",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 频道 Telegram 未配置 ▾ 此平台使用独占 token 锁。每个 profile 必须使用不同的身份 token，否则会与其他 profile 冲突导致 gateway 启动失败。 Bot Token 开发者门户获取的 Bot Token 123456:ABC-DEF... 需要 @提及 群组中需要 @机器人 才会响应 表情回应 对消息添加表情回应 自由响应聊天 不需要 @提及即响应的聊天 ID（逗号分隔） chat_id1,chat_id2 自定义提及模式 额外的触发模式列表 pattern1, pattern2 保存 Discord 未配置 ▾ 此平台使用独占 token 锁。每个 profile 必须使用不同的身份 token，否则会与其他 profile 冲突导致 gateway 启动失败。 Bot Token 开发者门户获取的 Bot Token Bot token... 需要 @提及 频道中需要 @机器人 才会响应 自动创建线程 @提及 后自动创建回复线程 表情回应 对消息添加表情回应 自由响应频道 不需要 @提及即响应的频道 ID（逗号分隔） channel_id1,channel_id2 允许的频道 白名单频道 ID（逗号分隔） chan"
+    },
+    {
+      "route": "/hermes/terminal",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/terminal",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 会话 powershell.exe #1 powershell.exe 16:05 powershell.exe #1 Default 新建终端 Windows PowerShell 版权所有 (C) Microsoft Corporation。保留所有权利。 尝试新的跨平台 PowerShell https://aka.ms/pscore6 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/devices",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/devices",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 设备 https://device.example.com 远程配对 复制配对链接 0 台设备 上次扫描：2026/6/18 15:55:54 申请列表 刷新 暂无设备 刷新 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/files",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/files",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 大小 修改时间 📁 audio_cache — 2026/6/12 10:34:29 📁 cache — 2026/6/15 12:13:41 📁 cron — 2026/6/15 11:14:40 📁 enterprise-skills — 2026/6/18 15:41:44 📁 hooks — 2026/6/12 10:34:29 📁 image_cache — 2026/6/12 10:34:29 📁 logs — 2026/6/15 14:23:10 📁 memories — 2026/6/12 10:34:29 📁 pairing — 2026/6/12 10:34:29 📁 runtime-skills — 2026/6/18 15:37:43 📁 sandboxes — 2026/6/15 11"
+    },
+    {
+      "route": "/hermes/coding-agents",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/coding-agents",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 编程工具 刷新 并非所有提供商和模型都兼容。 Claude Code Anthropic 安装情况 已安装 2.1.167 删除 配置文件 ~/.claude/settings.json ~/.claude.json ~/.claude/CLAUDE.md ~/.claude/settings.json 保存 启动 Codex OpenAI 安装情况 已安装 0.137.0 删除 配置文件 ~/.codex/auth.json ~/.codex/config.toml ~/.codex/AGENTS.md ~/.codex/config.toml 保存 启动 编程工具终端 会话 暂无终端会话 Default 新建终端 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/profiles",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/profiles",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 配置 导入 创建配置 default 活跃 模型 gpt-4o-mini 展开 删除 导出 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/performance",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/performance",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 性能监控 自动刷新 刷新 系统 CPU 0.0% 系统内存 59.4% 18.9 GB / 31.8 GB 活跃会话 0 运行中 0 Workers 0 / 0 Worker 总内存 0 B 进程 win32 x64 · 20 CPU · 运行 6d 1h Web UI PID 28668 0.0% 399.6 MB 运行中 Bridge Broker tcp://127.0.0.1:18765 0.0% 56.6 MB 运行中 Worker 内存 更新时间 16:05:30 Profile PID CPU 内存 运行中 / 活跃 最后使用 状态 暂无 Worker 按 Profile 统计会话 暂无活跃会话 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/version-preview",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/version-preview",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 版本预览 main 准备代码 安装依赖 开启预览 停止 刷新 将选中的 GitHub tag 克隆到 Web UI 预览工作目录，安装依赖并以开发端口运行。 预览代码存放在 Web UI 数据目录下。正式环境仍使用 9119，预览开发环境使用前端 8649、后端 9119。 预览路径 C:\\Users\\Administrator\\.hermes-web-ui\\hermes-web-ui-pereview 预览数据目录 C:\\Users\\Administrator\\.hermes-web-ui\\hermes-web-ui-pereview-home 当前 Tag - 仓库就绪 否 依赖已安装 否 运行状态 未运行 打开预览 http://localhost:8651 操作日志路径 C:\\Users\\Administrator\\.hermes-web-ui\\hermes-web-ui-pereview\\preview-action.log 开发服务日志 C:\\Users\\Administrator\\.hermes-web-ui\\hermes-web-ui-pereview\\preview-dev.log 日志输出 操作日志 - 开发服务日志 - 请修改默认账户和密码"
+    },
+    {
+      "route": "/hermes/mcp",
+      "role": "super_admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/mcp",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 — 退出登录 admin 未连接 简体中文 Studio v0.6.14 MCP 服务器 刷新 总计 1 已连接 1 未连接 0 工具 14 搜索服务器... 全部重载 + 添加服务器 hermes-studio stdio 已连接 工具列表 14/14个工具 hermes_lan_devices_list hermes_lan_devices_scan hermes_lan_peer_connect hermes_lan_peer_connections hermes_lan_peer_disconnect hermes_lan_terminal_create hermes_lan_terminal_list hermes_lan_terminal_input hermes_lan_terminal_read hermes_lan_terminal_resize hermes_lan_terminal_close hermes_lan_command_exec hermes_lan_file_download hermes_lan_file_upload 编辑 管理工具 测试 重载 移除 请修改默认账户和密码 当前登录账户仍在使用默认用户名或默认密码。为了避免未授权访问，请尽快进入当前账户修改用户名和密码。 稍后提醒 去修改"
+    },
+    {
+      "route": "/hermes/enterprise-skills",
+      "role": "admin",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Web UI 输入用户名和密码以继续。 默认登录名：admin，默认密码：123456 登录 登录已过期，请重新登录"
+    },
+    {
+      "route": "/hermes/chat",
+      "role": "super_admin",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "activeUrl": "http://127.0.0.1:8649/#/hermes/chat",
+      "hasViteError": 0,
+      "errorOverlayText": "",
+      "bodySnippet": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 文件树 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 📁 audio_cache 📁 cache 📁 cron 📁 enterprise-skills 📁 hooks 📁 image_cache 📁 logs 📁 memories 📁 pairing 📁 runtime-skills 📁 sandboxes 📁 sessions 📁 skills 📁 upload 📁 web-auth 📄 .env 👁️ ✏️ ⬇️ 📄 .env.example 👁️ ✏️ ⬇️ 📋 .skills_prompt_snapshot.json 👁️ ✏️ ⬇️ 📄 .update_check ⬇️ 📄 auth.lock 👁️ ✏️ ⬇️ 📋 channel_dir"
+    }
+  ],
+  "console": [
+    {
+      "route": "/hermes/enterprise-skills",
+      "type": "warning",
+      "text": "[Vue Router warn]: No match found for location with path \"/hermes/enterprise-skills\""
+    },
+    {
+      "route": "/hermes/enterprise-skills",
+      "type": "warning",
+      "text": "[Vue Router warn]: No match found for location with path \"/hermes/enterprise-skills\""
+    },
+    {
+      "route": "/hermes/enterprise-skills",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "route": "/hermes/enterprise-skills",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "route": "/hermes/enterprise-skills",
+      "type": "error",
+      "text": "Failed to fetch profiles: Error: Unauthorized\n    at request (http://127.0.0.1:8649/src/api/client.ts:150:9)\n    at async Module.fetchProfiles (http://127.0.0.1:8649/src/api/hermes/profiles.ts:3:14)\n    at async Proxy.fetchProfiles (http://127.0.0.1:8649/src/stores/hermes/profiles.ts:17:21)"
+    }
+  ],
+  "requests": [],
+  "screenshots": [
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\__super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_chat_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_history_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_jobs_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_kanban_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_models_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_logs_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_usage_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_skills_usage_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_skills_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_enterprise_skills_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_plugins_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_memory_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_settings_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_channels_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_terminal_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_devices_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_files_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_coding_agents_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_profiles_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_performance_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_version_preview_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_mcp_super_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_enterprise_skills_admin_1366.png",
+    "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\screenshots\\_hermes_chat_super_390.png"
+  ]
+}

@@ -1,37 +1,23 @@
 from __future__ import annotations
 
-import sqlite3
 import time
-from pathlib import Path
 from typing import Any
 
 from hermes_cli.config import redact_key
-from hermes_constants import get_hermes_home
+from hermes_cli import postgres_store
 
 PROVIDER = "deepseen"
 KEY_NAME = "api_key"
 LOCAL_USER_KEY = "local"
 
 
-def _auth_dir() -> Path:
-    path = get_hermes_home() / "web-auth"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def credential_db_path() -> Path:
-    return _auth_dir() / "auth.db"
-
-
-def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(credential_db_path())
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    _init_db(conn)
+def _connect() -> Any:
+    conn = postgres_store.connect()
+    _init_db_postgres(conn)
     return conn
 
 
-def _init_db(conn: sqlite3.Connection) -> None:
+def _init_db_postgres(conn: Any) -> None:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS user_credentials (
@@ -39,8 +25,8 @@ def _init_db(conn: sqlite3.Connection) -> None:
             provider TEXT NOT NULL,
             key_name TEXT NOT NULL,
             secret_value TEXT NOT NULL,
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL,
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL,
             PRIMARY KEY (user_key, provider, key_name)
         )
         """
@@ -70,7 +56,7 @@ def request_user_key(request: Any) -> str:
     return LOCAL_USER_KEY
 
 
-def _read_key(conn: sqlite3.Connection, user_key: str) -> str:
+def _read_key(conn: Any, user_key: str) -> str:
     row = conn.execute(
         """
         SELECT secret_value
@@ -113,6 +99,20 @@ def set_deepseen_api_key(api_key: str, user_key: str | None = None) -> dict[str,
     return deepseen_key_status(key)
 
 
+def delete_deepseen_api_key(user_key: str | None = None) -> dict[str, Any]:
+    key = normalize_user_key(user_key)
+    with _connect() as conn:
+        conn.execute(
+            """
+            DELETE FROM user_credentials
+            WHERE user_key = ? AND provider = ? AND key_name = ?
+            """,
+            (key, PROVIDER, KEY_NAME),
+        )
+        conn.commit()
+    return deepseen_key_status(key)
+
+
 def deepseen_key_status(user_key: str | None = None) -> dict[str, Any]:
     key = normalize_user_key(user_key)
     value = get_deepseen_api_key(key)
@@ -120,7 +120,7 @@ def deepseen_key_status(user_key: str | None = None) -> dict[str, Any]:
         "configured": bool(value),
         "redacted_value": redact_key(value) if value else "",
         "storage": "database",
-        "db_path": str(credential_db_path()),
+        "db_path": "postgresql",
         "user_key": key,
         "provider": PROVIDER,
         "key_name": KEY_NAME,

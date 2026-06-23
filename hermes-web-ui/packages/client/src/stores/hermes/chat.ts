@@ -910,7 +910,6 @@ export const useChatStore = defineStore('chat', () => {
     agent?: 'hermes' | 'claude' | 'codex'
     codingAgentId?: 'claude-code' | 'codex'
     codingAgentMode?: 'global' | 'scoped'
-    workspace?: string | null
     baseUrl?: string
     apiKey?: string
     apiMode?: 'chat_completions' | 'codex_responses' | 'anthropic_messages'
@@ -931,7 +930,7 @@ export const useChatStore = defineStore('chat', () => {
       updatedAt: Date.now(),
       model: options.model || undefined,
       provider: options.provider || '',
-      workspace: options.workspace || null,
+      workspace: null,
       baseUrl: options.baseUrl,
       apiKey: options.apiKey,
       apiMode: options.apiMode,
@@ -1181,7 +1180,7 @@ export const useChatStore = defineStore('chat', () => {
       agent: options.agent,
       codingAgentId: options.codingAgentId,
       codingAgentMode: options.codingAgentMode,
-      workspace: options.workspace,
+      workspace: null,
       baseUrl: options.baseUrl,
       apiKey: options.apiKey,
       apiMode: options.apiMode,
@@ -1969,7 +1968,7 @@ export const useChatStore = defineStore('chat', () => {
           models: group.models,
         })),
         queue_id: userMsg.id,
-        workspace: activeSession.value?.workspace || undefined,
+        workspace: undefined,
         source: sessionSource,
         ...(sessionSource === 'coding_agent'
           ? {

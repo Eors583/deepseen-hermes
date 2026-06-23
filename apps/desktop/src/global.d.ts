@@ -17,7 +17,7 @@ declare global {
       // Keepalive: mark a pool profile backend as recently used so the idle
       // reaper spares it while its chat is active.
       touchBackend: (profile?: string | null) => Promise<{ ok: boolean }>
-      getGatewayWsUrl: (profile?: null | string) => Promise<string>
+      getGatewayWsUrl: (profile?: null | string, authToken?: string) => Promise<string>
       // Open (or focus) a standalone OS window for a single chat session so
       // the user can work with multiple chats side by side. Returns ok:false
       // with an error code when the sessionId is empty/invalid.
@@ -232,7 +232,7 @@ export interface HermesConnection {
   baseUrl: string
   isFullscreen: boolean
   mode?: 'local' | 'remote'
-  authMode?: 'oauth' | 'token'
+  authMode?: 'jwt' | 'oauth' | 'token'
   nativeOverlayWidth: number
   source?: 'env' | 'local' | 'settings'
   token: string
@@ -267,7 +267,7 @@ export interface DesktopConnectionConfig {
   // The profile this config describes, or null for the global/default
   // connection. Per-profile entries let a profile point at its own backend.
   profile: null | string
-  remoteAuthMode: 'oauth' | 'token'
+  remoteAuthMode: 'jwt' | 'oauth' | 'token'
   remoteOauthConnected: boolean
   remoteTokenPreview: string | null
   remoteTokenSet: boolean
@@ -279,7 +279,7 @@ export interface DesktopConnectionConfigInput {
   // When set, the save/apply/test targets this profile's per-profile remote
   // override instead of the global connection.
   profile?: null | string
-  remoteAuthMode?: 'oauth' | 'token'
+  remoteAuthMode?: 'jwt' | 'oauth' | 'token'
   remoteToken?: string
   remoteUrl?: string
 }
@@ -293,17 +293,15 @@ export interface DesktopConnectionTestResult {
 export interface DesktopAuthProvider {
   name: string
   displayName: string
-  // True when this provider authenticates with a username + password
-  // (the gateway's /login page renders a credential form) rather than an
-  // OAuth redirect. The session/cookie/ws-ticket machinery is identical;
-  // only the login-page form and the desktop's button copy differ.
+  // Deprecated compatibility field. Herbound desktop uses the FastAPI/JWT
+  // login path and does not expose provider password forms.
   supportsPassword?: boolean
 }
 
 export interface DesktopConnectionProbeResult {
   baseUrl: string
   reachable: boolean
-  authMode: 'oauth' | 'token' | 'unknown'
+  authMode: 'jwt' | 'oauth' | 'token' | 'unknown'
   providers: DesktopAuthProvider[]
   version: string | null
   error: string | null
@@ -395,6 +393,7 @@ export interface HermesApiRequest {
   method?: string
   body?: unknown
   timeoutMs?: number
+  authToken?: string
   // Route this REST call to a specific profile's backend. Omit for the primary
   // (window) backend. Read-only cross-profile data is served by the primary, so
   // this is only needed for profile-scoped live/settings calls.

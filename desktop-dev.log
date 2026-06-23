@@ -1,0 +1,257 @@
+
+> hermes@0.15.1 dev
+> concurrently -k "npm:dev:renderer" "npm:dev:electron"
+
+[dev:renderer] 
+[dev:renderer] > hermes@0.15.1 dev:renderer
+[dev:renderer] > node scripts/assert-root-install.cjs && vite --host 127.0.0.1 --port 5174
+[dev:renderer] 
+[dev:electron] 
+[dev:electron] > hermes@0.15.1 dev:electron
+[dev:electron] > wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .
+[dev:electron] 
+[dev:renderer] 
+[dev:renderer]   [32m[1mVITE[22m v8.0.10[39m  [2mready in [0m[1m404[22m[2m[0m ms[22m
+[dev:renderer] 
+[dev:renderer]   [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5174[22m/[39m
+[dev:electron] 
+[dev:electron] (electron) 'console-message' arguments are deprecated and will be removed. Please use Event<WebContentsConsoleMessageEventParams> object instead.
+[dev:renderer] [2m12:22:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/chat/intro.tsx[22m
+[dev:renderer] [2m12:25:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/skills/index.tsx[22m
+[dev:renderer] [2m12:25:51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/skills/index.tsx[22m
+[dev:renderer] [2m12:26:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/skills/index.tsx[22m
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1732298855469257642 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (Use `electron --trace-warnings ...` to show where the warning was created)
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1730936224134435123 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1732432242468426672 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1731998767194739314 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1729488830529835238 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1731550007173878756 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1732380339190666168 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1732391220995527277 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1731533738602762587 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] (node:23140) electron: Failed to load URL: https://www.xn--vxup8b84bz3m.com/e-commerce/detail/1732119831822307583 with error: ERR_NAME_NOT_RESOLVED
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2530:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:renderer] [2m12:48:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/uninstall-section.tsx[22m
+[dev:renderer] [2m12:48:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/settings/constants.ts[22m
+[dev:renderer] [2m12:49:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/settings/constants.ts[22m
+[dev:renderer] [2m12:51:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/credential-key-ui.tsx[22m
+[dev:renderer] [2m12:53:11[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/skills/index.tsx[22m
+[dev:renderer] [2m12:53:51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/settings/constants.ts[22m
+[dev:renderer] [2m12:54:45[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/command-palette/index.tsx, /src/app/skills/index.tsx, /src/app/settings/keys-settings.tsx, /src/app/settings/config-settings.tsx, /src/app/settings/providers-settings.tsx, /src/app/settings/credential-key-ui.tsx, /src/app/settings/env-credentials.tsx[22m
+[dev:renderer] [2m12:55:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/boot-failure-overlay.tsx[22m
+[dev:renderer] [2m12:56:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/desktop-controller.tsx, /src/components/assistant-ui/thread.tsx, /src/components/boot-failure-overlay.tsx, /src/components/desktop-onboarding-overlay.tsx, /src/components/model-picker.tsx, /src/app/settings/providers-settings.tsx, /src/app/settings/model-settings.tsx[22m
+[dev:renderer] [2m12:56:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/desktop-onboarding-overlay.tsx[22m Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m12:56:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/desktop-controller.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m12:57:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/desktop-controller.tsx, /src/components/assistant-ui/thread.tsx, /src/components/boot-failure-overlay.tsx, /src/components/desktop-onboarding-overlay.tsx, /src/components/model-picker.tsx, /src/app/settings/providers-settings.tsx, /src/app/settings/model-settings.tsx[22m
+[dev:renderer] [2m12:57:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/desktop-onboarding-overlay.tsx[22m Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m12:57:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/desktop-controller.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m12:58:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/desktop-controller.tsx, /src/components/assistant-ui/thread.tsx, /src/components/boot-failure-overlay.tsx, /src/components/desktop-onboarding-overlay.tsx, /src/components/model-picker.tsx, /src/app/settings/providers-settings.tsx, /src/app/settings/model-settings.tsx[22m
+[dev:renderer] [2m12:58:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/desktop-onboarding-overlay.tsx[22m Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m12:58:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/desktop-controller.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:00:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/assistant-ui/tool-fallback.tsx[22m
+[dev:renderer] [2m13:00:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/assistant-ui/thread.tsx[22m
+[dev:renderer] [2m13:00:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/mcp-settings.tsx[22m
+[dev:renderer] [2m13:00:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/profiles/index.tsx[22m
+[dev:renderer] [2m13:00:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/profiles/create-profile-dialog.tsx[22m
+[dev:renderer] [2m13:00:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/profiles/create-profile-dialog.tsx[22m Could not Fast Refresh ("isValidProfileName" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:00:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/rename-profile-dialog.tsx[22m
+[dev:renderer] [2m13:01:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/chat/sidebar/profile-switcher.tsx[22m
+[dev:renderer] [2m13:01:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/mcp-settings.tsx[22m
+[dev:renderer] [2m13:02:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/desktop-onboarding-overlay.tsx[22m
+[dev:renderer] [2m13:02:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/desktop-onboarding-overlay.tsx[22m Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:02:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/desktop-controller.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:02:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/desktop-controller.tsx, /src/components/assistant-ui/thread.tsx, /src/components/boot-failure-overlay.tsx, /src/components/desktop-onboarding-overlay.tsx, /src/components/model-picker.tsx, /src/app/settings/providers-settings.tsx, /src/app/settings/model-settings.tsx[22m
+[dev:renderer] [2m13:02:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/desktop-onboarding-overlay.tsx[22m Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:02:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/desktop-controller.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:03:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css[22m
+[dev:renderer] [2m13:04:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/assistant-ui/tool-fallback.tsx[22m
+[dev:renderer] [2m13:09:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/assistant-ui/tool-fallback.tsx[22m
+[dev:renderer] [2m13:09:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css[22m
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/i18n/context.tsx, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/app/settings/gateway-settings.tsx, /src/app/settings/appearance-settings.tsx, /src/app/updates-overlay.tsx, /src/app/settings/about-settings.tsx, /src/app/command-palette/index.tsx and 26 more[22m
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/i18n/context.tsx[22m Could not Fast Refresh ("getConfigDisplayLanguage" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/context.tsx[22m
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/themes/context.tsx[22m Could not Fast Refresh ("getBaseColors" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/themes/context.tsx[22m
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/desktop-onboarding-overlay.tsx[22m Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/desktop-controller.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/assistant-ui/tool-approval.tsx[22m Could not Fast Refresh ("APPROVAL_TOOLS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/assistant-ui/tool-fallback.tsx[22m
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/providers-settings.tsx[22m Could not Fast Refresh ("PROVIDER_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/profiles/create-profile-dialog.tsx[22m Could not Fast Refresh ("isValidProfileName" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/rename-profile-dialog.tsx[22m
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/env-credentials.tsx[22m Could not Fast Refresh ("filterEnv" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:48:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/keys-settings.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/i18n/context.tsx, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/app/settings/gateway-settings.tsx, /src/app/settings/appearance-settings.tsx, /src/app/updates-overlay.tsx, /src/app/settings/about-settings.tsx, /src/app/command-palette/index.tsx and 26 more[22m
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/i18n/context.tsx[22m Could not Fast Refresh ("getConfigDisplayLanguage" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/context.tsx[22m
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/themes/context.tsx[22m Could not Fast Refresh ("getBaseColors" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/themes/context.tsx[22m
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/desktop-onboarding-overlay.tsx[22m Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/desktop-controller.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/assistant-ui/tool-approval.tsx[22m Could not Fast Refresh ("APPROVAL_TOOLS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/assistant-ui/tool-fallback.tsx[22m
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/providers-settings.tsx[22m Could not Fast Refresh ("PROVIDER_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/profiles/create-profile-dialog.tsx[22m Could not Fast Refresh ("isValidProfileName" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/rename-profile-dialog.tsx[22m
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/env-credentials.tsx[22m Could not Fast Refresh ("filterEnv" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/keys-settings.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:49:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/env-credentials.tsx[22m
+[dev:renderer] [2m13:49:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/env-credentials.tsx[22m Could not Fast Refresh ("filterEnv" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/keys-settings.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:49:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/keys-settings.tsx[22m Could not Fast Refresh ("KEYS_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:49:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/providers-settings.tsx[22m Could not Fast Refresh ("PROVIDER_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:49:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/env-credentials.tsx[22m
+[dev:renderer] [2m13:49:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/env-credentials.tsx[22m Could not Fast Refresh ("filterEnv" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/keys-settings.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:49:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/keys-settings.tsx[22m Could not Fast Refresh ("KEYS_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:49:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/providers-settings.tsx[22m Could not Fast Refresh ("PROVIDER_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:49:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:49:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/settings/constants.ts[22m
+[dev:renderer] [2m13:50:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/env-credentials.tsx[22m
+[dev:renderer] [2m13:50:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/keys-settings.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:50:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/keys-settings.tsx[22m Could not Fast Refresh ("KEYS_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:50:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:50:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/providers-settings.tsx[22m Could not Fast Refresh ("PROVIDER_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:50:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:50:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/env-credentials.tsx[22m
+[dev:renderer] [2m13:50:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/env-credentials.tsx[22m Could not Fast Refresh ("filterEnv" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:50:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/keys-settings.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:50:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/keys-settings.tsx[22m Could not Fast Refresh ("KEYS_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:50:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:50:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/providers-settings.tsx[22m Could not Fast Refresh ("PROVIDER_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:50:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:50:42[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mThe final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.
+[dev:renderer] 
+[dev:renderer] Previous: []
+[dev:renderer] Incoming: [API 密钥加载失败]
+[dev:renderer] [2m13:55:07[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/env-credentials.tsx[22m
+[dev:renderer] [2m13:55:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/env-credentials.tsx[22m Could not Fast Refresh ("filterEnv" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:55:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/keys-settings.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m13:55:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/keys-settings.tsx[22m Could not Fast Refresh ("KEYS_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:55:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:55:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/providers-settings.tsx[22m Could not Fast Refresh ("PROVIDER_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m13:55:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m13:55:08[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mThe final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.
+[dev:renderer] 
+[dev:renderer] Previous: [API 密钥加载失败]
+[dev:renderer] Incoming: []
+[dev:renderer] [2m13:55:08[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mThe final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.
+[dev:renderer] 
+[dev:renderer] Previous: []
+[dev:renderer] Incoming: [API 密钥加载失败]
+[dev:renderer] [2m13:55:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/toolset-config-panel.tsx[22m
+[dev:renderer] [2m13:56:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/toolset-config-panel.tsx[22m
+[dev:renderer] [2m13:56:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/toolset-config-panel.tsx[22m
+[dev:renderer] [2m13:59:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/toolset-config-panel.tsx[22m
+[dev:renderer] [2m13:59:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/toolset-config-panel.tsx[22m
+[dev:renderer] [2m14:05:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/i18n/context.tsx, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/app/settings/gateway-settings.tsx, /src/app/settings/appearance-settings.tsx, /src/app/updates-overlay.tsx, /src/app/settings/about-settings.tsx, /src/app/command-palette/index.tsx and 26 more[22m
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/i18n/context.tsx[22m Could not Fast Refresh ("getConfigDisplayLanguage" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/context.tsx[22m
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/themes/context.tsx[22m Could not Fast Refresh ("getBaseColors" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/themes/context.tsx[22m
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/desktop-onboarding-overlay.tsx[22m Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/desktop-controller.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/assistant-ui/tool-approval.tsx[22m Could not Fast Refresh ("APPROVAL_TOOLS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/assistant-ui/tool-fallback.tsx[22m
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/providers-settings.tsx[22m Could not Fast Refresh ("PROVIDER_VIEWS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/index.tsx[22m
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/profiles/create-profile-dialog.tsx[22m Could not Fast Refresh ("isValidProfileName" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/rename-profile-dialog.tsx[22m
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/app/settings/env-credentials.tsx[22m Could not Fast Refresh ("filterEnv" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] [2m14:05:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/settings/keys-settings.tsx, /src/app/settings/providers-settings.tsx[22m
+[dev:renderer] [2m14:06:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/main.tsx[22m
+[dev:renderer] [2m14:07:11[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/auth/auth-gate.tsx, /src/styles.css[22m
+[dev:renderer] [2m14:07:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/main.tsx[22m
+[dev:renderer] [2m14:07:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/auth/auth-gate.tsx, /src/styles.css[22m
+[dev:renderer] [2m14:07:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/i18n/context.tsx, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/app/settings/gateway-settings.tsx, /src/app/settings/appearance-settings.tsx, /src/app/updates-overlay.tsx, /src/app/settings/about-settings.tsx, /src/app/command-palette/index.tsx and 27 more[22m
+[dev:renderer] [2m14:59:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/gateway-settings.tsx[22m
+[dev:renderer] [2m14:59:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/gateway-settings.tsx[22m
+[dev:renderer] [2m15:00:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/boot-failure-overlay.tsx[22m
+[dev:renderer] [2m15:02:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/boot-failure-overlay.tsx[22m
+[dev:renderer] [2m15:02:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/boot-failure-overlay.tsx[22m
+[dev:renderer] [2m15:03:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/en.ts[22m
+[dev:renderer] [2m15:03:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/zh.ts[22m
+[dev:renderer] [2m15:04:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/boot-failure-overlay.tsx[22m
+[dev:renderer] [2m15:05:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/en.ts[22m
+[dev:renderer] [2m15:06:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/zh.ts[22m
+[dev:renderer] [2m15:06:45[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/zh-hant.ts[22m
+[dev:renderer] [2m15:11:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/gateway-settings.tsx[22m
+[dev:renderer] [2m15:13:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/boot-failure-overlay.tsx[22m
+[dev:renderer] [2m15:13:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/gateway-settings.tsx[22m
+[dev:renderer] [2m15:14:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/app/settings/gateway-settings.tsx[22m
+[dev:renderer] [2m15:14:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/boot-failure-overlay.tsx[22m
+[dev:renderer] [2m15:14:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/en.ts[22m
+[dev:renderer] [2m15:14:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/components/boot-failure-overlay.tsx[22m
+[dev:renderer] [2m15:14:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/zh.ts[22m
+[dev:renderer] [2m15:14:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/zh-hant.ts[22m
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 401: {"detail":"Unauthorized"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 401: {"detail":"Unauthorized"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 401: {"detail":"Invalid username or password"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 409: {"detail":"Username already exists"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 401: {"detail":"Unauthorized"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 401: {"detail":"Unauthorized"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 401: {"detail":"Unauthorized"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 401: {"detail":"Unauthorized"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 401: {"detail":"Unauthorized"}
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2497:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] [23140:0622/163449.881:ERROR:content\browser\network_service_instance_impl.cc:610] Network service crashed or was terminated, restarting service.
+[dev:electron] npm error Lifecycle script `dev:electron` failed with error:
+[dev:electron] npm error code 4294967295
+[dev:electron] npm error path D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop
+[dev:electron] npm error workspace hermes@0.15.1
+[dev:electron] npm error location D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop
+[dev:electron] npm error command failed
+[dev:electron] npm error command C:\WINDOWS\system32\cmd.exe /d /s /c wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .
+[dev:electron] npm run dev:electron exited with code 4294967295
+--> Sending SIGTERM to other processes..
+[dev:renderer] npm run dev:renderer exited with code 4294967295

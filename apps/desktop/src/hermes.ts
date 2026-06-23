@@ -1,17 +1,21 @@
 import { JsonRpcGatewayClient } from '@hermes/shared'
 
+import { getStoredAuthToken } from '@/lib/auth-token'
 import type {
   ActionResponse,
   ActionStatusResponse,
   AnalyticsResponse,
   AudioSpeakResponse,
   AudioTranscriptionResponse,
+  AuthMeResponse,
+  AuthTokenResponse,
   AuxiliaryModelsResponse,
   BackendUpdateCheckResponse,
   ConfigSchemaResponse,
   CronJob,
   CronJobCreatePayload,
   CronJobUpdates,
+  DeepSeenKeyStatus,
   ElevenLabsVoicesResponse,
   EnvVarInfo,
   HermesConfig,
@@ -44,6 +48,24 @@ import type {
 
 const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS = 30_000
 const SESSION_LIST_REQUEST_TIMEOUT_MS = 60_000
+const PUBLIC_AUTH_API_PATHS = new Set(['/api/auth/login', '/api/auth/register', '/api/status'])
+
+interface DesktopApiRequest {
+  path: string
+  method?: string
+  body?: unknown
+  timeoutMs?: number
+  authToken?: string
+  profile?: string | null
+}
+
+function desktopApi<T>(request: DesktopApiRequest): Promise<T> {
+  const token = request.authToken || (PUBLIC_AUTH_API_PATHS.has(request.path) ? '' : getStoredAuthToken() || '')
+  return window.hermesDesktop.api<T>({
+    ...request,
+    ...(token ? { authToken: token } : {})
+  })
+}
 
 export type {
   ActionResponse,
@@ -56,6 +78,9 @@ export type {
   AnalyticsTotals,
   AudioSpeakResponse,
   AudioTranscriptionResponse,
+  AuthMeResponse,
+  AuthTokenResponse,
+  AuthUser,
   AuxiliaryModelsResponse,
   BackendUpdateCheckResponse,
   ConfigFieldSchema,
@@ -64,6 +89,7 @@ export type {
   CronJobCreatePayload,
   CronJobSchedule,
   CronJobUpdates,
+  DeepSeenKeyStatus,
   ElevenLabsVoice,
   ElevenLabsVoicesResponse,
   EnvVarInfo,
@@ -107,21 +133,21 @@ export type {
 export class HermesGateway extends JsonRpcGatewayClient {
   constructor() {
     super({
-      closedErrorMessage: 'Hermes gateway connection closed',
-      connectErrorMessage: 'Could not connect to Hermes gateway',
+      closedErrorMessage: 'Herbound gateway connection closed',
+      connectErrorMessage: 'Could not connect to Herbound gateway',
       createRequestId: nextId => nextId,
-      notConnectedErrorMessage: 'Hermes gateway is not connected',
+      notConnectedErrorMessage: 'Herbound gateway is not connected',
       requestTimeoutMs: DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS
     })
   }
 }
 
-// Profile that profile-scoped REST settings (config/env/skills/tools/model/…)
+// Profile that profile-scoped REST settings (config/env/skills/tools/model/�?
 // should target. Mirrors $activeGatewayProfile, pushed in from the store via
 // setApiRequestProfile so this module needs no store import (avoids a cycle).
 // Electron main consumes request.profile to pick which backend *process* serves
 // the call; each pooled backend already has its own HERMES_HOME, so no backend
-// change is needed. Null → primary, so single-profile users are unaffected.
+// change is needed. Null �?primary, so single-profile users are unaffected.
 let _apiProfile: null | string = null
 
 export function setApiRequestProfile(profile: null | string): void {
@@ -138,7 +164,7 @@ export async function listSessions(
   archived: 'exclude' | 'include' | 'only' = 'exclude',
   order: 'created' | 'recent' = 'recent'
 ): Promise<PaginatedSessions> {
-  const result = await window.hermesDesktop.api<PaginatedSessions>({
+  const result = await desktopApi<PaginatedSessions>({
     path: `/api/sessions?limit=${limit}&offset=0&min_messages=${Math.max(0, minMessages)}&archived=${archived}&order=${order}`,
     timeoutMs: SESSION_LIST_REQUEST_TIMEOUT_MS
   })
@@ -151,7 +177,7 @@ export async function listSessions(
 }
 
 // Unified, read-only session list aggregated across ALL profiles. Served by the
-// primary backend straight off each profile's state.db — no per-profile backend
+// primary backend straight off each profile's state.db �?no per-profile backend
 // is spawned. Single-profile users get the same rows as listSessions(), tagged
 // profile="default".
 // Source scoping lets callers split the unified list into independent slices:
@@ -177,7 +203,7 @@ export async function listAllProfileSessions(
     ? `&exclude_sources=${encodeURIComponent(filter.excludeSources.join(','))}`
     : ''
 
-  const result = await window.hermesDesktop.api<PaginatedSessions>({
+  const result = await desktopApi<PaginatedSessions>({
     path:
       `/api/profiles/sessions?limit=${limit}&offset=0&min_messages=${Math.max(0, minMessages)}` +
       `&archived=${archived}&order=${order}&profile=${encodeURIComponent(profile)}${sourceParam}${excludeParam}`,
@@ -192,11 +218,11 @@ export async function listAllProfileSessions(
 }
 
 // Mutations take the owning `profile` so Electron routes them to that profile's
-// backend (remote pool or local primary) via request.profile — matching the
+// backend (remote pool or local primary) via request.profile �?matching the
 // read path. A remote session's row lives only on its remote host, so a mutation
 // that hit the local primary would no-op or 404. Omit for the current/default.
 export function setSessionArchived(id: string, archived: boolean, profile?: string | null): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return desktopApi<{ ok: boolean }>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}`,
     method: 'PATCH',
@@ -205,7 +231,7 @@ export function setSessionArchived(id: string, archived: boolean, profile?: stri
 }
 
 export function searchSessions(query: string): Promise<SessionSearchResponse> {
-  return window.hermesDesktop.api<SessionSearchResponse>({
+  return desktopApi<SessionSearchResponse>({
     path: `/api/sessions/search?q=${encodeURIComponent(query)}`
   })
 }
@@ -217,14 +243,14 @@ export function searchSessions(query: string): Promise<SessionSearchResponse> {
 export function getSessionMessages(id: string, profile?: string | null): Promise<SessionMessagesResponse> {
   const suffix = profile ? `?profile=${encodeURIComponent(profile)}` : ''
 
-  return window.hermesDesktop.api<SessionMessagesResponse>({
+  return desktopApi<SessionMessagesResponse>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}/messages${suffix}`
   })
 }
 
 export function deleteSession(id: string, profile?: string | null): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return desktopApi<{ ok: boolean }>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}`,
     method: 'DELETE'
@@ -236,7 +262,7 @@ export function renameSession(
   title: string,
   profile?: string | null
 ): Promise<{ ok: boolean; title: string }> {
-  return window.hermesDesktop.api<{ ok: boolean; title: string }>({
+  return desktopApi<{ ok: boolean; title: string }>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}`,
     method: 'PATCH',
@@ -245,15 +271,38 @@ export function renameSession(
 }
 
 export function getGlobalModelInfo(): Promise<ModelInfoResponse> {
-  return window.hermesDesktop.api<ModelInfoResponse>({
+  return desktopApi<ModelInfoResponse>({
     ...profileScoped(),
     path: '/api/model/info'
   })
 }
 
 export function getStatus(): Promise<StatusResponse> {
-  return window.hermesDesktop.api<StatusResponse>({
+  return desktopApi<StatusResponse>({
     path: '/api/status'
+  })
+}
+
+export function loginUser(username: string, password: string): Promise<AuthTokenResponse> {
+  return desktopApi<AuthTokenResponse>({
+    path: '/api/auth/login',
+    method: 'POST',
+    body: { username, password }
+  })
+}
+
+export function registerUser(username: string, password: string): Promise<AuthTokenResponse> {
+  return desktopApi<AuthTokenResponse>({
+    path: '/api/auth/register',
+    method: 'POST',
+    body: { username, password }
+  })
+}
+
+export function getCurrentAuthUser(authToken: string): Promise<AuthMeResponse> {
+  return desktopApi<AuthMeResponse>({
+    path: '/api/auth/me',
+    authToken
   })
 }
 
@@ -283,42 +332,42 @@ export function getLogs(params: {
 
   const suffix = query.toString()
 
-  return window.hermesDesktop.api<LogsResponse>({
+  return desktopApi<LogsResponse>({
     ...profileScoped(),
     path: suffix ? `/api/logs?${suffix}` : '/api/logs'
   })
 }
 
 export function getHermesConfig(): Promise<HermesConfig> {
-  return window.hermesDesktop.api<HermesConfig>({
+  return desktopApi<HermesConfig>({
     ...profileScoped(),
     path: '/api/config'
   })
 }
 
 export function getHermesConfigRecord(): Promise<HermesConfigRecord> {
-  return window.hermesDesktop.api<HermesConfigRecord>({
+  return desktopApi<HermesConfigRecord>({
     ...profileScoped(),
     path: '/api/config'
   })
 }
 
 export function getHermesConfigDefaults(): Promise<HermesConfigRecord> {
-  return window.hermesDesktop.api<HermesConfigRecord>({
+  return desktopApi<HermesConfigRecord>({
     ...profileScoped(),
     path: '/api/config/defaults'
   })
 }
 
 export function getHermesConfigSchema(): Promise<ConfigSchemaResponse> {
-  return window.hermesDesktop.api<ConfigSchemaResponse>({
+  return desktopApi<ConfigSchemaResponse>({
     ...profileScoped(),
     path: '/api/config/schema'
   })
 }
 
 export function saveHermesConfig(config: HermesConfigRecord): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return desktopApi<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/config',
     method: 'PUT',
@@ -327,18 +376,42 @@ export function saveHermesConfig(config: HermesConfigRecord): Promise<{ ok: bool
 }
 
 export function getEnvVars(): Promise<Record<string, EnvVarInfo>> {
-  return window.hermesDesktop.api<Record<string, EnvVarInfo>>({
+  return desktopApi<Record<string, EnvVarInfo>>({
     ...profileScoped(),
     path: '/api/env'
   })
 }
 
 export function setEnvVar(key: string, value: string): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return desktopApi<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/env',
     method: 'PUT',
     body: { key, value }
+  })
+}
+
+export function getDeepSeenKeyStatus(): Promise<DeepSeenKeyStatus> {
+  return desktopApi<DeepSeenKeyStatus>({
+    ...profileScoped(),
+    path: '/api/hermes/deepseen-key'
+  })
+}
+
+export function setDeepSeenApiKey(apiKey: string): Promise<DeepSeenKeyStatus & { ok: boolean }> {
+  return desktopApi<DeepSeenKeyStatus & { ok: boolean }>({
+    ...profileScoped(),
+    path: '/api/hermes/deepseen-key',
+    method: 'PUT',
+    body: { api_key: apiKey }
+  })
+}
+
+export function deleteDeepSeenApiKey(): Promise<DeepSeenKeyStatus & { ok: boolean }> {
+  return desktopApi<DeepSeenKeyStatus & { ok: boolean }>({
+    ...profileScoped(),
+    path: '/api/hermes/deepseen-key',
+    method: 'DELETE'
   })
 }
 
@@ -347,7 +420,7 @@ export function validateProviderCredential(
   value: string,
   apiKey?: string
 ): Promise<{ ok: boolean; reachable: boolean; message: string; models?: string[] }> {
-  return window.hermesDesktop.api<{ ok: boolean; reachable: boolean; message: string; models?: string[] }>({
+  return desktopApi<{ ok: boolean; reachable: boolean; message: string; models?: string[] }>({
     ...profileScoped(),
     path: '/api/providers/validate',
     method: 'POST',
@@ -356,7 +429,7 @@ export function validateProviderCredential(
 }
 
 export function deleteEnvVar(key: string): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return desktopApi<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/env',
     method: 'DELETE',
@@ -365,7 +438,7 @@ export function deleteEnvVar(key: string): Promise<{ ok: boolean }> {
 }
 
 export function revealEnvVar(key: string): Promise<{ key: string; value: string }> {
-  return window.hermesDesktop.api<{ key: string; value: string }>({
+  return desktopApi<{ key: string; value: string }>({
     ...profileScoped(),
     path: '/api/env/reveal',
     method: 'POST',
@@ -374,14 +447,14 @@ export function revealEnvVar(key: string): Promise<{ key: string; value: string 
 }
 
 export function listOAuthProviders(): Promise<OAuthProvidersResponse> {
-  return window.hermesDesktop.api<OAuthProvidersResponse>({
+  return desktopApi<OAuthProvidersResponse>({
     ...profileScoped(),
     path: '/api/providers/oauth'
   })
 }
 
 export function startOAuthLogin(providerId: string): Promise<OAuthStartResponse> {
-  return window.hermesDesktop.api<OAuthStartResponse>({
+  return desktopApi<OAuthStartResponse>({
     ...profileScoped(),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/start`,
     method: 'POST',
@@ -390,7 +463,7 @@ export function startOAuthLogin(providerId: string): Promise<OAuthStartResponse>
 }
 
 export function submitOAuthCode(providerId: string, sessionId: string, code: string): Promise<OAuthSubmitResponse> {
-  return window.hermesDesktop.api<OAuthSubmitResponse>({
+  return desktopApi<OAuthSubmitResponse>({
     ...profileScoped(),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/submit`,
     method: 'POST',
@@ -399,14 +472,14 @@ export function submitOAuthCode(providerId: string, sessionId: string, code: str
 }
 
 export function pollOAuthSession(providerId: string, sessionId: string): Promise<OAuthPollResponse> {
-  return window.hermesDesktop.api<OAuthPollResponse>({
+  return desktopApi<OAuthPollResponse>({
     ...profileScoped(),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/poll/${encodeURIComponent(sessionId)}`
   })
 }
 
 export function cancelOAuthSession(sessionId: string): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return desktopApi<{ ok: boolean }>({
     ...profileScoped(),
     path: `/api/providers/oauth/sessions/${encodeURIComponent(sessionId)}`,
     method: 'DELETE'
@@ -414,14 +487,14 @@ export function cancelOAuthSession(sessionId: string): Promise<{ ok: boolean }> 
 }
 
 export function getSkills(): Promise<SkillInfo[]> {
-  return window.hermesDesktop.api<SkillInfo[]>({
+  return desktopApi<SkillInfo[]>({
     ...profileScoped(),
     path: '/api/skills'
   })
 }
 
 export function toggleSkill(name: string, enabled: boolean): Promise<{ ok: boolean; name: string; enabled: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean; name: string; enabled: boolean }>({
+  return desktopApi<{ ok: boolean; name: string; enabled: boolean }>({
     ...profileScoped(),
     path: '/api/skills/toggle',
     method: 'PUT',
@@ -430,7 +503,7 @@ export function toggleSkill(name: string, enabled: boolean): Promise<{ ok: boole
 }
 
 export function getToolsets(): Promise<ToolsetInfo[]> {
-  return window.hermesDesktop.api<ToolsetInfo[]>({
+  return desktopApi<ToolsetInfo[]>({
     ...profileScoped(),
     path: '/api/tools/toolsets'
   })
@@ -440,7 +513,7 @@ export function toggleToolset(
   name: string,
   enabled: boolean
 ): Promise<{ ok: boolean; name: string; enabled: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean; name: string; enabled: boolean }>({
+  return desktopApi<{ ok: boolean; name: string; enabled: boolean }>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}`,
     method: 'PUT',
@@ -449,7 +522,7 @@ export function toggleToolset(
 }
 
 export function getToolsetConfig(name: string): Promise<ToolsetConfig> {
-  return window.hermesDesktop.api<ToolsetConfig>({
+  return desktopApi<ToolsetConfig>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}/config`
   })
@@ -459,7 +532,7 @@ export function selectToolsetProvider(
   name: string,
   provider: string
 ): Promise<{ ok: boolean; name: string; provider: string }> {
-  return window.hermesDesktop.api<{ ok: boolean; name: string; provider: string }>({
+  return desktopApi<{ ok: boolean; name: string; provider: string }>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}/provider`,
     method: 'PUT',
@@ -468,7 +541,7 @@ export function selectToolsetProvider(
 }
 
 export function runToolsetPostSetup(name: string, key: string): Promise<ActionResponse & { key: string }> {
-  return window.hermesDesktop.api<ActionResponse & { key: string }>({
+  return desktopApi<ActionResponse & { key: string }>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}/post-setup`,
     method: 'POST',
@@ -477,7 +550,7 @@ export function runToolsetPostSetup(name: string, key: string): Promise<ActionRe
 }
 
 export function getMessagingPlatforms(): Promise<MessagingPlatformsResponse> {
-  return window.hermesDesktop.api<MessagingPlatformsResponse>({
+  return desktopApi<MessagingPlatformsResponse>({
     path: '/api/messaging/platforms'
   })
 }
@@ -486,7 +559,7 @@ export function updateMessagingPlatform(
   platformId: string,
   body: MessagingPlatformUpdate
 ): Promise<{ ok: boolean; platform: string }> {
-  return window.hermesDesktop.api<{ ok: boolean; platform: string }>({
+  return desktopApi<{ ok: boolean; platform: string }>({
     path: `/api/messaging/platforms/${encodeURIComponent(platformId)}`,
     method: 'PUT',
     body
@@ -494,26 +567,26 @@ export function updateMessagingPlatform(
 }
 
 export function testMessagingPlatform(platformId: string): Promise<MessagingPlatformTestResponse> {
-  return window.hermesDesktop.api<MessagingPlatformTestResponse>({
+  return desktopApi<MessagingPlatformTestResponse>({
     path: `/api/messaging/platforms/${encodeURIComponent(platformId)}/test`,
     method: 'POST'
   })
 }
 
 export function getCronJobs(): Promise<CronJob[]> {
-  return window.hermesDesktop.api<CronJob[]>({
+  return desktopApi<CronJob[]>({
     path: '/api/cron/jobs'
   })
 }
 
 export function getCronJob(jobId: string): Promise<CronJob> {
-  return window.hermesDesktop.api<CronJob>({
+  return desktopApi<CronJob>({
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}`
   })
 }
 
 export async function getCronJobRuns(jobId: string, limit = 20): Promise<SessionInfo[]> {
-  const { runs } = await window.hermesDesktop.api<{ runs: SessionInfo[] }>({
+  const { runs } = await desktopApi<{ runs: SessionInfo[] }>({
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}/runs?limit=${limit}`
   })
 
@@ -521,7 +594,7 @@ export async function getCronJobRuns(jobId: string, limit = 20): Promise<Session
 }
 
 export function createCronJob(body: CronJobCreatePayload): Promise<CronJob> {
-  return window.hermesDesktop.api<CronJob>({
+  return desktopApi<CronJob>({
     path: '/api/cron/jobs',
     method: 'POST',
     body
@@ -529,7 +602,7 @@ export function createCronJob(body: CronJobCreatePayload): Promise<CronJob> {
 }
 
 export function updateCronJob(jobId: string, updates: CronJobUpdates): Promise<CronJob> {
-  return window.hermesDesktop.api<CronJob>({
+  return desktopApi<CronJob>({
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}`,
     method: 'PUT',
     body: { updates }
@@ -537,41 +610,41 @@ export function updateCronJob(jobId: string, updates: CronJobUpdates): Promise<C
 }
 
 export function pauseCronJob(jobId: string): Promise<CronJob> {
-  return window.hermesDesktop.api<CronJob>({
+  return desktopApi<CronJob>({
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}/pause`,
     method: 'POST'
   })
 }
 
 export function resumeCronJob(jobId: string): Promise<CronJob> {
-  return window.hermesDesktop.api<CronJob>({
+  return desktopApi<CronJob>({
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}/resume`,
     method: 'POST'
   })
 }
 
 export function triggerCronJob(jobId: string): Promise<CronJob> {
-  return window.hermesDesktop.api<CronJob>({
+  return desktopApi<CronJob>({
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}/trigger`,
     method: 'POST'
   })
 }
 
 export function deleteCronJob(jobId: string): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return desktopApi<{ ok: boolean }>({
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}`,
     method: 'DELETE'
   })
 }
 
 export function getProfiles(): Promise<ProfilesResponse> {
-  return window.hermesDesktop.api<ProfilesResponse>({
+  return desktopApi<ProfilesResponse>({
     path: '/api/profiles'
   })
 }
 
 export function createProfile(body: ProfileCreatePayload): Promise<{ name: string; ok: boolean; path: string }> {
-  return window.hermesDesktop.api<{ name: string; ok: boolean; path: string }>({
+  return desktopApi<{ name: string; ok: boolean; path: string }>({
     path: '/api/profiles',
     method: 'POST',
     body
@@ -579,7 +652,7 @@ export function createProfile(body: ProfileCreatePayload): Promise<{ name: strin
 }
 
 export function renameProfile(name: string, newName: string): Promise<{ name: string; ok: boolean; path: string }> {
-  return window.hermesDesktop.api<{ name: string; ok: boolean; path: string }>({
+  return desktopApi<{ name: string; ok: boolean; path: string }>({
     path: `/api/profiles/${encodeURIComponent(name)}`,
     method: 'PATCH',
     body: { new_name: newName }
@@ -587,20 +660,20 @@ export function renameProfile(name: string, newName: string): Promise<{ name: st
 }
 
 export function deleteProfile(name: string): Promise<{ ok: boolean; path: string }> {
-  return window.hermesDesktop.api<{ ok: boolean; path: string }>({
+  return desktopApi<{ ok: boolean; path: string }>({
     path: `/api/profiles/${encodeURIComponent(name)}`,
     method: 'DELETE'
   })
 }
 
 export function getProfileSoul(name: string): Promise<ProfileSoul> {
-  return window.hermesDesktop.api<ProfileSoul>({
+  return desktopApi<ProfileSoul>({
     path: `/api/profiles/${encodeURIComponent(name)}/soul`
   })
 }
 
 export function updateProfileSoul(name: string, content: string): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return desktopApi<{ ok: boolean }>({
     path: `/api/profiles/${encodeURIComponent(name)}/soul`,
     method: 'PUT',
     body: { content }
@@ -608,20 +681,20 @@ export function updateProfileSoul(name: string, content: string): Promise<{ ok: 
 }
 
 export function getProfileSetupCommand(name: string): Promise<ProfileSetupCommand> {
-  return window.hermesDesktop.api<ProfileSetupCommand>({
+  return desktopApi<ProfileSetupCommand>({
     path: `/api/profiles/${encodeURIComponent(name)}/setup-command`
   })
 }
 
 export function getUsageAnalytics(days = 30): Promise<AnalyticsResponse> {
-  return window.hermesDesktop.api<AnalyticsResponse>({
+  return desktopApi<AnalyticsResponse>({
     ...profileScoped(),
     path: `/api/analytics/usage?days=${Math.max(1, Math.floor(days))}`
   })
 }
 
 export function getGlobalModelOptions(): Promise<ModelOptionsResponse> {
-  return window.hermesDesktop.api<ModelOptionsResponse>({
+  return desktopApi<ModelOptionsResponse>({
     ...profileScoped(),
     path: '/api/model/options'
   })
@@ -635,10 +708,10 @@ export interface RecommendedDefaultModel {
 }
 
 // Recommended default model for a freshly-authenticated provider. Mirrors the
-// curation `hermes model` does — for Nous it honors the free/paid tier so a
+// curation `hermes model` does �?for Nous it honors the free/paid tier so a
 // free user gets a free model instead of a paid default.
 export function getRecommendedDefaultModel(provider: string): Promise<RecommendedDefaultModel> {
-  return window.hermesDesktop.api<RecommendedDefaultModel>({
+  return desktopApi<RecommendedDefaultModel>({
     ...profileScoped(),
     path: `/api/model/recommended-default?provider=${encodeURIComponent(provider)}`
   })
@@ -648,7 +721,7 @@ export function setGlobalModel(
   provider: string,
   model: string
 ): Promise<{ ok: boolean; provider: string; model: string }> {
-  return window.hermesDesktop.api<{ ok: boolean; provider: string; model: string }>({
+  return desktopApi<{ ok: boolean; provider: string; model: string }>({
     ...profileScoped(),
     path: '/api/model/set',
     method: 'POST',
@@ -661,14 +734,14 @@ export function setGlobalModel(
 }
 
 export function getAuxiliaryModels(): Promise<AuxiliaryModelsResponse> {
-  return window.hermesDesktop.api<AuxiliaryModelsResponse>({
+  return desktopApi<AuxiliaryModelsResponse>({
     ...profileScoped(),
     path: '/api/model/auxiliary'
   })
 }
 
 export function setModelAssignment(body: ModelAssignmentRequest): Promise<ModelAssignmentResponse> {
-  return window.hermesDesktop.api<ModelAssignmentResponse>({
+  return desktopApi<ModelAssignmentResponse>({
     ...profileScoped(),
     path: '/api/model/set',
     method: 'POST',
@@ -677,14 +750,14 @@ export function setModelAssignment(body: ModelAssignmentRequest): Promise<ModelA
 }
 
 export function restartGateway(): Promise<ActionResponse> {
-  return window.hermesDesktop.api<ActionResponse>({
+  return desktopApi<ActionResponse>({
     path: '/api/gateway/restart',
     method: 'POST'
   })
 }
 
 export function updateHermes(): Promise<ActionResponse> {
-  return window.hermesDesktop.api<ActionResponse>({
+  return desktopApi<ActionResponse>({
     path: '/api/hermes/update',
     method: 'POST'
   })
@@ -694,19 +767,19 @@ export function updateHermes(): Promise<ActionResponse> {
  *  authoritative source for the backend's behind-count + "what's changed",
  *  distinct from the Electron client clone's git state. */
 export function checkHermesUpdate(force = false): Promise<BackendUpdateCheckResponse> {
-  return window.hermesDesktop.api<BackendUpdateCheckResponse>({
+  return desktopApi<BackendUpdateCheckResponse>({
     path: `/api/hermes/update/check${force ? '?force=true' : ''}`
   })
 }
 
 export function getActionStatus(name: string, lines = 200): Promise<ActionStatusResponse> {
-  return window.hermesDesktop.api<ActionStatusResponse>({
+  return desktopApi<ActionStatusResponse>({
     path: `/api/actions/${encodeURIComponent(name)}/status?lines=${Math.max(1, lines)}`
   })
 }
 
 export function transcribeAudio(dataUrl: string, mimeType?: string): Promise<AudioTranscriptionResponse> {
-  return window.hermesDesktop.api<AudioTranscriptionResponse>({
+  return desktopApi<AudioTranscriptionResponse>({
     path: '/api/audio/transcribe',
     method: 'POST',
     body: {
@@ -717,7 +790,7 @@ export function transcribeAudio(dataUrl: string, mimeType?: string): Promise<Aud
 }
 
 export function speakText(text: string): Promise<AudioSpeakResponse> {
-  return window.hermesDesktop.api<AudioSpeakResponse>({
+  return desktopApi<AudioSpeakResponse>({
     path: '/api/audio/speak',
     method: 'POST',
     body: { text }
@@ -725,7 +798,7 @@ export function speakText(text: string): Promise<AudioSpeakResponse> {
 }
 
 export function getElevenLabsVoices(): Promise<ElevenLabsVoicesResponse> {
-  return window.hermesDesktop.api<ElevenLabsVoicesResponse>({
+  return desktopApi<ElevenLabsVoicesResponse>({
     path: '/api/audio/elevenlabs/voices'
   })
 }

@@ -1,5 +1,6 @@
 import { HermesGatewayClient, type GatewayEvent } from '@/api/native/hermesGateway'
 import { fetchSessionMessagesPage } from '@/api/hermes/sessions'
+import { getAuthUserId } from '@/api/client'
 
 export type ContentBlock =
   | { type: 'text'; text: string }
@@ -408,6 +409,7 @@ async function nativeSessionFor(uiSessionId: string): Promise<string> {
     session_key: uiSessionId,
     title: 'Herbound',
     close_on_disconnect: false,
+    ...(getAuthUserId() ? { user_id: getAuthUserId() } : {}),
   })
   return created.session_id
 }
@@ -421,6 +423,7 @@ async function recreateNativeSessionFor(uiSessionId: string): Promise<string> {
     session_key: uiSessionId,
     title: 'Herbound',
     close_on_disconnect: false,
+    ...(getAuthUserId() ? { user_id: getAuthUserId() } : {}),
   })
   return created.session_id
 }

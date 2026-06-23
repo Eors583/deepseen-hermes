@@ -1,4 +1,5 @@
 import type { HermesConnection } from '@/global'
+import { getStoredAuthToken } from '@/lib/auth-token'
 
 /**
  * The desktop main process exposes `getGatewayWsUrl()` to re-mint a WebSocket
@@ -28,7 +29,7 @@ export interface ResolveGatewayWsUrlDeps {
   /** `window.hermesDesktop.getGatewayWsUrl`, if the preload exposes it. The
    *  optional profile selects which backend to mint for — critical when swapping
    *  to a pooled profile, since the default mint resolves the primary backend. */
-  getGatewayWsUrl?: (profile?: null | string) => Promise<string>
+  getGatewayWsUrl?: (profile?: null | string, authToken?: string) => Promise<string>
 }
 
 export class GatewayReauthRequiredError extends Error {
@@ -57,7 +58,7 @@ export async function resolveGatewayWsUrl(
   // backend.
   const profile = conn.profile ?? null
 
-  if (conn.authMode === 'oauth') {
+  if (conn.authMode === 'oauth' || conn.authMode === 'jwt') {
     if (!mint) {
       // OAuth gateway but no way to mint a fresh ticket: the cached ticket is
       // dead, so connecting with it cannot succeed. Surface a reauth error
@@ -68,7 +69,7 @@ export async function resolveGatewayWsUrl(
     }
 
     try {
-      return await mint(profile)
+      return await mint(profile, conn.authMode === 'jwt' ? getStoredAuthToken() || undefined : undefined)
     } catch (error) {
       throw new GatewayReauthRequiredError(
         'Your remote gateway session has expired. Open Settings → Gateway and click "Sign in" again.',

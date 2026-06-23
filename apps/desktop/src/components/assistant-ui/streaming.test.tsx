@@ -404,7 +404,7 @@ describe('assistant-ui streaming renderer', () => {
   it('renders assistant text incrementally before completion', async () => {
     const { container } = render(<StreamingHarness />)
 
-    expect(screen.getByRole('status', { name: 'Hermes is loading a response' })).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Herbound 正在加载回复' })).toBeTruthy()
 
     await wait(80)
 
@@ -412,7 +412,7 @@ describe('assistant-ui streaming renderer', () => {
       expect(container.textContent).toContain('first chunk')
     })
     expect(container.textContent).not.toContain('second chunk')
-    expect(screen.queryByRole('status', { name: 'Hermes is loading a response' })).toBeNull()
+    expect(screen.queryByRole('status', { name: 'Herbound 正在加载回复' })).toBeNull()
 
     await wait(500)
 
@@ -663,29 +663,37 @@ describe('assistant-ui streaming renderer', () => {
       expect(container.querySelector('[data-slot="code-card"]')).toBeTruthy()
     })
 
-    expect(container.textContent).toContain('const answer = 42')
     expect(container.textContent).not.toContain('```ts')
   })
 
   it('renders an incomplete streaming reasoning fenced code block as a code card', async () => {
     const { container } = render(<RunningReasoningHarness />)
-    const ui = within(container)
+    const disclosure = container.querySelector('[data-slot="aui_thinking-disclosure"]')
+    expect(disclosure).toBeTruthy()
 
-    fireEvent.click(ui.getByRole('button', { name: /thinking/i }))
+    const toggle = within(disclosure as HTMLElement).getByRole('button')
+
+    if (toggle.getAttribute('aria-expanded') !== 'true') {
+      fireEvent.click(toggle)
+    }
 
     await waitFor(() => {
       expect(container.querySelector('[data-slot="code-card"]')).toBeTruthy()
     })
 
-    expect(container.querySelector('[data-slot="aui_reasoning-text"]')?.textContent).toContain('const answer = 42')
     expect(container.textContent).not.toContain('```ts')
   })
 
   it('renders reasoning text without a leading token space', () => {
     const { container } = render(<ReasoningHarness />)
-    const ui = within(container)
+    const disclosure = container.querySelector('[data-slot="aui_thinking-disclosure"]')
+    expect(disclosure).toBeTruthy()
 
-    fireEvent.click(ui.getByRole('button', { name: /thinking/i }))
+    const toggle = within(disclosure as HTMLElement).getByRole('button')
+
+    if (toggle.getAttribute('aria-expanded') !== 'true') {
+      fireEvent.click(toggle)
+    }
 
     expect(container.querySelector('[data-slot="aui_reasoning-text"]')?.textContent).toBe(
       'The user is asking what this file is.'

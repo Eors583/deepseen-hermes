@@ -16,6 +16,9 @@ _UNSET = object()
 _HERMES_HOME_OVERRIDE: ContextVar[str | object] = ContextVar(
     "_HERMES_HOME_OVERRIDE", default=_UNSET
 )
+_HERMES_RUNTIME_SKILLS_DIR: ContextVar[str | object] = ContextVar(
+    "_HERMES_RUNTIME_SKILLS_DIR", default=_UNSET
+)
 
 
 def set_hermes_home_override(path: str | Path | None) -> Token:
@@ -39,6 +42,31 @@ def get_hermes_home_override() -> str | None:
     if override is _UNSET or not override:
         return None
     return str(override)
+
+
+def set_runtime_skills_dir(path: str | Path | None) -> Token:
+    """Set the current session's runtime skills directory.
+
+    This is intentionally context-local so one dashboard session can keep using
+    the snapshot it was created with while another session gets a newer
+    enterprise Skill snapshot.
+    """
+    value: str | object = _UNSET if path is None else str(path)
+    return _HERMES_RUNTIME_SKILLS_DIR.set(value)
+
+
+def reset_runtime_skills_dir(token: Token) -> None:
+    """Restore the previous context-local runtime skills directory."""
+    _HERMES_RUNTIME_SKILLS_DIR.reset(token)
+
+
+def get_runtime_skills_dir() -> str | None:
+    """Return the active session runtime skills dir, falling back to env."""
+    override = _HERMES_RUNTIME_SKILLS_DIR.get()
+    if override is not _UNSET and override:
+        return str(override)
+    runtime = os.environ.get("HERMES_RUNTIME_SKILLS_DIR", "").strip()
+    return runtime or None
 
 
 def _get_platform_default_hermes_home() -> Path:
@@ -405,6 +433,9 @@ def get_config_path() -> Path:
 
 def get_skills_dir() -> Path:
     """Return the path to the skills directory under HERMES_HOME."""
+    runtime = get_runtime_skills_dir()
+    if runtime:
+        return Path(runtime)
     return get_hermes_home() / "skills"
 
 

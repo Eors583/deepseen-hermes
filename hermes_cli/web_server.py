@@ -65,6 +65,7 @@ from hermes_cli.config import (
 )
 from hermes_cli.deepseen_credentials import (
     deepseen_key_status as db_deepseen_key_status,
+    delete_deepseen_api_key as db_delete_deepseen_api_key,
     request_user_key as deepseen_request_user_key,
     set_deepseen_api_key as db_set_deepseen_api_key,
 )
@@ -661,6 +662,11 @@ CONFIG_SCHEMA = _ordered_schema
 
 class ConfigUpdate(BaseModel):
     config: dict
+    profile: Optional[str] = None
+
+
+class AuxiliaryModelsUpdate(BaseModel):
+    auxiliary: Dict[str, Any]
     profile: Optional[str] = None
 
 
@@ -3227,6 +3233,162 @@ _AUX_TASK_SLOTS: Tuple[str, ...] = (
 )
 
 
+_AUXILIARY_RESPONSE_KEYS = {
+    "provider",
+    "model",
+    "base_url",
+    "timeout",
+    "download_timeout",
+    "extra_body",
+    "max_tokens",
+}
+_AUXILIARY_SAVE_KEYS = _AUXILIARY_RESPONSE_KEYS | {"api_key"}
+_AUXILIARY_TASK_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def _auxiliary_label(task: str) -> str:
+    return task.replace("_", " ").replace("-", " ").title()
+
+
+def _sanitize_auxiliary_settings(
+    raw: Any,
+    *,
+    include_secret: bool = False,
+    base: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    if raw is None:
+        return dict(base or {})
+    if not isinstance(raw, dict):
+        raise HTTPException(status_code=400, detail="auxiliary task settings must be objects")
+
+    allowed = _AUXILIARY_SAVE_KEYS if include_secret else _AUXILIARY_RESPONSE_KEYS
+    settings = dict(base or {})
+    for key, value in raw.items():
+        if key not in allowed:
+            continue
+        if value is None:
+            settings.pop(key, None)
+            continue
+        if key in {"provider", "model", "base_url", "api_key"}:
+            settings[key] = str(value).strip()
+        elif key in {"timeout", "download_timeout", "max_tokens"}:
+            try:
+                number = int(value)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail=f"{key} must be an integer")
+            if number <= 0:
+                settings.pop(key, None)
+            else:
+                settings[key] = number
+        elif key == "extra_body":
+            if not isinstance(value, dict):
+                raise HTTPException(status_code=400, detail="extra_body must be an object")
+            settings[key] = dict(value)
+    return settings
+
+
+def _auxiliary_models_payload(config: Dict[str, Any]) -> Dict[str, Any]:
+    default_aux = DEFAULT_CONFIG.get("auxiliary", {})
+    if not isinstance(default_aux, dict):
+        default_aux = {}
+    current_aux = config.get("auxiliary", {})
+    if not isinstance(current_aux, dict):
+        current_aux = {}
+
+    task_keys: List[str] = []
+    for key in list(default_aux.keys()) + list(current_aux.keys()):
+        if key not in task_keys and _AUXILIARY_TASK_RE.match(str(key)):
+            task_keys.append(str(key))
+
+    tasks: List[Dict[str, Any]] = []
+    auxiliary: Dict[str, Any] = {}
+    for key in task_keys:
+        defaults = default_aux.get(key, {})
+        if not isinstance(defaults, dict):
+            defaults = {}
+        task: Dict[str, Any] = {"key": key, "label": _auxiliary_label(key)}
+        timeout = defaults.get("timeout")
+        download_timeout = defaults.get("download_timeout")
+        if isinstance(timeout, int) and timeout > 0:
+            task["default_timeout"] = timeout
+        if isinstance(download_timeout, int) and download_timeout > 0:
+            task["default_download_timeout"] = download_timeout
+        tasks.append(task)
+
+        raw_settings = current_aux.get(key, defaults)
+        if isinstance(raw_settings, dict):
+            auxiliary[key] = _sanitize_auxiliary_settings(raw_settings)
+
+    return {"tasks": tasks, "auxiliary": auxiliary}
+
+
+def _config_profile_from_request(profile: Optional[str], request: Request) -> Optional[str]:
+    selected = (profile or "").strip() or (request.headers.get("X-Hermes-Profile") or "").strip()
+    if selected.lower() in {"", "default", "herbound"}:
+        return None
+    return selected
+
+
+@app.get("/api/hermes/config/auxiliary-models")
+async def get_hermes_auxiliary_models(request: Request, profile: Optional[str] = None):
+    selected_profile = _config_profile_from_request(profile, request)
+    try:
+        with _profile_scope(selected_profile):
+            cfg = load_config()
+        return _auxiliary_models_payload(cfg)
+    except HTTPException:
+        raise
+    except Exception:
+        _log.exception("GET /api/hermes/config/auxiliary-models failed")
+        raise HTTPException(status_code=500, detail="Failed to read auxiliary models")
+
+
+@app.put("/api/hermes/config/auxiliary-models")
+async def update_hermes_auxiliary_models(
+    body: AuxiliaryModelsUpdate,
+    request: Request,
+    profile: Optional[str] = None,
+):
+    selected_profile = _config_profile_from_request(body.profile or profile, request)
+    incoming = body.auxiliary
+    if not isinstance(incoming, dict):
+        raise HTTPException(status_code=400, detail="auxiliary must be an object")
+
+    try:
+        with _profile_scope(selected_profile):
+            cfg = load_config()
+            current_aux = cfg.get("auxiliary", {})
+            if not isinstance(current_aux, dict):
+                current_aux = {}
+            next_aux: Dict[str, Any] = {
+                str(key): dict(value)
+                for key, value in current_aux.items()
+                if isinstance(value, dict) and _AUXILIARY_TASK_RE.match(str(key))
+            }
+
+            for key, raw_settings in incoming.items():
+                task_key = str(key)
+                if not _AUXILIARY_TASK_RE.match(task_key):
+                    raise HTTPException(status_code=400, detail=f"invalid auxiliary task: {task_key}")
+                base_settings = next_aux.get(task_key, {})
+                if not isinstance(base_settings, dict):
+                    base_settings = {}
+                next_aux[task_key] = _sanitize_auxiliary_settings(
+                    raw_settings,
+                    include_secret=True,
+                    base=base_settings,
+                )
+
+            cfg["auxiliary"] = next_aux
+            save_config(cfg)
+        return {"success": True, **_auxiliary_models_payload(cfg)}
+    except HTTPException:
+        raise
+    except Exception:
+        _log.exception("PUT /api/hermes/config/auxiliary-models failed")
+        raise HTTPException(status_code=500, detail="Failed to save auxiliary models")
+
+
 @app.get("/api/model/options")
 def get_model_options(profile: Optional[str] = None):
     """Return authenticated providers + their curated model lists.
@@ -3736,6 +3898,19 @@ async def set_deepseen_key(body: DeepSeenKeyUpdate, request: Request, profile: O
     except Exception:
         _log.exception("PUT /api/hermes/deepseen-key failed")
         raise HTTPException(status_code=500, detail="Failed to save DEEPSEEN_API_KEY")
+
+
+@app.delete("/api/hermes/deepseen-key")
+async def delete_deepseen_key(request: Request, profile: Optional[str] = None):
+    try:
+        user_key = deepseen_request_user_key(request)
+        status = db_delete_deepseen_api_key(user_key)
+        if user_key != "local":
+            db_delete_deepseen_api_key("local")
+        return {"ok": True, **status}
+    except Exception:
+        _log.exception("DELETE /api/hermes/deepseen-key failed")
+        raise HTTPException(status_code=500, detail="Failed to delete DEEPSEEN_API_KEY")
 
 
 # Live credential probes keyed by env var. Each entry is (method, url, auth)
@@ -10371,6 +10546,45 @@ def _ws_auth_reason(ws: "WebSocket") -> tuple[Optional[str], str]:
     Audit-logs the rejection so operators can debug "WS keeps closing"
     issues from the log.
     """
+    from hermes_cli.dashboard_auth.audit import AuditEvent, audit_log
+    from hermes_cli.dashboard_auth.ws_tickets import (
+        TicketInvalid,
+        consume_internal_credential,
+        consume_ticket,
+    )
+
+    # Vite-served dev pages do not receive the injected loopback
+    # _SESSION_TOKEN, so they use a user-bound ws-ticket even when the
+    # dashboard is bound to loopback. Accept explicit ticket/internal
+    # credentials in every mode, then fall back to the legacy token path.
+    internal = ws.query_params.get("internal", "")
+    if internal:
+        try:
+            consume_internal_credential(internal)
+            return None, "internal"
+        except TicketInvalid as exc:
+            audit_log(
+                AuditEvent.WS_TICKET_REJECTED,
+                reason=f"internal: {exc}",
+                ip=(ws.client.host if ws.client else ""),
+                path=ws.url.path,
+            )
+            return "internal_invalid", "internal"
+
+    ticket = ws.query_params.get("ticket", "")
+    if ticket:
+        try:
+            consume_ticket(ticket)
+            return None, "ticket"
+        except TicketInvalid as exc:
+            audit_log(
+                AuditEvent.WS_TICKET_REJECTED,
+                reason=str(exc),
+                ip=(ws.client.host if ws.client else ""),
+                path=ws.url.path,
+            )
+            return "ticket_invalid", "ticket"
+
     auth_required = bool(getattr(app.state, "auth_required", False))
     password_auth_required = bool(getattr(app.state, "password_auth_required", False))
     if auth_required or password_auth_required:
@@ -10772,17 +10986,30 @@ async def pty_ws(ws: WebSocket) -> None:
 
 @app.websocket("/api/ws")
 async def gateway_ws(ws: WebSocket) -> None:
+    peer = ws.client.host if ws.client else "?"
+
     if not _DASHBOARD_EMBEDDED_CHAT_ENABLED:
-        await ws.close(code=4403)
+        _log.warning("gateway ws refused: embedded chat disabled peer=%s", peer)
+        await ws.close(code=4403, reason="embedded chat disabled")
         return
 
-    if not _ws_auth_ok(ws):
-        await ws.close(code=4401)
+    auth_reason, cred = _ws_auth_reason(ws)
+    mode = _ws_auth_mode()
+    if auth_reason is not None:
+        _log.warning(
+            "gateway ws auth rejected reason=%s mode=%s cred=%s peer=%s",
+            auth_reason, mode, cred, peer,
+        )
+        await ws.close(code=4401, reason=_ws_close_reason(f"auth: {auth_reason}"))
         return
 
-    if not _ws_request_is_allowed(ws):
-        await ws.close(code=4403)
+    request_reason = _ws_request_reason(ws)
+    if request_reason is not None:
+        _log.warning("gateway ws refused: %s peer=%s", request_reason, peer)
+        await ws.close(code=4403, reason=_ws_close_reason(request_reason))
         return
+
+    _log.info("gateway ws accepted peer=%s mode=%s cred=%s", peer, mode, cred)
 
     from tui_gateway.ws import handle_ws
 
@@ -12062,6 +12289,8 @@ _mount_plugin_api_routes()
 # not whether the routes exist.
 from hermes_cli.dashboard_auth.routes import router as _dashboard_auth_router  # noqa: E402
 app.include_router(_dashboard_auth_router)
+from hermes_cli.enterprise_skills.routes import router as _enterprise_skills_router  # noqa: E402
+app.include_router(_enterprise_skills_router)
 
 mount_spa(app)
 

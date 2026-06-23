@@ -1,0 +1,168 @@
+{
+  "snapshots": [
+    {
+      "name": "01-after-login-before-modal-close",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\01-after-login-before-modal-close.png",
+      "text": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 会话 全部配置 暂无会话 新建对话 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 大小 修改时间 📁 audio_cache — 2026/6/12 10:34:29 📁 cache — 2026/6/15 12:13:41 📁 cron — 2026/6/15 11:14:40 📁 enterprise-skills — 2026/6/18 15:41:44 📁 hooks — 2026/6/12 10:34:29 📁 image_cache — 2026/6/12 10:34:29 📁 logs — 2026/6/15 14:23:10 📁 memories — 2026/6/12 10:34:29 📁 pairing — 2026/6/12 10:34:29 📁 runtime-skills — 2026/6/18 15:37:43 📁 sandboxes — 2026/6/15 11:19:48 📁 sessions — 2026/6/12 10:58:01 📁 skills — 2026/6/18 15:05:20 📁 upload — 2026/6/12 15:57:43 📁 web-auth — 2026/6/18 16:13:42 📄 .env 870 B 2026/6/12 15:16:37 👁️ ✏️ ⬇️ 📄 .env.example 332 B 2026/6/12 10:34:06 👁️ ✏️ ⬇️ 📋 .skills_p"
+    },
+    {
+      "name": "02-after-modal-close",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\02-after-modal-close.png",
+      "text": "Hermes Studio 对话 对话 历史 群聊(beta) 搜索 饲料 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 会话 全部配置 暂无会话 新建对话 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 大小 修改时间 📁 audio_cache — 2026/6/12 10:34:29 📁 cache — 2026/6/15 12:13:41 📁 cron — 2026/6/15 11:14:40 📁 enterprise-skills — 2026/6/18 15:41:44 📁 hooks — 2026/6/12 10:34:29 📁 image_cache — 2026/6/12 10:34:29 📁 logs — 2026/6/15 14:23:10 📁 memories — 2026/6/12 10:34:29 📁 pairing — 2026/6/12 10:34:29 📁 runtime-skills — 2026/6/18 15:37:43 📁 sandboxes — 2026/6/15 11:19:48 📁 sessions — 2026/6/12 10:58:01 📁 skills — 2026/6/18 15:05:20 📁 upload — 2026/6/12 15:57:43 📁 web-auth — 2026/6/18 16:13:42 📄 .env 870 B 2026/6/12 15:16:37 👁️ ✏️ ⬇️ 📄 .env.example 332 B 2026/6/12 10:34:06 👁️ ✏️ ⬇️ 📋 .skills_p"
+    },
+    {
+      "name": "nav-chat",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-chat.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 会话 全部配置 暂无会话 新建对话 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 大小 修改时间 📁 audio_cache — 2026/6/12 10:34:29 📁 cache — 2026/6/15 12:13:41 📁 cron — 2026/6/15 11:14:40 📁 enterprise-skills — 2026/6/18 15:41:44 📁 hooks — 2026/6/12 10:34:29 📁 image_cache — 2026/6/12 10:34:29 📁 logs — 2026/6/15 14:23:10 📁 memories — 2026/6/12 10:34:29 📁 pairing — 2026/6/12 10:34:29 📁 runtime-skills — 2026/6/18 15:37:43 📁 sandboxes — 2026/6/15 11:19:48 📁 sessions — 2026/6/12 10:58:01 📁 skills — 2026/6/18 15:05:20 📁 upload — 2026/6/12 15:57:43 📁 web-auth — 2026/6/18 16:13:42 📄 .env 870 B 2026/6/12 15:16:37 👁️ ✏️ ⬇️ 📄 .env.example 332 B 2026/6/12 10:34:06 👁️ ✏️ ⬇️ 📋 .skills_prompt_snapshot.json 4"
+    },
+    {
+      "name": "nav-history",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": null,
+      "text": "CLICK_ERR locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText(/历史/).first()\u001b[22m\n\u001b[2m    - locator resolved to <span data-v-0355add9=\"\">历史</span>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    58 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+    },
+    {
+      "name": "nav-history",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-history.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 会话 全部配置 暂无会话 新建对话 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 大小 修改时间 📁 audio_cache — 2026/6/12 10:34:29 📁 cache — 2026/6/15 12:13:41 📁 cron — 2026/6/15 11:14:40 📁 enterprise-skills — 2026/6/18 15:41:44 📁 hooks — 2026/6/12 10:34:29 📁 image_cache — 2026/6/12 10:34:29 📁 logs — 2026/6/15 14:23:10 📁 memories — 2026/6/12 10:34:29 📁 pairing — 2026/6/12 10:34:29 📁 runtime-skills — 2026/6/18 15:37:43 📁 sandboxes — 2026/6/15 11:19:48 📁 sessions — 2026/6/12 10:58:01 📁 skills — 2026/6/18 15:05:20 📁 upload — 2026/6/12 15:57:43 📁 web-auth — 2026/6/18 16:13:42 📄 .env 870 B 2026/6/12 15:16:37 👁️ ✏️ ⬇️ 📄 .env.example 332 B 2026/6/12 10:34:06 👁️ ✏️ ⬇️ 📋 .skills_prompt_snapshot.json 4"
+    },
+    {
+      "name": "nav-group-chat",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": null,
+      "text": "CLICK_ERR locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText(/群聊/).first()\u001b[22m\n\u001b[2m    - locator resolved to <span data-v-0355add9=\"\">…</span>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    58 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+    },
+    {
+      "name": "nav-group-chat",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-group-chat.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 会话 全部配置 暂无会话 新建对话 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 大小 修改时间 📁 audio_cache — 2026/6/12 10:34:29 📁 cache — 2026/6/15 12:13:41 📁 cron — 2026/6/15 11:14:40 📁 enterprise-skills — 2026/6/18 15:41:44 📁 hooks — 2026/6/12 10:34:29 📁 image_cache — 2026/6/12 10:34:29 📁 logs — 2026/6/15 14:23:10 📁 memories — 2026/6/12 10:34:29 📁 pairing — 2026/6/12 10:34:29 📁 runtime-skills — 2026/6/18 15:37:43 📁 sandboxes — 2026/6/15 11:19:48 📁 sessions — 2026/6/12 10:58:01 📁 skills — 2026/6/18 15:05:20 📁 upload — 2026/6/12 15:57:43 📁 web-auth — 2026/6/18 16:13:42 📄 .env 870 B 2026/6/12 15:16:37 👁️ ✏️ ⬇️ 📄 .env.example 332 B 2026/6/12 10:34:06 👁️ ✏️ ⬇️ 📋 .skills_prompt_snapshot.json 4"
+    },
+    {
+      "name": "nav-jobs",
+      "url": "http://127.0.0.1:8649/#/hermes/jobs",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-jobs.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 定时任务 创建任务 暂无定时任务，创建一个开始吧。 运行历史 0 次运行 暂无运行历史。"
+    },
+    {
+      "name": "nav-kanban",
+      "url": "http://127.0.0.1:8649/#/hermes/kanban?board=default",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-kanban.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 看板 看板: Default · 任务数: 0 添加 归档看板 调度 全部状态 全部负责人 新建任务 待分拣 (0) 暂无任务 待办 (0) 暂无任务 已调度 (0) 暂无任务 就绪 (0) 暂无任务 进行中 (0) 暂无任务 阻塞 (0) 暂无任务 待审查 (0) 暂无任务 已完成 (0) 暂无任务 已归档 (0) 暂无任务"
+    },
+    {
+      "name": "nav-channels",
+      "url": "http://127.0.0.1:8649/#/hermes/channels",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-channels.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 频道 Telegram 未配置 ▾ 此平台使用独占 token 锁。每个 profile 必须使用不同的身份 token，否则会与其他 profile 冲突导致 gateway 启动失败。 Bot Token 开发者门户获取的 Bot Token 123456:ABC-DEF... 需要 @提及 群组中需要 @机器人 才会响应 表情回应 对消息添加表情回应 自由响应聊天 不需要 @提及即响应的聊天 ID（逗号分隔） chat_id1,chat_id2 自定义提及模式 额外的触发模式列表 pattern1, pattern2 保存 Discord 未配置 ▾ 此平台使用独占 token 锁。每个 profile 必须使用不同的身份 token，否则会与其他 profile 冲突导致 gateway 启动失败。 Bot Token 开发者门户获取的 Bot Token Bot token... 需要 @提及 频道中需要 @机器人 才会响应 自动创建线程 @提及 后自动创建回复线程 表情回应 对消息添加表情回应 自由响应频道 不需要 @提及即响应的频道 ID（逗号分隔） channel_id1,channel_id2 允许的频道 白名单频道 ID（逗号分隔） channel_id1,channel_id2 忽略的频道 不响应的频道 ID（逗号分隔） channel_id1,channel_id2 无线程频道 不创建线程的频道 ID（逗号分隔） channel_id1,channel_id2 保存 Slack 未配置 ▾ 此平台使用独占 token 锁。每个 profile 必须使用不同的身份 token，否则会与其他 profile 冲突导致 gateway 启动失败。 Bot Token 开发者门户获取的 Bot Token xoxb-... 需要 @提及 频道中需要 @机器人 才会响应 允许机器人消息 响应其他机器人发送的消息 自由响应频道 不需要 @提及即响应的频道 ID"
+    },
+    {
+      "name": "nav-skills",
+      "url": "http://127.0.0.1:8649/#/hermes/skills",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-skills.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 技能 内置 Hub 安装 本地安装 外部目录 ✎ 用户已修改 待审核 0 导入 外部目录 搜索技能... APPLE 5 apple-notes Use `memo` to manage Apple Notes directly from the terminal. Notes sync across a apple-reminders Use `remindctl` to manage Apple Reminders directly from the terminal. Tasks sync findmy Track Apple devices and AirTags via the FindMy.app on macOS. Since Apple doesn't imessage Use `imsg` to read and send iMessage/SMS via macOS Messages.app. macos-computer-use You have a `computer_use` tool that drives the Mac in the **background**. AUTONOMOUS-AI-AGENTS 4 claude-code Delegate coding tasks to [Claude Code](https://code.claude.com/docs/en/cli-refer codex Delegate coding tasks to [Codex](https://github.com/openai/codex) via the Hermes hermes-agent ✎ Hermes Agent is an open-source AI agent framework by Nous Research that runs in opencode Use [OpenCode](https://opencode.ai) a"
+    },
+    {
+      "name": "nav-plugins",
+      "url": "http://127.0.0.1:8649/#/hermes/plugins",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-plugins.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 插件 刷新"
+    },
+    {
+      "name": "nav-mcp",
+      "url": "http://127.0.0.1:8649/#/hermes/mcp",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-mcp.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 MCP 服务器 刷新 总计 1 已连接 1 未连接 0 工具 14 搜索服务器... 全部重载 + 添加服务器 hermes-studio stdio 已连接 工具列表 14/14个工具 hermes_lan_devices_list hermes_lan_devices_scan hermes_lan_peer_connect hermes_lan_peer_connections hermes_lan_peer_disconnect hermes_lan_terminal_create hermes_lan_terminal_list hermes_lan_terminal_input hermes_lan_terminal_read hermes_lan_terminal_resize hermes_lan_terminal_close hermes_lan_command_exec hermes_lan_file_download hermes_lan_file_upload 编辑 管理工具 测试 重载 移除"
+    },
+    {
+      "name": "nav-memory",
+      "url": "http://127.0.0.1:8649/#/hermes/memory",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-memory.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 记忆 刷新 我的笔记 编辑 暂无笔记。 用户画像 编辑 暂无画像。 灵魂 6月16日 10:41 编辑 Herbound You are Herbound, the company’s dedicated cross-border ecommerce intelligent agent. Your default behavior is not general chat. Your default behavior is: Understand the user’s ecommerce business need. Map the need to the correct DeepSeen SDK tool. Ask for missing required inputs instead of guessing. Call the SDK tool. Return the SDK result through deterministic field translation only, as a user-readable Markdown layout. Do not paste raw JSON or expose internal SDK/debug fields after the SDK result is available. Do not produce generic strategic advice when a DeepSeen tool can answer the request. Do not beautify SDK output. Do not add new claims after SDK execution. Use the tool’s display_markdown or user_visible_summary directly when present; never answer with the whole SDK JSON o"
+    },
+    {
+      "name": "nav-models",
+      "url": "http://127.0.0.1:8649/#/hermes/models",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-models.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 模型 刷新模型缓存 添加 Provider 辅助模型 为压缩、视觉、审批、MCP 和后台维护等辅助任务单独指定模型。 刷新 任务 PROVIDER / 默认模型 超时 操作 视觉 自动 120s / 下载 30s 编辑 清除 网页提取 自动 360s 编辑 清除 压缩 自动 120s 编辑 清除 技能中心 自动 30s 编辑 清除 审批 自动 30s 编辑 清除 MCP 自动 30s 编辑 清除 标题生成 自动 30s 编辑 清除 Triage 扩写 自动 120s 编辑 清除 看板拆解 自动 180s 编辑 清除 Profile 描述 自动 60s 编辑 清除 策展 自动 600s 编辑 清除 会话搜索 自动 30s 编辑 清除 写入记忆 自动 30s 编辑 清除 Google AI Studio 内置 Provider gemini Base URL https://api.ominilink.ai 模型列表 4 个模型 gemini-3.1-pro-preview gemini-3-pro-preview gemini-3-flash-preview gemini-3.1-flash-lite-preview 显示名 管理可见模型 删除 OpenAI API 当前默认 内置 Provider openai-api Base URL https://api.ominilink.ai/v1 模型列表 74 个模型 claude-3-5 claude-3-7-sonnet-20250219 claude-3.7-sonnet claude-4.0-sonnet claude-4.1-opus claude-4.5-haiku claude-4.5-sonnet claude-fable-5 claude-haiku-4-5-20251001 claude-opus-4-1-20250805 claude-opus-4-5-20251101 claude-opus-4-6 "
+    },
+    {
+      "name": "nav-logs",
+      "url": "http://127.0.0.1:8649/#/hermes/logs",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-logs.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 日志 agent (334.1KB) 全部 100 刷新"
+    },
+    {
+      "name": "nav-usage",
+      "url": "http://127.0.0.1:8649/#/hermes/usage",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-usage.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 用量统计 7d 30d 90d 365d 刷新 总 Token 数 34.6K 34.5K 输入 / 9 输出 总会话数 3 日均 ~3.0 预估费用 $0.00 缓存命中率 10.6% 4.1K Token 模型分布 输入 输出 缓存读取 gpt-4o-mini 34.6K +4.1K 每日用量 05-20 06-18 输入 输出 缓存读取 日期 输入 输出 缓存读取 缓存写入 缓存命中率 会话 费用 2026-06-18 34.5K 9 4.1K 0 10.6% 3 $0.00 2026-06-17 0 0 0 0 -- 0 $0.00 2026-06-16 0 0 0 0 -- 0 $0.00 2026-06-15 0 0 0 0 -- 0 $0.00 2026-06-14 0 0 0 0 -- 0 $0.00 2026-06-13 0 0 0 0 -- 0 $0.00 2026-06-12 0 0 0 0 -- 0 $0.00 2026-06-11 0 0 0 0 -- 0 $0.00 2026-06-10 0 0 0 0 -- 0 $0.00 2026-06-09 0 0 0 0 -- 0 $0.00 2026-06-08 0 0 0 0 -- 0 $0.00 2026-06-07 0 0 0 0 -- 0 $0.00 2026-06-06 0 0 0 0 -- 0 $0.00 2026-06-05 0 0 0 0 -- 0 $0.00 2026-06-04 0 0 0 0 -- 0 $0.00 2026-06-03 0 0 0 0 -- 0 $0.00 2026-06-02 0 0 0 0 -- 0 $0.00 2026-06-01 0 0 0 0 -- 0 $0.00 2026-05-31 0 0 0 0 -- 0 $0.00 2026-05-30 0 0 0 0 -- 0 $0.00 2026-05-29 0 0 0 0 -- 0 $0.00 2026-0"
+    },
+    {
+      "name": "nav-performance",
+      "url": "http://127.0.0.1:8649/#/hermes/performance",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-performance.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 性能监控 自动刷新 刷新"
+    },
+    {
+      "name": "nav-skills-usage",
+      "url": "http://127.0.0.1:8649/#/hermes/skills-usage",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-skills-usage.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 技能用量 跟踪 Hermes 会话中的技能加载和编辑 7天 30天 90天 365天 刷新 趋势 最近 7 天 暂无技能用量数据 操作 0 加载 0 编辑 0 技能数 0 热门 最近 7 天 暂无技能用量数据"
+    },
+    {
+      "name": "nav-coding-agents",
+      "url": "http://127.0.0.1:8649/#/hermes/coding-agents",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-coding-agents.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 编程工具 刷新 并非所有提供商和模型都兼容。 Claude Code Anthropic 安装情况 已安装 2.1.167 删除 配置文件 ~/.claude/settings.json ~/.claude.json ~/.claude/CLAUDE.md ~/.claude/settings.json 保存 启动 Codex OpenAI 安装情况 已安装 0.137.0 删除 配置文件 ~/.codex/auth.json ~/.codex/config.toml ~/.codex/AGENTS.md ~/.codex/config.toml 保存 启动 编程工具终端 会话 暂无终端会话 Default 新建终端"
+    },
+    {
+      "name": "nav-version-preview",
+      "url": "http://127.0.0.1:8649/#/hermes/version-preview",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-version-preview.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 版本预览 准备代码 安装依赖 开启预览 停止 刷新 将选中的 GitHub tag 克隆到 Web UI 预览工作目录，安装依赖并以开发端口运行。 预览代码存放在 Web UI 数据目录下。正式环境仍使用 9119，预览开发环境使用前端 8649、后端 9119。 预览路径 C:\\Users\\Administrator\\.hermes-web-ui\\hermes-web-ui-pereview 预览数据目录 C:\\Users\\Administrator\\.hermes-web-ui\\hermes-web-ui-pereview-home 当前 Tag - 仓库就绪 否 依赖已安装 否 运行状态 未运行 打开预览 http://localhost:8651 操作日志路径 C:\\Users\\Administrator\\.hermes-web-ui\\hermes-web-ui-pereview\\preview-action.log 开发服务日志 C:\\Users\\Administrator\\.hermes-web-ui\\hermes-web-ui-pereview\\preview-dev.log 日志输出 操作日志 [2026-06-18T08:05:33.265Z] load tags with git ls-remote 开发服务日志 -"
+    },
+    {
+      "name": "nav-devices",
+      "url": "http://127.0.0.1:8649/#/hermes/devices",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-devices.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 设备 https://device.example.com 远程配对 复制配对链接 0 台设备 上次扫描：2026/6/18 15:55:54 申请列表 刷新 暂无设备 刷新"
+    },
+    {
+      "name": "nav-settings",
+      "url": "http://127.0.0.1:8649/#/hermes/settings",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\nav-settings.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 设置 当前账户 账户管理 显示 代理 记忆 上下文压缩 会话 隐私 模型 语音 管理用于登录的用户名和密码。 用户头像 支持 PNG、JPEG、WebP，最大 1MB，会自动压缩到 500KB 以下 上传图片 随机生成 恢复默认 当前账户：admin 修改密码 修改用户名 锁定 IP 管理 0 个 IP 被锁定 重试 暂无锁定 IP"
+    },
+    {
+      "name": "direct-enterprise-skills",
+      "url": "http://127.0.0.1:8649/#/hermes/enterprise-skills",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\direct-enterprise-skills.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14"
+    },
+    {
+      "name": "chat-input-typed-not-sent",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\chat-input-typed-not-sent.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 会话 全部配置 暂无会话 新建对话 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 大小 修改时间 📁 audio_cache — 2026/6/12 10:34:29 📁 cache — 2026/6/15 12:13:41 📁 cron — 2026/6/15 11:14:40 📁 enterprise-skills — 2026/6/18 15:41:44 📁 hooks — 2026/6/12 10:34:29 📁 image_cache — 2026/6/12 10:34:29 📁 logs — 2026/6/15 14:23:10 📁 memories — 2026/6/12 10:34:29 📁 pairing — 2026/6/12 10:34:29 📁 runtime-skills — 2026/6/18 15:37:43 📁 sandboxes — 2026/6/15 11:19:48 📁 sessions — 2026/6/12 10:58:01 📁 skills — 2026/6/18 15:05:20 📁 upload — 2026/6/12 15:57:43 📁 web-auth — 2026/6/18 16:13:42 📄 .env 870 B 2026/6/12 15:16:37 👁️ ✏️ ⬇️ 📄 .env.example 332 B 2026/6/12 10:34:06 👁️ ✏️ ⬇️ 📋 .skills_prompt_snapshot.json 4"
+    },
+    {
+      "name": "mobile-chat",
+      "url": "http://127.0.0.1:8649/#/hermes/chat",
+      "file": "D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\codex-docs\\cs-docs\\browser-visible\\mobile-chat.png",
+      "text": "Hermes Studio 对话 助手 任务 看板 频道 技能 插件 MCP 记忆 模型 监控 日志 用量 性能监控 技能用量 工具 编程工具 版本预览 设备 系统 用户 设置 用户 default 模型 gpt-4o-mini 退出登录 admin 未连接 简体中文 Studio v0.6.14 新建对话 开始与 Herbound 对话 发送 工作区 终端 根目录 audio_cache cache cron enterprise-skills hooks image_cache logs memories pairing runtime-skills sandboxes sessions skills upload web-auth 文件树 新建文件 新建文件夹 上传 刷新 根目录 名称 ↑ 📁 audio_cache 📁 cache 📁 cron 📁 enterprise-skills 📁 hooks 📁 image_cache 📁 logs 📁 memories 📁 pairing 📁 runtime-skills 📁 sandboxes 📁 sessions 📁 skills 📁 upload 📁 web-auth 📄 .env 👁️ ✏️ ⬇️ 📄 .env.example 👁️ ✏️ ⬇️ 📋 .skills_prompt_snapshot.json 👁️ ✏️ ⬇️ 📄 .update_check ⬇️ 📄 auth.lock 👁️ ✏️ ⬇️ 📋 channel_directory.json 👁️ ✏️ ⬇️ ⚙️ config.yaml 👁️ ✏️ ⬇️ 📄 config.yaml.bak ⬇️ 📋 gateway_state.json 👁️ ✏️ ⬇️ 📄 gateway.lock 👁️ ✏️ ⬇️ 📄 gateway.pid ⬇️ 📄 kanban.db ⬇️ 📄 kanban.db.init.lock 👁️ ✏️ ⬇️ 📝 SOUL.md 👁️ ✏️ ⬇️ 📄 state.db ⬇️ 📄 state.db-shm ⬇️ 📄 state.db-wal ⬇️"
+    }
+  ],
+  "logs": [
+    {
+      "type": "warning",
+      "text": "[Vue Router warn]: No match found for location with path \"/hermes/enterprise-skills\"",
+      "url": "http://127.0.0.1:8649/#/hermes/enterprise-skills"
+    }
+  ],
+  "requests": []
+}

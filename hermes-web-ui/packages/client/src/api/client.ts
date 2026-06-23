@@ -34,6 +34,21 @@ export function getApiKey(): string {
   return token
 }
 
+export function getAuthUserId(): string | null {
+  const token = getApiKey()
+  if (!token) return null
+  const payload = token.split('.')[1]
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const decoded = JSON.parse(atob(padded)) as { sub?: string | number; user_id?: string | number; id?: string | number }
+    const value = decoded.sub ?? decoded.user_id ?? decoded.id
+    return value === undefined || value === null || value === '' ? null : String(value)
+  } catch {
+    return null
+  }
+}
+
 export function setServerUrl(url: string) {
   localStorage.setItem('hermes_server_url', url)
 }

@@ -1,4 +1,22 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: deepseen-hermes-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hermes}
+      POSTGRES_USER: ${POSTGRES_USER:-hermes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-before-prod}
+    volumes:
+      - hermes_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_BIND:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hermes} -d ${POSTGRES_DB:-hermes}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   hermes:
     build:
       context: .
@@ -7,6 +25,9 @@ services:
     image: deepseen-hermes:prod
     container_name: deepseen-hermes
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     env_file:
       - path: .env.prod
         required: false
@@ -15,6 +36,8 @@ services:
       HERMES_WEB_DIST: /app/hermes_cli/web_dist
       HERMES_ENABLE_PROJECT_PLUGINS: "1"
       HERMES_WEB_PASSWORD_AUTH: "1"
+      HERMES_DATABASE_URL: postgresql://${POSTGRES_USER:-hermes}:${POSTGRES_PASSWORD:-change-me-before-prod}@postgres:5432/${POSTGRES_DB:-hermes}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hermes}:${POSTGRES_PASSWORD:-change-me-before-prod}@postgres:5432/${POSTGRES_DB:-hermes}
       DEEPSEEN_BASE_URL: ${DEEPSEEN_BASE_URL:-https://deepseen.ai/v1}
     expose:
       - "9119"
@@ -49,3 +72,4 @@ services:
 
 volumes:
   hermes_data:
+  hermes_postgres_data:

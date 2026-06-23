@@ -7,6 +7,7 @@ import { useI18n } from '@/i18n'
 import { type ChatMessage, chatMessageText, preserveLocalAssistantErrors, toChatMessages } from '@/lib/chat-messages'
 import { normalizePersonalityValue } from '@/lib/chat-runtime'
 import { embeddedImageUrls, textWithoutEmbeddedImages } from '@/lib/embedded-images'
+import { getStoredAuthUserId } from '@/lib/auth-token'
 import { setSessionYolo } from '@/lib/yolo-session'
 import { clearQueuedPrompts } from '@/store/composer-queue'
 import { $pinnedSessionIds } from '@/store/layout'
@@ -417,6 +418,7 @@ export function useSessionActions({
         const created = await requestGateway<SessionCreateResponse>('session.create', {
           cols: 96,
           ...(cwd && { cwd }),
+          ...(getStoredAuthUserId() ? { user_id: getStoredAuthUserId() } : {}),
           ...(newChatProfile ? { profile: newChatProfile } : {})
         })
 
@@ -782,6 +784,7 @@ export function useSessionActions({
         const branched = await requestGateway<SessionCreateResponse>('session.create', {
           cols: 96,
           ...(cwd && { cwd }),
+          ...(getStoredAuthUserId() ? { user_id: getStoredAuthUserId() } : {}),
           messages: branchMessages.map(({ content, role }) => ({ content, role })),
           title: copy.branchTitle
         })

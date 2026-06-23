@@ -500,39 +500,39 @@ function PlatformDetail({
 
 const PLATFORM_INTRO: Record<string, string> = {
   telegram:
-    'In Telegram, talk to @BotFather, run /newbot, and copy the token it gives you. Then grab your numeric user ID from @userinfobot.',
+    '在 Telegram 中联系 @BotFather，执行 /newbot 并复制它给你的令牌。然后从 @userinfobot 获取你的数字用户 ID。',
   discord:
-    'Open the Discord Developer Portal, create an application, add a Bot, then copy its token. Invite the bot to your server with the right scopes.',
+    '打开 Discord 开发者门户，创建应用并添加机器人，然后复制机器人令牌。用正确权限把机器人邀请到你的服务器。',
   slack:
-    'Create a Slack app, enable Socket Mode, install it to your workspace, then copy the bot token and app-level token.',
+    '创建 Slack 应用，启用 Socket Mode，安装到工作区，然后复制机器人令牌和应用级令牌。',
   mattermost:
-    'On your Mattermost server, create a bot account or personal access token, then paste the server URL and token here.',
-  matrix: 'Sign in to your homeserver with the bot account, then copy the access token, user ID, and homeserver URL.',
+    '在 Mattermost 服务器上创建机器人账号或个人访问令牌，然后在这里填写服务器地址和令牌。',
+  matrix: '使用机器人账号登录你的 homeserver，然后复制访问令牌、用户 ID 和 homeserver 地址。',
   signal:
-    'Run a signal-cli REST bridge somewhere reachable, then point Hermes at the URL and the registered phone number.',
+    '运行一个可访问的 signal-cli REST 桥接服务，然后填写服务地址和已注册手机号。',
   whatsapp:
-    'Start the WhatsApp bridge that ships with Hermes, scan the QR code on first run, then enable the platform.',
+    '启动 Herbound 自带的 WhatsApp 桥接服务，首次运行时扫码，然后启用该平台。',
   bluebubbles:
-    'Run BlueBubbles Server on a Mac with iMessage, expose its API, then point Hermes at the URL with the server password.',
+    '在支持 iMessage 的 Mac 上运行 BlueBubbles Server，开放 API 后填写服务地址和服务器密码。',
   homeassistant:
-    'In Home Assistant, open your profile and create a long-lived access token. Paste it here along with your HA URL.',
+    '在 Home Assistant 中打开个人资料并创建长期访问令牌，然后在这里填写令牌和 HA 地址。',
   email:
-    'Use a dedicated mailbox. For Gmail/Workspace, create an app password and use imap.gmail.com / smtp.gmail.com.',
-  sms: 'Get your Twilio Account SID and Auth Token from the Twilio console, plus a phone number that can send SMS.',
-  dingtalk: 'Create a DingTalk app in the developer console, then copy the Client ID (App key) and Client Secret here.',
+    '建议使用专用邮箱。Gmail / Workspace 请创建应用密码，并使用 imap.gmail.com / smtp.gmail.com。',
+  sms: '从 Twilio 控制台获取 Account SID、Auth Token，以及一个可发送短信的手机号。',
+  dingtalk: '在钉钉开发者控制台创建应用，然后在这里填写 Client ID（App key）和 Client Secret。',
   feishu:
-    'Create a Feishu / Lark app, configure the bot capability, and copy the App ID, App secret, and event encryption keys.',
+    '创建飞书 / Lark 应用，配置机器人能力，然后复制 App ID、App secret 和事件加密密钥。',
   wecom:
-    'Add a group robot in WeCom and copy its webhook key as WECOM_BOT_ID. Send-only — use the WeCom (app) option for two-way.',
+    '在企业微信中添加群机器人，并把 webhook key 填为 WECOM_BOT_ID。该方式仅支持发送，双向通信请选择企业微信应用。',
   wecom_callback:
-    'Set up a WeCom self-built app, expose its callback URL, and provide the corp ID, secret, agent ID, and AES key.',
+    '配置企业微信自建应用，开放回调地址，并填写企业 ID、secret、agent ID 和 AES key。',
   weixin:
-    'Sign in to the WeChat Official Account platform, copy the AppID and Token, and point the message callback URL at Hermes.',
-  qqbot: 'Register an app on the QQ Open Platform (q.qq.com) and copy the App ID and Client Secret.',
+    '登录微信公众号平台，复制 AppID 和 Token，并把消息回调地址指向 Herbound。',
+  qqbot: '在 QQ 开放平台（q.qq.com）注册应用，并复制 App ID 和 Client Secret。',
   api_server:
-    'Expose Hermes as an OpenAI-compatible API. Set an auth key, then point Open WebUI / LobeChat / etc. at the host:port.',
+    '把 Herbound 暴露为 OpenAI 兼容 API。设置认证密钥后，让 Open WebUI / LobeChat 等工具连接到对应 host:port。',
   webhook:
-    'Run an HTTP server that other tools (GitHub, GitLab, custom apps) can POST to. Use the secret to verify signatures.'
+    '运行一个可接收 HTTP POST 的服务，供 GitHub、GitLab 或自定义应用调用。使用密钥校验签名。'
 }
 
 const introCopy = (platform: MessagingPlatformInfo, m: Translations['messaging']) =>

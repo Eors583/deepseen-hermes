@@ -88,8 +88,8 @@ const CONFIGURED_CACHE_KEY = 'hermes-desktop-onboarded-v1'
 const SKIP_CACHE_KEY = 'hermes-onboarding-skipped-v1'
 const POLL_MS = 2000
 const COPY_FLASH_MS = 1500
-export const DEFAULT_ONBOARDING_REASON = 'No inference provider is configured.'
-export const DEFAULT_MANUAL_ONBOARDING_REASON = 'Add or switch inference provider.'
+export const DEFAULT_ONBOARDING_REASON = '还没有配置可用的模型服务。'
+export const DEFAULT_MANUAL_ONBOARDING_REASON = '添加或切换模型服务。'
 
 function readCachedConfigured(): boolean | null {
   if (typeof window === 'undefined') {
@@ -189,18 +189,18 @@ async function checkRuntime(ctx: OnboardingContext): Promise<RuntimeReadinessRes
 }
 
 function notifyReady(provider: string) {
-  notify({ kind: 'success', title: 'Hermes is ready', message: `${provider} connected.` })
+  notify({ kind: 'success', title: 'Herbound 已就绪', message: `${provider} 已连接。` })
 }
 
 // Human-friendly labels for tools auto-routed through the Nous Tool Gateway,
 // mirroring hermes_cli/nous_subscription._GATEWAY_TOOL_LABELS so the GUI and
 // CLI describe the same thing.
 const GATEWAY_TOOL_LABELS: Record<string, string> = {
-  browser: 'browser automation',
-  image_gen: 'image generation',
-  tts: 'text-to-speech',
-  video_gen: 'video generation',
-  web: 'web search & extract'
+  browser: '浏览器自动化',
+  image_gen: '图片生成',
+  tts: '语音合成',
+  video_gen: '视频生成',
+  web: '网页搜索与内容提取'
 }
 
 // When switching to Nous auto-routes unconfigured tools through the Tool
@@ -212,16 +212,15 @@ function notifyGatewayTools(tools: string[] | undefined) {
   }
 
   const labels = tools.map(t => GATEWAY_TOOL_LABELS[t] ?? t)
-  const list = labels.length === 1 ? labels[0] : `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`
+  const list = labels.length === 1 ? labels[0] : `${labels.slice(0, -1).join('、')} 和 ${labels[labels.length - 1]}`
 
   notify({
     durationMs: 8000,
     kind: 'info',
-    message: `${list} now run through your Nous subscription — no separate API keys needed.`,
-    title: 'Tool Gateway enabled'
+    message: `${list} 现在会通过你的订阅运行，不需要再单独配置密钥。`,
+    title: '工具网关已启用'
   })
 }
-
 // After credentials are persisted, ask the backend which provider+models
 // are now authenticated. Pick the first curated model for the matching
 // provider as a sensible default, persist it via /api/model/set, and
@@ -231,6 +230,7 @@ function notifyGatewayTools(tools: string[] | undefined) {
 // card — the user gets the undefined-model auto-selection behaviour
 // we had before, which works but is surprising. The confirm step is
 // opportunistic polish, not a hard requirement for onboarding.
+
 async function fetchProviderDefaultModel(
   preferredSlugs: string[]
 ): Promise<null | { providerSlug: string; defaultModel: string }> {
@@ -360,8 +360,8 @@ function providerResolutionFailure(reason: null | string) {
   const detail = reason?.trim()
 
   return detail
-    ? `Connected, but Hermes still cannot resolve a usable provider. ${detail}`
-    : 'Connected, but Hermes still cannot resolve a usable provider.'
+    ? `已经连接，但 Herbound 仍未找到可用的模型服务。${detail}`
+    : '已经连接，但 Herbound 仍未找到可用的模型服务。'
 }
 
 async function refreshProviders() {
@@ -722,7 +722,7 @@ export async function recheckExternalSignin(ctx: OnboardingContext) {
       provider,
       message:
         reason?.trim() ||
-        `Hermes still cannot reach ${provider.name}. Run \`${provider.cli_command}\` in a terminal first.`
+        `Herbound 仍无法连接 ${provider.name}。请先在终端运行 \`${provider.cli_command}\`。`
     })
   )
 }
@@ -837,10 +837,10 @@ export async function saveOnboardingLocalEndpoint(baseUrl: string, apiKey: strin
     if (!runtime.ready) {
       const detail = (runtime.reason ?? '').trim()
 
-      return { ok: false, message: detail || `Saved, but Hermes still cannot reach ${url}.` }
+      return { ok: false, message: detail || `已保存，但 Herbound 仍无法连接 ${url}。` }
     }
 
-    notifyReady('Local / custom endpoint')
+    notifyReady('本地或自定义接口')
     completeDesktopOnboarding()
     ctx.onCompleted?.()
 

@@ -17,8 +17,8 @@ from hermes_cli.deepseen_credentials import get_deepseen_api_key
 _PLUGIN_DIR = Path(__file__).resolve().parent
 _RUNNER = _PLUGIN_DIR / "deepseen_runner.mjs"
 _TOOLSET = "crossborder_deepseen"
-_DEFAULT_TIMEOUT_MS = 3600000
-_VIDEO_TIMEOUT_MS = 3600000
+_DEFAULT_TIMEOUT_MS = 7200000
+_VIDEO_TIMEOUT_MS = 7200000
 _VIDEO_ACTIONS = {"smart_video", "video_recreation"}
 
 
@@ -283,7 +283,7 @@ def _handler(action: str) -> Callable:
 def _schema(name: str, description: str, properties: dict[str, Any], required: list[str]) -> dict[str, Any]:
     common = {
         "poll_interval_ms": {"type": "integer", "description": "Polling interval in milliseconds. Default 8000."},
-        "timeout_ms": {"type": "integer", "description": "Task timeout in milliseconds. Default 3600000 (1 hour)."},
+        "timeout_ms": {"type": "integer", "description": "Task timeout in milliseconds. Default 7200000 (2 hours)."},
     }
     return {
         "name": name,
@@ -307,12 +307,12 @@ def _media_common() -> dict[str, Any]:
         "asset_urls": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "Already uploaded OSS/CDN image URLs. Prefer this for production web uploads.",
+            "description": "Already uploaded OSS/CDN image URLs only. For local image files use local_paths/product_local_paths so the tool can upload them.",
         },
         "product_images": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "Public product image URLs.",
+            "description": "Public product image URLs only. Do not put local file paths here.",
         },
         "product_file_ids": {
             "type": "array",
@@ -340,7 +340,7 @@ _TOOLS: tuple[tuple[str, str, dict[str, Any], list[str], str], ...] = (
     ),
     (
         "deepseen_smart_video_create_and_wait",
-        "Generate cross-border ecommerce marketing short videos with DeepSeen SDK. Use for product videos, TikTok ad creatives, and short selling videos. Video jobs default to a 1-hour wait timeout.",
+        "Generate cross-border ecommerce marketing short videos with DeepSeen SDK. Use for product videos, TikTok ad creatives, and short selling videos. Video jobs default to a 2-hour wait timeout.",
         {
             **_media_common(),
             "product_title": {"type": "string", "description": "Product title or core selling point."},
@@ -367,15 +367,15 @@ _TOOLS: tuple[tuple[str, str, dict[str, Any], list[str], str], ...] = (
     ),
     (
         "deepseen_video_recreation_create_and_wait",
-        "Create benchmark/recreated short videos from a competitor/reference video plus own product images. Use for TikTok video recreation and reference-video based generation. Video recreation jobs default to a 1-hour wait timeout.",
+        "Create benchmark/recreated short videos from a competitor/reference video plus own product images. Use for TikTok video recreation and reference-video based generation. Video recreation jobs default to a 2-hour wait timeout.",
         {
             **_media_common(),
-            "competitor_video_url": {"type": "string", "description": "TikTok/Douyin/video URL or already uploaded reference video URL."},
-            "reference_video_local_path": {"type": "string", "description": "Server-visible local reference video path. The tool uploads it first."},
+            "competitor_video_url": {"type": "string", "description": "TikTok/Douyin/video URL or already uploaded reference video URL only. Do not put local file paths here."},
+            "reference_video_local_path": {"type": "string", "description": "Server-visible local reference video path, for example D:\\path\\video.mp4. Use this for local videos; the tool uploads it first."},
             "product_local_paths": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Alias for local_paths, used for product base images.",
+                "description": "Local product base image paths, for example D:\\path\\image.png. The tool uploads them first.",
             },
             "model": {"type": "string"},
             "group_count": {"type": "integer"},

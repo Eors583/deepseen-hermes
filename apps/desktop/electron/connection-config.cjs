@@ -10,6 +10,8 @@
  * main.cjs requires these and wires them into the electron-coupled IPC layer.
  *
  * Background on the two auth models a remote gateway can use:
+ *   - 'jwt': Herbound/FastAPI production auth. REST uses the user's login JWT;
+ *     WS upgrades mint a single-use `?ticket=` with that JWT.
  *   - 'token': legacy static dashboard session token. REST uses an
  *     `X-Hermes-Session-Token` header; WS uses `?token=`.
  *   - 'oauth': hosted gateways gate behind an OAuth provider. REST is authed
@@ -100,7 +102,7 @@ function buildGatewayWsUrlWithTicket(baseUrl, ticket) {
  * can't authenticate /api/ws and boot dies with "Could not connect".
  *
  * @param {string} baseUrl
- * @param {'token'|'oauth'} authMode
+ * @param {'token'|'oauth'|'jwt'} authMode
  * @param {string|null} token
  * @param {{ mintTicket: (baseUrl: string) => Promise<string> }} deps
  * @returns {Promise<string|null>}
@@ -125,6 +127,14 @@ async function resolveTestWsUrl(baseUrl, authMode, token, deps = {}) {
     }
     return buildGatewayWsUrlWithTicket(baseUrl, ticket)
   }
+  if (authMode === 'jwt') {
+    const mintTicket = deps.mintTicket
+    if (typeof mintTicket !== 'function') {
+      throw new Error('resolveTestWsUrl: a mintTicket function is required in JWT mode.')
+    }
+    const ticket = await mintTicket(baseUrl)
+    return buildGatewayWsUrlWithTicket(baseUrl, ticket)
+  }
   if (!token) {
     return null
   }
@@ -137,8 +147,9 @@ function connectionScopeKey(profile) {
   return String(profile ?? '').trim() || null
 }
 
-// Coerce a remote auth mode to one of the two supported values ('token' default).
+// Coerce a remote auth mode to one of the supported values ('token' default).
 function normAuthMode(mode) {
+  if (mode === 'jwt') return 'jwt'
   return mode === 'oauth' ? 'oauth' : 'token'
 }
 
@@ -188,11 +199,13 @@ function authModeFromStatus(statusBody) {
 /**
  * Resolve the effective auth mode for a coerce/save operation.
  * Explicit input wins; otherwise inherit the saved value; default 'token'.
- * Returns 'oauth' | 'token'.
+ * Returns 'oauth' | 'token' | 'jwt'.
  */
 function resolveAuthMode(inputAuthMode, existingAuthMode) {
+  if (inputAuthMode === 'jwt') return 'jwt'
   if (inputAuthMode === 'oauth') return 'oauth'
   if (inputAuthMode === 'token') return 'token'
+  if (existingAuthMode === 'jwt') return 'jwt'
   if (existingAuthMode === 'oauth') return 'oauth'
   return 'token'
 }

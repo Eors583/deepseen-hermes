@@ -104,6 +104,15 @@ class MemoryStore:
         default_trust: float = 0.5,
         hrr_dim: int = 1024,
     ) -> None:
+        try:
+            from hermes_cli import postgres_store
+
+            if postgres_store.postgres_enabled():
+                raise RuntimeError(
+                    "Holographic memory SQLite store is disabled in PostgreSQL production mode."
+                )
+        except ImportError:
+            pass
         if db_path is None:
             from hermes_constants import get_hermes_home
             db_path = str(get_hermes_home() / "memory_store.db")

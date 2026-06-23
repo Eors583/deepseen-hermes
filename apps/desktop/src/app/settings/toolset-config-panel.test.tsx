@@ -10,6 +10,9 @@ const deleteEnvVar = vi.fn()
 const revealEnvVar = vi.fn()
 const runToolsetPostSetup = vi.fn()
 const getActionStatus = vi.fn()
+const getDeepSeenKeyStatus = vi.fn()
+const setDeepSeenApiKey = vi.fn()
+const deleteDeepSeenApiKey = vi.fn()
 
 vi.mock('@/hermes', () => ({
   getToolsetConfig: (name: string) => getToolsetConfig(name),
@@ -18,7 +21,10 @@ vi.mock('@/hermes', () => ({
   deleteEnvVar: (key: string) => deleteEnvVar(key),
   revealEnvVar: (key: string) => revealEnvVar(key),
   runToolsetPostSetup: (name: string, key: string) => runToolsetPostSetup(name, key),
-  getActionStatus: (name: string, lines?: number) => getActionStatus(name, lines)
+  getActionStatus: (name: string, lines?: number) => getActionStatus(name, lines),
+  getDeepSeenKeyStatus: () => getDeepSeenKeyStatus(),
+  setDeepSeenApiKey: (apiKey: string) => setDeepSeenApiKey(apiKey),
+  deleteDeepSeenApiKey: () => deleteDeepSeenApiKey()
 }))
 
 vi.mock('@/store/notifications', () => ({
@@ -66,6 +72,18 @@ beforeEach(() => {
   selectToolsetProvider.mockResolvedValue({ ok: true, name: 'tts', provider: 'ElevenLabs' })
   setEnvVar.mockResolvedValue({ ok: true })
   deleteEnvVar.mockResolvedValue({ ok: true })
+  getDeepSeenKeyStatus.mockResolvedValue({
+    configured: false,
+    db_path: 'postgresql',
+    env_var: 'DEEPSEEN_API_KEY',
+    key_name: 'api_key',
+    provider: 'deepseen',
+    redacted_value: '',
+    storage: 'database',
+    user_key: 'local'
+  })
+  setDeepSeenApiKey.mockResolvedValue({ ok: true, configured: true, redacted_value: 'sk-...123' })
+  deleteDeepSeenApiKey.mockResolvedValue({ ok: true, configured: false, redacted_value: '' })
 })
 
 afterEach(() => {
@@ -74,6 +92,13 @@ afterEach(() => {
 })
 
 describe('ToolsetConfigPanel', () => {
+  async function openSetCredentialAction(key: string) {
+    const trigger = await screen.findByRole('button', { name: new RegExp(key) })
+
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: /设置|Set/ }))
+  }
+
   it('lists providers from the config endpoint', async () => {
     const { ToolsetConfigPanel } = await import('./toolset-config-panel')
     render(<ToolsetConfigPanel onConfiguredChange={vi.fn()} toolset="tts" />)
@@ -100,15 +125,54 @@ describe('ToolsetConfigPanel', () => {
     // Select the keyed provider so its env vars render.
     const elevenlabs = await screen.findByRole('button', { name: /ElevenLabs/ })
     fireEvent.click(elevenlabs)
+    await screen.findByText('ELEVENLABS_API_KEY')
 
-    // Click "Set" to reveal the input for the unset key.
-    fireEvent.click(await screen.findByRole('button', { name: 'Set' }))
+    await openSetCredentialAction('ELEVENLABS_API_KEY')
 
     const input = await screen.findByPlaceholderText('ElevenLabs API key')
     fireEvent.change(input, { target: { value: 'sk-test-123' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: /保存|Save/ }))
 
     await waitFor(() => expect(setEnvVar).toHaveBeenCalledWith('ELEVENLABS_API_KEY', 'sk-test-123'))
+  })
+
+  it('saves the DeepSeen API key through the user credential database endpoint', async () => {
+    getToolsetConfig.mockResolvedValue(
+      config({
+        active_provider: 'DeepSeen',
+        providers: [
+          {
+            name: 'DeepSeen',
+            badge: 'paid',
+            tag: 'Cross-border tools',
+            env_vars: [
+              {
+                key: 'DEEPSEEN_API_KEY',
+                prompt: 'DeepSeen API key',
+                url: 'https://deepseen.ai/',
+                default: null,
+                is_set: false
+              }
+            ],
+            post_setup: null,
+            requires_nous_auth: false,
+            is_active: true
+          }
+        ]
+      })
+    )
+
+    const { ToolsetConfigPanel } = await import('./toolset-config-panel')
+    render(<ToolsetConfigPanel onConfiguredChange={vi.fn()} toolset="crossborder-deepseen" />)
+
+    await openSetCredentialAction('DEEPSEEN_API_KEY')
+
+    const input = await screen.findByPlaceholderText('DeepSeen API key')
+    fireEvent.change(input, { target: { value: 'deepseen-test-key' } })
+    fireEvent.click(screen.getByRole('button', { name: /保存|Save/ }))
+
+    await waitFor(() => expect(setDeepSeenApiKey).toHaveBeenCalledWith('deepseen-test-key'))
+    expect(setEnvVar).not.toHaveBeenCalledWith('DEEPSEEN_API_KEY', expect.any(String))
   })
 
   it('expands the active provider on load, not just the first configured one', async () => {
@@ -201,7 +265,7 @@ describe('ToolsetConfigPanel', () => {
     const { ToolsetConfigPanel } = await import('./toolset-config-panel')
     render(<ToolsetConfigPanel onConfiguredChange={vi.fn()} toolset="browser" />)
 
-    fireEvent.click(await screen.findByRole('button', { name: /Run setup/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /运行设置|Run setup/ }))
 
     await waitFor(() => expect(runToolsetPostSetup).toHaveBeenCalledWith('browser', 'camofox'))
     // The install log is tailed inline. The first poll fires after a 1200ms
@@ -235,7 +299,7 @@ describe('ToolsetConfigPanel', () => {
     const { ToolsetConfigPanel } = await import('./toolset-config-panel')
     render(<ToolsetConfigPanel onConfiguredChange={vi.fn()} toolset="browser" />)
 
-    fireEvent.click(await screen.findByRole('button', { name: /Run setup/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /运行设置|Run setup/ }))
 
     await waitFor(() => expect(runToolsetPostSetup).toHaveBeenCalledWith('browser', 'camofox'))
     // Give the would-be first poll delay (1200ms) time to NOT fire.
@@ -274,7 +338,7 @@ describe('ToolsetConfigPanel', () => {
     const { ToolsetConfigPanel } = await import('./toolset-config-panel')
     render(<ToolsetConfigPanel onConfiguredChange={vi.fn()} toolset="browser" />)
 
-    fireEvent.click(await screen.findByRole('button', { name: /Run setup/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /运行设置|Run setup/ }))
 
     // The failing install log is still tailed and shown; exit_code:1 routes to
     // the error notify branch (asserted via the poll completing on a non-zero

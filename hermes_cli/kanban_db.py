@@ -1435,6 +1435,16 @@ def connect(
       ``HERMES_KANBAN_DB`` env → ``HERMES_KANBAN_BOARD`` env →
       ``<root>/kanban/current`` → ``default``.
     """
+    try:
+        from hermes_cli import postgres_store
+
+        if postgres_store.postgres_enabled():
+            raise RuntimeError(
+                "Kanban SQLite storage is disabled in PostgreSQL production mode. "
+                "Use the main chat/enterprise skill flows or migrate kanban_db.py to PostgreSQL before enabling Kanban."
+            )
+    except ImportError:
+        pass
     if db_path is not None:
         path = db_path
     else:

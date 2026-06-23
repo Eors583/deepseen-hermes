@@ -108,6 +108,38 @@ export interface EnvVarInfo {
   url: null | string
 }
 
+export interface DeepSeenKeyStatus {
+  configured: boolean
+  db_path: string
+  env_var: 'DEEPSEEN_API_KEY'
+  key_name: 'api_key'
+  provider: 'deepseen'
+  redacted_value: string
+  storage: 'database'
+  user_key: string
+}
+
+export interface AuthUser {
+  avatar: string
+  created_at: number
+  id: number
+  last_login_at: null | number
+  requiresCredentialChange?: boolean
+  role: 'admin' | 'super_admin'
+  status: 'active' | 'disabled'
+  updated_at: number
+  username: string
+}
+
+export interface AuthTokenResponse {
+  token: string
+  user?: AuthUser
+}
+
+export interface AuthMeResponse {
+  user: AuthUser
+}
+
 export interface MessagingEnvVarInfo {
   advanced: boolean
   description: string

@@ -70,7 +70,7 @@ export function McpSettings({ gateway, onConfigSaved }: McpSettingsProps) {
       .catch(err => notifyError(err, m.failedLoad))
 
     return () => void (cancelled = true)
-  }, [])
+  }, [m.failedLoad])
 
   const servers = useMemo(() => getServers(config), [config])
   const names = useMemo(() => Object.keys(servers).sort(), [servers])
@@ -235,7 +235,7 @@ export function McpSettings({ gateway, onConfigSaved }: McpSettingsProps) {
           </div>
           <label className="grid gap-1.5">
             <span className="text-xs text-muted-foreground">{m.name}</span>
-            <Input onChange={event => setName(event.currentTarget.value)} placeholder="filesystem" value={name} />
+            <Input onChange={event => setName(event.currentTarget.value)} placeholder="例如：文件系统" value={name} />
           </label>
           <label className="grid gap-1.5">
             <span className="text-xs text-muted-foreground">{m.serverJson}</span>

@@ -71,6 +71,7 @@ watch(() => route.fullPath, () => {
 <template>
   <NModal
     v-model:show="show"
+    data-testid="default-credential-prompt"
     preset="dialog"
     :title="t('login.defaultCredentialTitle')"
     :mask-closable="false"
@@ -79,10 +80,10 @@ watch(() => route.fullPath, () => {
       {{ t("login.defaultCredentialMessage") }}
     </p>
     <template #action>
-      <NButton :disabled="loading" @click="remindLater">
+      <NButton data-testid="default-credential-remind-later" :disabled="loading" @click="remindLater">
         {{ t("login.defaultCredentialLater") }}
       </NButton>
-      <NButton type="primary" :loading="loading" @click="goToAccountSettings">
+      <NButton data-testid="default-credential-go-settings" type="primary" :loading="loading" @click="goToAccountSettings">
         {{ t("login.defaultCredentialAction") }}
       </NButton>
     </template>

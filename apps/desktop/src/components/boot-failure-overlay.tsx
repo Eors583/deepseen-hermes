@@ -168,7 +168,6 @@ export function BootFailureOverlay() {
 
   const label = signInLabel(remoteReauth, {
     identityProvider: copy.identityProvider,
-    remoteGateway: copy.signInToRemoteGateway,
     withProvider: copy.signInWithProvider
   })
 

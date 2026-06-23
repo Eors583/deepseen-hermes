@@ -7,29 +7,24 @@ import type { DesktopAuthProvider, DesktopConnectionConfig } from '@/global'
 
 export interface RemoteReauth {
   url: string
-  // True when every advertised provider is username/password — drives the
-  // button copy ("Sign in to remote gateway" vs "Sign in with <provider>"),
-  // mirroring the gateway-settings page. Probe is best-effort.
-  isPassword: boolean
+  isPassword: false
   providerLabel: string
 }
 
 interface SignInCopy {
   identityProvider: string
-  remoteGateway: string
   withProvider: (provider: string) => string
 }
 
 const DEFAULT_SIGN_IN_COPY: SignInCopy = {
   identityProvider: 'your identity provider',
-  remoteGateway: 'Sign in to remote gateway',
   withProvider: provider => `Sign in with ${provider}`
 }
 
 // A remote, gated (oauth-bucket), not-currently-connected gateway is a
 // remote-reauth boot failure: the access cookie lapsed (e.g. the remote
 // dashboard restarted) and the local-recovery buttons (Retry/Repair) can't
-// fix it — only re-establishing the remote session can. A connected oauth
+// fix it. Only re-establishing the remote session can. A connected oauth
 // session, or a token/local gateway, boots for some other reason the
 // local-recovery buttons address, so those return false here.
 export function isRemoteReauthFailure(config: DesktopConnectionConfig | null | undefined): boolean {
@@ -45,12 +40,10 @@ export function isRemoteReauthFailure(config: DesktopConnectionConfig | null | u
   )
 }
 
-// Derive the password flag + display label from the probed providers. A
-// gateway is treated as password-style only when EVERY advertised provider
-// supports password (a mixed deployment keeps the generic OAuth copy), so the
-// button copy matches the login window the user is about to see.
+// Derive the display label from the probed providers. Legacy password-provider
+// flags are ignored because Herbound uses the FastAPI/JWT login flow.
 export function deriveProviderShape(providers: DesktopAuthProvider[] | null | undefined): {
-  isPassword: boolean
+  isPassword: false
   providerLabel: string
 } {
   const list = providers ?? []
@@ -59,22 +52,16 @@ export function deriveProviderShape(providers: DesktopAuthProvider[] | null | un
     return { isPassword: false, providerLabel: 'your identity provider' }
   }
 
-  const isPassword = list.every(p => Boolean(p.supportsPassword))
-
   const providerLabel =
     list.length === 1
       ? list[0].displayName || list[0].name
       : list.map(p => p.displayName || p.name).join(' / ')
 
-  return { isPassword, providerLabel }
+  return { isPassword: false, providerLabel }
 }
 
 // Button copy for the remote sign-in action.
 export function signInLabel(reauth: RemoteReauth | null, copy: SignInCopy = DEFAULT_SIGN_IN_COPY): string {
-  if (reauth?.isPassword) {
-    return copy.remoteGateway
-  }
-
   const provider = reauth?.providerLabel === DEFAULT_SIGN_IN_COPY.identityProvider ? copy.identityProvider : reauth?.providerLabel
 
   return copy.withProvider(provider ?? copy.identityProvider)

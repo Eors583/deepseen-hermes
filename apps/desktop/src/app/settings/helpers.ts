@@ -8,7 +8,6 @@ export const includesQuery = (v: unknown, q: string) => asText(v).toLowerCase().
 
 export const prettyName = (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
-/** Strip leading emoji from toolset titles (CLI registry prefixes labels with icons). */
 export const stripToolsetLabel = (label: string): string =>
   label.replace(/^[\p{Emoji}\p{Extended_Pictographic}\s]+/u, '').trim() || label
 
@@ -24,11 +23,8 @@ export const withoutKey = <T>(record: Record<string, T>, key: string) => {
   return next
 }
 
-export const redactedValue = (v: string) => (v.length <= 8 ? '••••' : `${v.slice(0, 4)}...${v.slice(-4)}`)
+export const redactedValue = (v: string) => (v.length <= 8 ? '••••••••' : `${v.slice(0, 4)}...${v.slice(-4)}`)
 
-// Longest-prefix match so a more specific group like ``MINIMAX_CN_`` is
-// chosen over its shorter parent ``MINIMAX_``. Falls back to the bucket
-// "Other" used by the Keys settings view for un-grouped env vars.
 export const providerGroup = (key: string) => {
   let best: (typeof PROVIDER_GROUPS)[number] | undefined
 

@@ -14,7 +14,7 @@ import { CONTROL_TEXT } from './constants'
 import { EmptyState, ListRow, LoadingState, Pill, SettingsContent } from './primitives'
 
 type Mode = 'local' | 'remote'
-type AuthMode = 'oauth' | 'token'
+type AuthMode = 'jwt' | 'oauth' | 'token'
 type ProbeStatus = 'idle' | 'probing' | 'done' | 'error'
 
 interface GatewaySettingsState {
@@ -155,7 +155,7 @@ export function GatewaySettings() {
       })
 
     return () => void (cancelled = true)
-  }, [scope])
+  }, [g.failedLoad, scope])
 
   // Debounced probe of the entered remote URL. Only runs in remote mode with a
   // syntactically plausible URL. The probe result drives whether we render the
@@ -214,7 +214,7 @@ export function GatewaySettings() {
   }, [probe, probeStatus, state.remoteAuthMode])
 
   // Whether we actually KNOW how this gateway authenticates yet. Until we do,
-  // neither the OAuth button nor the session-token box should render —
+  // neither the OAuth button nor the session-token box should render.
   // `authMode` defaults to 'token', so without this gate the token box flashes
   // for every gateway (including OAuth ones) during the idle/probing window
   // before the first probe lands. The scheme is known when either:
@@ -248,18 +248,6 @@ export function GatewaySettings() {
     return t.boot.failure.identityProvider
   }, [probe, t.boot.failure.identityProvider])
 
-  // A username/password gateway authenticates through a credential form on the
-  // gateway's /login page (POST /auth/password-login) rather than an OAuth
-  // redirect. Everything downstream — the session cookie, the ws-ticket mint,
-  // the persistent partition — is identical, so the desktop drives it through
-  // the same sign-in window; only the button copy changes. We treat the
-  // gateway as password-style only when EVERY advertised provider supports
-  // password, so a mixed deployment keeps the generic OAuth copy.
-  const isPasswordProvider = useMemo(() => {
-    const providers: DesktopAuthProvider[] = probe?.providers ?? []
-
-    return providers.length > 0 && providers.every(p => p.supportsPassword)
-  }, [probe])
 
   // The 'default' profile uses the global ("All profiles") connection, so the
   // per-profile scopes are the named, non-default profiles.
@@ -274,6 +262,9 @@ export function GatewaySettings() {
 
     if (authMode === 'oauth') {
       return oauthConnected
+    }
+    if (authMode === 'jwt') {
+      return true
     }
 
     return Boolean(remoteToken.trim()) || state.remoteTokenSet
@@ -295,7 +286,9 @@ export function GatewaySettings() {
         message:
           authMode === 'oauth'
             ? g.incompleteSignIn
-            : g.incompleteToken
+            : authMode === 'jwt'
+              ? g.enterUrlFirst
+              : g.incompleteToken
       })
 
       return
@@ -503,7 +496,7 @@ export function GatewaySettings() {
               className={cn('h-8', CONTROL_TEXT)}
               disabled={state.envOverride}
               onChange={event => setState(current => ({ ...current, remoteUrl: event.target.value }))}
-              placeholder="https://gateway.example.com/hermes"
+              placeholder="https://gateway.example.com/herbound"
               value={state.remoteUrl}
             />
           }
@@ -525,7 +518,7 @@ export function GatewaySettings() {
           </div>
         ) : null}
 
-        {/* OAuth / password gateways: present a sign-in button + connection status. */}
+        {/* OAuth gateways: present a sign-in button + connection status. */}
         {state.mode === 'remote' && authResolved && authMode === 'oauth' ? (
           <ListRow
             action={
@@ -542,18 +535,14 @@ export function GatewaySettings() {
               ) : (
                 <Button disabled={signingIn || state.envOverride || !trimmedUrl} onClick={() => void signIn()}>
                   {signingIn ? <Loader2 className="animate-spin" /> : <LogIn />}
-                  {isPasswordProvider ? g.signIn : g.signInWith(providerLabel)}
+                  {g.signInWith(providerLabel)}
                 </Button>
               )
             }
             description={
               oauthConnected
-                ? isPasswordProvider
-                  ? g.authSignedInPassword
-                  : g.authSignedInOauth
-                : isPasswordProvider
-                  ? g.authNeedsPassword
-                  : g.authNeedsOauth(providerLabel)
+                ? g.authSignedInOauth
+                : g.authNeedsOauth(providerLabel)
             }
             title={g.authTitle}
           />

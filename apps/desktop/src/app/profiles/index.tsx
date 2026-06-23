@@ -520,7 +520,7 @@ function CreateProfileDialog({
               autoFocus
               id="new-profile-name"
               onChange={event => setName(event.target.value)}
-              placeholder="my-profile"
+              placeholder="例如：默认档案"
               value={name}
             />
             <p className={cn('text-[0.66rem] leading-4', invalid ? 'text-destructive' : 'text-muted-foreground')}>

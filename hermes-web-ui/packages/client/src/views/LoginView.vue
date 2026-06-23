@@ -16,12 +16,20 @@ const errorMsg = ref("");
 const showLockResetHint = ref(false);
 const mode = ref<"login" | "register">("login");
 
-// If already has a key, try to go to main page
-if (hasApiKey()) {
-  router.replace("/hermes/chat");
+async function goHome() {
+  try {
+    await router.replace({ name: "hermes.chat" });
+  } catch {
+    window.location.hash = "#/hermes/chat";
+  }
 }
 
 onMounted(async () => {
+  if (hasApiKey()) {
+    await goHome();
+    return;
+  }
+
   try {
     await fetchAuthStatus();
   } catch {
@@ -50,7 +58,7 @@ async function handlePasswordLogin() {
   try {
     const sessionToken = await loginWithPassword(username.value.trim(), password.value);
     setApiKey(sessionToken);
-    window.location.replace(`${window.location.pathname}${window.location.search}#/hermes/chat`);
+    await goHome();
   } catch (err: any) {
     if (err.status === 429 || err.status === 503) {
       errorMsg.value = t("login.tooManyAttempts");
@@ -88,7 +96,7 @@ async function handleRegister() {
   try {
     const sessionToken = await registerWithPassword(username.value.trim(), password.value);
     setApiKey(sessionToken);
-    window.location.replace(`${window.location.pathname}${window.location.search}#/hermes/chat`);
+    await goHome();
   } catch (err: any) {
     if (err.status === 409) {
       errorMsg.value = t("login.usernameExists");

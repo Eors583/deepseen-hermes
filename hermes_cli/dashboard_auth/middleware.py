@@ -38,7 +38,6 @@ _log = logging.getLogger(__name__)
 _GATE_PUBLIC_PREFIXES: tuple[str, ...] = (
     "/auth/login",
     "/auth/callback",
-    "/auth/password-login",
     "/auth/logout",
     "/login",
     "/api/auth/providers",
@@ -365,4 +364,3 @@ def _attempt_refresh(request: Request, *, refresh_token):
         if new_session is not None:
             return new_session, provider.name
     return None
-

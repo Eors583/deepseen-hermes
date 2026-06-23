@@ -206,7 +206,13 @@ export function ChatBar({
 
   const { availableThemes, themeName } = useTheme()
   const at = useAtCompletions({ gateway: gateway ?? null, sessionId: sessionId ?? null, cwd: cwd ?? null })
-  const slash = useSlashCompletions({ activeSkin: themeName, gateway: gateway ?? null, skinThemes: availableThemes })
+
+  const slash = useSlashCompletions({
+    activeSkin: themeName,
+    gateway: gateway ?? null,
+    sessionId: sessionId ?? null,
+    skinThemes: availableThemes
+  })
 
   const stacked = expanded || narrow || tight
   const trimmedDraft = draft.trim()

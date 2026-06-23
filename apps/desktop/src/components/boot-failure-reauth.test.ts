@@ -54,7 +54,7 @@ describe('deriveProviderShape', () => {
   it('password shape when the sole provider supports password', () => {
     expect(
       deriveProviderShape([{ name: 'basic', displayName: 'Username & Password', supportsPassword: true }])
-    ).toEqual({ isPassword: true, providerLabel: 'Username & Password' })
+    ).toEqual({ isPassword: false, providerLabel: 'Username & Password' })
   })
 
   it('OAuth shape when the provider is a redirect IDP', () => {
@@ -64,10 +64,10 @@ describe('deriveProviderShape', () => {
     })
   })
 
-  it('mixed deployment keeps generic OAuth copy (not every provider is password)', () => {
+  it('keeps generic provider copy even when every provider advertises password support', () => {
     const shape = deriveProviderShape([
       { name: 'basic', displayName: 'Username & Password', supportsPassword: true },
-      { name: 'nous', displayName: 'Nous Research', supportsPassword: false }
+      { name: 'nous', displayName: 'Nous Research', supportsPassword: true }
     ])
 
     expect(shape.isPassword).toBe(false)
@@ -82,9 +82,9 @@ describe('deriveProviderShape', () => {
 })
 
 describe('signInLabel', () => {
-  it('password gateway gets the plain "Sign in to remote gateway" copy', () => {
-    expect(signInLabel({ url: 'x', isPassword: true, providerLabel: 'Username & Password' })).toBe(
-      'Sign in to remote gateway'
+  it('provider gateway names the provider', () => {
+    expect(signInLabel({ url: 'x', isPassword: false, providerLabel: 'Username & Password' })).toBe(
+      'Sign in with Username & Password'
     )
   })
 

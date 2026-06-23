@@ -26,7 +26,7 @@ import html
 from hermes_cli.dashboard_auth import list_providers
 
 # Inline minimal CSS. The dashboard's full skin lives in the React
-# bundle, which we deliberately do NOT load here — the login page must
+# bundle, which we deliberately do NOT load here 鈥?the login page must
 # not depend on the SPA build being present or on the injected session
 # token.
 #
@@ -38,9 +38,9 @@ _LOGIN_HTML_TEMPLATE = """\
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign in — Hermes Agent</title>
+<title>Sign in 鈥?Hermes Agent</title>
 <style>
-  /* Brand fonts shipped by @nous-research/ui — same files the SPA loads. */
+  /* Brand fonts shipped by @nous-research/ui 鈥?same files the SPA loads. */
   @font-face {{
     font-family: 'Collapse';
     font-style: normal;
@@ -94,7 +94,7 @@ _LOGIN_HTML_TEMPLATE = """\
     -moz-osx-font-smoothing: grayscale;
   }}
 
-  /* Subtle dot-grid backdrop — DS idiom (see `.dither` in globals.css). */
+  /* Subtle dot-grid backdrop 鈥?DS idiom (see `.dither` in globals.css). */
   body {{
     background-image:
       radial-gradient(
@@ -133,7 +133,7 @@ _LOGIN_HTML_TEMPLATE = """\
     main {{ animation: none; }}
   }}
 
-  /* Brand wordmark above the card — same uppercase + wide-tracking
+  /* Brand wordmark above the card 鈥?same uppercase + wide-tracking
      idiom DS Buttons use. */
   .brand {{
     text-align: center;
@@ -160,7 +160,7 @@ _LOGIN_HTML_TEMPLATE = """\
     padding: 2.25rem 2rem 2rem;
     background: color-mix(in srgb, #ffffff 2%, var(--background-base));
     border: 1px solid var(--hairline);
-    /* Hairline highlight + bevel shadow — matches DS Button SHADOW_DEFAULT
+    /* Hairline highlight + bevel shadow 鈥?matches DS Button SHADOW_DEFAULT
        (`inset -1px -1px 0 #00000080, inset 1px 1px 0 #ffffff80`) at panel scale. */
     box-shadow:
       inset 1px 1px 0 0 color-mix(in srgb, #ffffff 5%, transparent),
@@ -189,7 +189,7 @@ _LOGIN_HTML_TEMPLATE = """\
     gap: 0.75rem;
   }}
 
-  /* Provider button — mirrors DS Button (default variant):
+  /* Provider button 鈥?mirrors DS Button (default variant):
      amber surface, dark text, uppercase + wide tracking, inset bevel. */
   .provider-btn {{
     display: block;
@@ -206,7 +206,7 @@ _LOGIN_HTML_TEMPLATE = """\
     text-transform: uppercase;
     text-decoration: none;
     border: 0;
-    border-radius: 0;  /* DS Button is squared — no rounded corners. */
+    border-radius: 0;  /* DS Button is squared 鈥?no rounded corners. */
     cursor: pointer;
     box-shadow:
       inset 1px 1px 0 0 rgba(255, 255, 255, 0.5),
@@ -225,7 +225,7 @@ _LOGIN_HTML_TEMPLATE = """\
     outline-offset: 3px;
   }}
 
-  /* Password provider form — same visual language as the OAuth buttons:
+  /* Password provider form 鈥?same visual language as the OAuth buttons:
      squared inputs, hairline borders, amber focus ring. */
   .provider-form {{
     display: grid;
@@ -293,7 +293,7 @@ _LOGIN_HTML_TEMPLATE = """\
     margin: 0 0.6em 0.2em;
   }}
 
-  /* Selection — DS uses midground bg + background text. */
+  /* Selection 鈥?DS uses midground bg + background text. */
   ::selection {{
     background: var(--midground);
     color: var(--background-base);
@@ -325,7 +325,7 @@ _EMPTY_HTML = """\
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign-in unavailable — Hermes Agent</title>
+<title>Sign-in unavailable 鈥?Hermes Agent</title>
 <style>
   @font-face {
     font-family: 'Collapse';
@@ -401,64 +401,10 @@ auth gate (not recommended on untrusted networks).</p>
 """
 
 
-# Inline script that wires every password provider form to POST JSON to
-# ``/auth/password-login`` and navigate on success. Emitted ONLY when at
-# least one ``supports_password`` provider is listed (OAuth-only login
-# pages stay script-free, preserving the no-JS contract for that case).
-#
-# Plain string (NOT run through ``str.format``), so braces are literal —
-# do not double them. A single delegated submit handler covers all forms;
-# the provider name is read from the form's ``data-provider`` attribute.
-_PASSWORD_FORM_SCRIPT = """\
-<script>
-(function () {
-  function handle(form) {
-    form.addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      var err = form.querySelector('.form-error');
-      var btn = form.querySelector('button[type=submit]');
-      if (err) { err.hidden = true; err.textContent = ''; }
-      if (btn) { btn.disabled = true; }
-      var body = {
-        provider: form.getAttribute('data-provider') || '',
-        username: (form.querySelector('input[name=username]') || {}).value || '',
-        password: (form.querySelector('input[name=password]') || {}).value || '',
-        next: (form.querySelector('input[name=next]') || {}).value || ''
-      };
-      fetch('/auth/password-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        credentials: 'same-origin'
-      }).then(function (resp) {
-        if (resp.ok) {
-          return resp.json().then(function (data) {
-            window.location.assign((data && data.next) || '/');
-          });
-        }
-        var msg = resp.status === 429
-          ? 'Too many attempts. Please wait and try again.'
-          : (resp.status === 401 ? 'Invalid username or password.'
-                                 : 'Sign-in failed. Please try again.');
-        if (err) { err.textContent = msg; err.hidden = false; }
-        if (btn) { btn.disabled = false; }
-      }).catch(function () {
-        if (err) { err.textContent = 'Network error. Please try again.'; err.hidden = false; }
-        if (btn) { btn.disabled = false; }
-      });
-    });
-  }
-  var forms = document.querySelectorAll('form.provider-form');
-  for (var i = 0; i < forms.length; i++) { handle(forms[i]); }
-})();
-</script>
-"""
-
-
 def render_login_html(*, next_path: str = "") -> str:
     """Return the full HTML for ``GET /login``.
 
-    ``next_path`` — when set, the post-login landing path the user
+    ``next_path`` 鈥?when set, the post-login landing path the user
     originally requested. Threaded into each provider button's ``href``
     as a ``next=`` query parameter so the OAuth round trip carries it
     end-to-end. The caller (``routes.login_page``) is responsible for
@@ -480,55 +426,13 @@ def render_login_html(*, next_path: str = "") -> str:
         next_qs = ""
 
     buttons = []
-    needs_password_script = False
     for p in providers:
-        if getattr(p, "supports_password", False):
-            needs_password_script = True
-            buttons.append(_render_password_form(p, next_path))
-        else:
-            buttons.append(
-                f'      <a class="provider-btn" '
-                f'href="/auth/login?provider={html.escape(p.name, quote=True)}{next_qs}">'
-                f'Sign in with {html.escape(p.display_name)}</a>'
-            )
-    script = _PASSWORD_FORM_SCRIPT if needs_password_script else ""
+        buttons.append(
+            f'      <a class="provider-btn" '
+            f'href="/auth/login?provider={html.escape(p.name, quote=True)}{next_qs}">'
+            f'Sign in with {html.escape(p.display_name)}</a>'
+        )
     return _LOGIN_HTML_TEMPLATE.format(
         provider_buttons="\n".join(buttons),
-        password_script=script,
-    )
-
-
-def _render_password_form(provider, next_path: str) -> str:
-    """Render a username/password form for a ``supports_password`` provider.
-
-    The form is wired by :data:`_PASSWORD_FORM_SCRIPT` (a single delegated
-    submit handler) to POST JSON to ``/auth/password-login`` and navigate
-    on success. ``next_path`` is carried in a hidden field; it has already
-    been validated same-origin by the caller and is HTML-escaped here as
-    defence in depth. The provider ``name`` is emitted in a ``data-``
-    attribute (not a hidden input) so the script reads it without trusting
-    form-field ordering.
-    """
-    pname = html.escape(provider.name, quote=True)
-    plabel = html.escape(provider.display_name)
-    safe_next = html.escape(next_path, quote=True) if next_path else ""
-    return (
-        f'      <form class="provider-form" data-provider="{pname}" '
-        f'autocomplete="on">\n'
-        f'        <div class="form-title">Sign in with {plabel}</div>\n'
-        f'        <input type="hidden" name="next" value="{safe_next}">\n'
-        f'        <label class="field">\n'
-        f'          <span class="field-label">Username</span>\n'
-        f'          <input class="field-input" type="text" name="username" '
-        f'autocomplete="username" autocapitalize="none" '
-        f'autocorrect="off" spellcheck="false" required>\n'
-        f'        </label>\n'
-        f'        <label class="field">\n'
-        f'          <span class="field-label">Password</span>\n'
-        f'          <input class="field-input" type="password" name="password" '
-        f'autocomplete="current-password" required>\n'
-        f'        </label>\n'
-        f'        <div class="form-error" role="alert" hidden></div>\n'
-        f'        <button class="provider-btn" type="submit">Sign in</button>\n'
-        f'      </form>'
+        password_script="",
     )

@@ -327,7 +327,7 @@ const StreamStallIndicator: FC<{ activity: string }> = ({ activity }) => {
   }
 
   return (
-    <StatusRow className="mt-1.5" data-slot="aui_stream-stall" label="Hermes is thinking">
+    <StatusRow className="mt-1.5" data-slot="aui_stream-stall" label="Herbound is thinking">
       <span aria-hidden="true" className="dither inline-block size-3 rounded-[2px] text-midground/80 animate-pulse" />
       <ActivityTimerText seconds={elapsed} />
     </StatusRow>
@@ -919,7 +919,7 @@ const SystemMessage: FC = () => {
         data-slot="aui_system-message-root"
       >
         <Codicon className="text-muted-foreground/55" name="compass" size="0.75rem" />
-        <span className="text-muted-foreground/55">steered</span>
+        <span className="text-muted-foreground/55">已调整</span>
         <span className="text-muted-foreground/35">·</span>
         <span className="whitespace-pre-wrap">{steerNote.groups.text.trim()}</span>
       </MessagePrimitive.Root>

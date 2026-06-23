@@ -4,12 +4,15 @@ import { PageLoader } from '@/components/page-loader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
+  deleteDeepSeenApiKey,
   deleteEnvVar,
   getActionStatus,
+  getDeepSeenKeyStatus,
   getToolsetConfig,
   revealEnvVar,
   runToolsetPostSetup,
   selectToolsetProvider,
+  setDeepSeenApiKey,
   setEnvVar
 } from '@/hermes'
 import { useI18n } from '@/i18n'
@@ -21,6 +24,8 @@ import type { ActionStatusResponse, ToolEnvVar, ToolProvider, ToolsetConfig } fr
 
 import { EnvVarActionsMenu, EnvVarActionsTrigger } from './env-var-actions-menu'
 import { Pill } from './primitives'
+
+const DEEPSEEN_API_KEY = 'DEEPSEEN_API_KEY'
 
 interface ToolsetConfigPanelProps {
   toolset: string
@@ -60,7 +65,12 @@ function EnvVarField({ envVar, isSet, onSaved, onCleared }: EnvVarFieldProps) {
     setBusy(true)
 
     try {
-      await setEnvVar(envVar.key, value)
+      if (envVar.key === DEEPSEEN_API_KEY) {
+        await setDeepSeenApiKey(value)
+      } else {
+        await setEnvVar(envVar.key, value)
+      }
+
       setEditing(false)
       setValue('')
       onSaved(envVar.key)
@@ -80,7 +90,12 @@ function EnvVarField({ envVar, isSet, onSaved, onCleared }: EnvVarFieldProps) {
     setBusy(true)
 
     try {
-      await deleteEnvVar(envVar.key)
+      if (envVar.key === DEEPSEEN_API_KEY) {
+        await deleteDeepSeenApiKey()
+      } else {
+        await deleteEnvVar(envVar.key)
+      }
+
       setRevealed(null)
       onCleared(envVar.key)
       notify({ kind: 'success', title: copy.removedTitle, message: copy.removedMessage(envVar.key) })
@@ -92,6 +107,16 @@ function EnvVarField({ envVar, isSet, onSaved, onCleared }: EnvVarFieldProps) {
   }
 
   async function handleReveal() {
+    if (envVar.key === DEEPSEEN_API_KEY) {
+      notify({
+        kind: 'info',
+        title: copy.savedTitle,
+        message: 'DeepSeen 密钥保存在用户凭证数据库中，出于安全原因不支持明文查看。'
+      })
+
+      return
+    }
+
     if (revealed !== null) {
       setRevealed(null)
 
@@ -295,10 +320,29 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
 
     try {
       const next = await getToolsetConfig(toolset)
-      setCfg(next)
+
+      const hasDeepSeenKey = next.providers.some(provider =>
+        provider.env_vars.some(envVar => envVar.key === DEEPSEEN_API_KEY)
+      )
+
+      const deepseenStatus = hasDeepSeenKey ? await getDeepSeenKeyStatus() : null
+
+      const resolved = deepseenStatus
+        ? {
+            ...next,
+            providers: next.providers.map(provider => ({
+              ...provider,
+              env_vars: provider.env_vars.map(envVar =>
+                envVar.key === DEEPSEEN_API_KEY ? { ...envVar, is_set: deepseenStatus.configured } : envVar
+              )
+            }))
+          }
+        : next
+
+      setCfg(resolved)
       const seeded: Record<string, boolean> = {}
 
-      for (const provider of next.providers) {
+      for (const provider of resolved.providers) {
         for (const ev of provider.env_vars) {
           seeded[ev.key] = ev.is_set
         }
@@ -310,7 +354,7 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
     } finally {
       setLoading(false)
     }
-  }, [toolset])
+  }, [toolset, copy.failedLoad])
 
   useEffect(() => {
     void refresh()

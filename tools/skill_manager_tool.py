@@ -39,7 +39,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from hermes_constants import get_hermes_home, display_hermes_home
+from hermes_constants import get_hermes_home, display_hermes_home, get_skills_dir
 from typing import Dict, Any, List, Optional, Tuple
 
 from utils import atomic_replace, is_truthy_value
@@ -106,7 +106,7 @@ import yaml
 
 # All skills live in ~/.hermes/skills/ (single source of truth)
 HERMES_HOME = get_hermes_home()
-SKILLS_DIR = HERMES_HOME / "skills"
+SKILLS_DIR = get_skills_dir()
 
 MAX_NAME_LENGTH = 64
 MAX_DESCRIPTION_LENGTH = 1024
@@ -818,6 +818,192 @@ def _remove_file(name: str, file_path: str) -> Dict[str, Any]:
     }
 
 
+def _enterprise_sync_context() -> tuple[str, str]:
+    try:
+        from gateway.session_context import get_session_env
+
+        actor = (
+            get_session_env("HERMES_WEB_USER_ID", "")
+            or get_session_env("HERMES_SESSION_USER_ID", "")
+            or os.getenv("HERMES_WEB_USER_ID", "")
+        )
+        organization = (
+            get_session_env("HERMES_ENTERPRISE_ORGANIZATION_ID", "")
+            or os.getenv("HERMES_ENTERPRISE_ORGANIZATION_ID", "")
+        )
+    except Exception:
+        actor = os.getenv("HERMES_WEB_USER_ID", "")
+        organization = os.getenv("HERMES_ENTERPRISE_ORGANIZATION_ID", "")
+    return str(actor or "system"), str(organization or "default")
+
+
+def _skill_category_for_db(skill_dir: Path) -> str | None:
+    try:
+        rel = skill_dir.relative_to(SKILLS_DIR)
+        if len(rel.parts) > 2:
+            return rel.parts[0]
+        if len(rel.parts) == 2 and rel.parts[-1] == skill_dir.name:
+            return rel.parts[0]
+    except Exception:
+        pass
+    return None
+
+
+def _support_file_kind(path: Path) -> str:
+    top = path.parts[0] if path.parts else ""
+    return {
+        "references": "reference",
+        "templates": "template",
+        "scripts": "script",
+        "assets": "asset",
+    }.get(top, "reference")
+
+
+def _sync_skill_files_to_enterprise_db(conn: Any, service: Any, skill: dict[str, Any], skill_dir: Path, actor_user_id: str, organization_id: str) -> None:
+    version_id = skill.get("latest_version_id")
+    skill_id = skill.get("id")
+    if not version_id or not skill_id:
+        return
+    seen: list[str] = []
+    for subdir in sorted(ALLOWED_SUBDIRS):
+        root = skill_dir / subdir
+        if not root.is_dir():
+            continue
+        for item in sorted(root.rglob("*")):
+            if not item.is_file():
+                continue
+            rel = item.relative_to(skill_dir).as_posix()
+            seen.append(rel)
+            try:
+                content_text = item.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                content_text = None
+            service.upsert_file(
+                conn,
+                skill_id=skill_id,
+                version_id=version_id,
+                organization_id=organization_id,
+                actor_user_id=actor_user_id,
+                path=rel,
+                content_text=content_text,
+                object_url=None if content_text is not None else str(item),
+                mime_type=None,
+                file_kind=_support_file_kind(Path(rel)),
+            )
+    if seen:
+        placeholders = ",".join(["?"] * len(seen))
+        conn.execute(
+            f"""
+            DELETE FROM skill_files
+            WHERE organization_id = ? AND skill_id = ? AND skill_version_id = ?
+              AND path NOT IN ({placeholders})
+            """,
+            [organization_id, skill_id, version_id, *seen],
+        )
+    else:
+        conn.execute(
+            """
+            DELETE FROM skill_files
+            WHERE organization_id = ? AND skill_id = ? AND skill_version_id = ?
+            """,
+            (organization_id, skill_id, version_id),
+        )
+
+
+def _sync_skill_to_enterprise_db(name: str, *, action: str) -> Dict[str, Any]:
+    if action == "delete":
+        return _archive_skill_in_enterprise_db(name)
+    found = _find_skill(name)
+    if not found:
+        return {"synced": False, "reason": "local skill not found"}
+    skill_dir = found["path"]
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        return {"synced": False, "reason": "SKILL.md not found"}
+    content = skill_md.read_text(encoding="utf-8")
+    actor_user_id, organization_id = _enterprise_sync_context()
+    try:
+        from agent.skill_utils import parse_frontmatter
+        from hermes_cli.enterprise_skills.db import transaction
+        from hermes_cli.enterprise_skills.service import service
+
+        frontmatter, _body = parse_frontmatter(content)
+        display_name = str(frontmatter.get("name") or name)
+        description = str(frontmatter.get("description") or "")
+        category = str(frontmatter.get("category") or _skill_category_for_db(skill_dir) or "") or None
+        with transaction() as conn:
+            service.ensure_membership(conn, actor_user_id, "skill_admin", organization_id)
+            existing = service.get_skill_by_name(conn, name, organization_id)
+            if existing:
+                skill = service.update_draft(
+                    conn,
+                    skill_id=existing["id"],
+                    content_md=content,
+                    changelog=f"Mirrored local skill_manage {action}",
+                    actor_user_id=actor_user_id,
+                    organization_id=organization_id,
+                )
+            else:
+                skill = service.create_skill(
+                    conn,
+                    name=name,
+                    content_md=content,
+                    actor_user_id=actor_user_id,
+                    organization_id=organization_id,
+                    display_name=display_name,
+                    description=description,
+                    category=category,
+                    visibility=[{"scope_type": "user", "scope_id": actor_user_id, "access_level": "use"}],
+                )
+            try:
+                skill = service.submit_review(conn, skill["id"], actor_user_id, organization_id)
+                skill = service.approve_version(conn, skill["id"], actor_user_id, organization_id)
+                skill = service.publish_version(conn, skill["id"], actor_user_id, organization_id)
+                publish_error = None
+            except Exception as publish_exc:
+                publish_error = str(publish_exc)
+                logger.info(
+                    "Mirrored local skill '%s' to enterprise DB without publishing: %s",
+                    name,
+                    publish_error,
+                )
+                skill = service.get_skill_by_name(conn, name, organization_id) or skill
+            _sync_skill_files_to_enterprise_db(conn, service, skill, skill_dir, actor_user_id, organization_id)
+            sync_result = {
+                "synced": True,
+                "organization_id": organization_id,
+                "skill_id": skill.get("id"),
+                "version_id": skill.get("latest_version_id"),
+                "status": skill.get("status"),
+            }
+            if publish_error:
+                sync_result["published"] = False
+                sync_result["publish_error"] = publish_error
+            else:
+                sync_result["published"] = True
+            return sync_result
+    except Exception as exc:
+        logger.warning("Failed to mirror skill '%s' to enterprise DB: %s", name, exc, exc_info=True)
+        return {"synced": False, "error": str(exc)}
+
+
+def _archive_skill_in_enterprise_db(name: str) -> Dict[str, Any]:
+    actor_user_id, organization_id = _enterprise_sync_context()
+    try:
+        from hermes_cli.enterprise_skills.db import transaction
+        from hermes_cli.enterprise_skills.service import service
+
+        with transaction() as conn:
+            skill = service.get_skill_by_name(conn, name, organization_id)
+            if not skill:
+                return {"synced": True, "organization_id": organization_id, "archived": False, "reason": "not found"}
+            service.archive_skill(conn, skill["id"], actor_user_id, organization_id)
+            return {"synced": True, "organization_id": organization_id, "skill_id": skill["id"], "archived": True}
+    except Exception as exc:
+        logger.warning("Failed to archive skill '%s' in enterprise DB: %s", name, exc, exc_info=True)
+        return {"synced": False, "error": str(exc)}
+
+
 # =============================================================================
 # Main entry point
 # =============================================================================
@@ -962,6 +1148,8 @@ def skill_manage(
             clear_skills_system_prompt_cache(clear_snapshot=True)
         except Exception:
             pass
+        if action in {"create", "edit", "patch", "delete", "write_file", "remove_file"}:
+            result["enterprise_db_sync"] = _sync_skill_to_enterprise_db(name, action=action)
         # Curator telemetry: bump patch_count on edit/patch/write_file (the actions
         # that mutate an existing skill's guidance), drop the record on delete.
         # Only mark a skill as agent-created when the background self-improvement

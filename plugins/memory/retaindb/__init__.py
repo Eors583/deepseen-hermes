@@ -331,6 +331,15 @@ class _WriteQueue:
     """SQLite-backed async write queue. Survives crashes — pending rows replay on startup."""
 
     def __init__(self, client: _Client, db_path: Path):
+        try:
+            from hermes_cli import postgres_store
+
+            if postgres_store.postgres_enabled():
+                raise RuntimeError(
+                    "RetainDB SQLite write queue is disabled in PostgreSQL production mode."
+                )
+        except ImportError:
+            pass
         self._client = client
         self._db_path = db_path
         self._q: queue.Queue = queue.Queue()

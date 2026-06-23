@@ -1,9 +1,9 @@
 {
   "name": "hermes",
-  "productName": "Hermes",
+  "productName": "Herbound",
   "private": true,
   "version": "0.15.1",
-  "description": "Native desktop shell for Hermes Agent.",
+  "description": "Native desktop shell for Herbound Agent.",
   "author": "Nous Research",
   "type": "module",
   "main": "electron/main.cjs",
@@ -18,7 +18,7 @@
     "profile:main": "wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron --inspect=9229 .",
     "profile:main:cpu": "wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 NODE_OPTIONS=--cpu-prof HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .",
     "start": "npm run build && electron .",
-    "build": "node scripts/assert-root-install.cjs && node scripts/write-build-stamp.cjs && node scripts/stage-native-deps.cjs && tsc -b && vite build && node scripts/assert-dist-built.cjs",
+    "build": "node scripts/assert-root-install.cjs && node scripts/write-build-stamp.cjs && node scripts/write-production-connection.cjs && node scripts/stage-native-deps.cjs && tsc -b && vite build && node scripts/assert-dist-built.cjs",
     "builder": "cross-env NODE_OPTIONS=--max-old-space-size=16384 electron-builder",
     "pack": "npm run build && npm run builder -- --dir",
     "dist": "npm run build && npm run builder",
@@ -132,17 +132,17 @@
   "build": {
     "electronVersion": "40.9.3",
     "appId": "com.nousresearch.hermes",
-    "productName": "Hermes",
-    "executableName": "Hermes",
+    "productName": "Herbound",
+    "executableName": "Herbound",
     "protocols": [
       {
-        "name": "Hermes Protocol",
+        "name": "Herbound Protocol",
         "schemes": [
           "hermes"
         ]
       }
     ],
-    "artifactName": "Hermes-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Herbound-${version}-${os}-${arch}.${ext}",
     "icon": "assets/icon",
     "directories": {
       "output": "release"
@@ -161,6 +161,10 @@
       {
         "from": "build/install-stamp.json",
         "to": "install-stamp.json"
+      },
+      {
+        "from": "build/production-connection.json",
+        "to": "production-connection.json"
       },
       {
         "from": "build/native-deps",
@@ -183,11 +187,11 @@
       "entitlements": "electron/entitlements.mac.plist",
       "entitlementsInherit": "electron/entitlements.mac.inherit.plist",
       "extendInfo": {
-        "CFBundleDisplayName": "Hermes",
-        "CFBundleExecutable": "Hermes",
-        "CFBundleName": "Hermes",
-        "NSAudioCaptureUsageDescription": "Hermes uses audio capture for voice conversations.",
-        "NSMicrophoneUsageDescription": "Hermes uses the microphone for voice input and voice conversations."
+        "CFBundleDisplayName": "Herbound",
+        "CFBundleExecutable": "Herbound",
+        "CFBundleName": "Herbound",
+        "NSAudioCaptureUsageDescription": "Herbound uses audio capture for voice conversations.",
+        "NSMicrophoneUsageDescription": "Herbound uses the microphone for voice input and voice conversations."
       },
       "gatekeeperAssess": false,
       "hardenedRuntime": true,
@@ -197,7 +201,7 @@
       ]
     },
     "dmg": {
-      "title": "Install Hermes",
+      "title": "Install Herbound",
       "backgroundColor": "#f5f5f7",
       "iconSize": 96,
       "window": {
@@ -219,7 +223,7 @@
       ]
     },
     "win": {
-      "legalTrademarks": "Hermes",
+      "legalTrademarks": "Herbound",
       "target": [
         "nsis",
         "msi"
@@ -229,7 +233,7 @@
     "linux": {
       "category": "Development",
       "maintainer": "Nous Research <support@nousresearch.com>",
-      "synopsis": "Native desktop shell for Hermes Agent.",
+      "synopsis": "Native desktop shell for Herbound Agent.",
       "target": [
         "AppImage",
         "deb",
@@ -240,8 +244,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
-      "shortcutName": "Hermes",
-      "uninstallDisplayName": "Hermes",
+      "shortcutName": "Herbound",
+      "uninstallDisplayName": "Herbound",
       "warningsAsErrors": false
     }
   }

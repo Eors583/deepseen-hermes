@@ -1,0 +1,48 @@
+
+> hermes@0.15.1 dev
+> concurrently -k "npm:dev:renderer" "npm:dev:electron"
+
+[dev:electron] 
+[dev:electron] > hermes@0.15.1 dev:electron
+[dev:electron] > wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .
+[dev:electron] 
+[dev:renderer] 
+[dev:renderer] > hermes@0.15.1 dev:renderer
+[dev:renderer] > node scripts/assert-root-install.cjs && vite --host 127.0.0.1 --port 5174
+[dev:renderer] 
+[dev:renderer] 
+[dev:renderer]   VITE v8.0.10  ready in 8516 ms
+[dev:renderer] 
+[dev:renderer]   ➜  Local:   http://127.0.0.1:5174/
+[dev:electron] 
+[dev:electron] (electron) 'console-message' arguments are deprecated and will be removed. Please use Event<WebContentsConsoleMessageEventParams> object instead.
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 500: Internal Server Error
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2501:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 500: Internal Server Error
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2501:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 500: Internal Server Error
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2501:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 500: Internal Server Error
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2501:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 500: Internal Server Error
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2501:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: 500: Internal Server Error
+[dev:electron]     at IncomingMessage.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2501:20)
+[dev:electron]     at IncomingMessage.emit (node:events:520:35)
+[dev:electron]     at endReadableNT (node:internal/streams/readable:1729:12)
+[dev:electron]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)

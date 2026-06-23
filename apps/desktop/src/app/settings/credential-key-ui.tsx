@@ -8,35 +8,64 @@ import { cn } from '@/lib/utils'
 import type { EnvVarInfo } from '@/types/hermes'
 
 import { CONTROL_TEXT } from './constants'
-import { prettyName, withoutKey } from './helpers'
+import { withoutKey } from './helpers'
 import { ListRow } from './primitives'
 import type { EnvRowProps } from './types'
 
 export type KeyRowProps = Omit<EnvRowProps, 'info' | 'varKey'>
 
-/** Matches Advanced / config field controls (ListRow + Input). */
 export const CREDENTIAL_CONTROL_CLASS = cn('h-8', CONTROL_TEXT)
+
+const ENV_LABELS: Record<string, string> = {
+  TAVILY_API_KEY: 'Tavily 密钥',
+  TOOL_GATEWAY_DOMAIN: '工具网关域名',
+  TOOL_GATEWAY_SCHEME: '工具网关协议',
+  TOOL_GATEWAY_USER: '工具网关用户',
+  TOOL_GATEWAY_PASSWORD: '工具网关密码',
+  TOOL_GATEWAY_TOKEN: '工具网关令牌',
+  DEEPSEEN_API_KEY: 'DeepSeen 密钥',
+  DEEPSEEN_BASE_URL: 'DeepSeen 服务地址',
+  OPENAI_API_KEY: 'OpenAI 密钥',
+  OPENAI_BASE_URL: 'OpenAI 服务地址',
+  CUSTOM_API_KEY: '自定义模型密钥',
+  CUSTOM_BASE_URL: '自定义模型服务地址'
+}
+
+const ENV_DESCRIPTIONS: Record<string, string> = {
+  TOOL_GATEWAY_DOMAIN: '工具网关的域名后缀，用于自动推导各工具服务地址。',
+  TOOL_GATEWAY_SCHEME: '工具网关使用的访问协议，默认使用 https，本地调试时可填写 http。',
+  TOOL_GATEWAY_USER: '工具网关的登录用户名。',
+  TOOL_GATEWAY_PASSWORD: '工具网关的登录密码。',
+  TOOL_GATEWAY_TOKEN: '工具网关访问令牌。',
+  TAVILY_API_KEY: '用于网页搜索能力的 Tavily 密钥。',
+  DEEPSEEN_API_KEY: '用于调用 DeepSeen 工具的密钥。',
+  DEEPSEEN_BASE_URL: 'DeepSeen 工具接口地址。'
+}
+
+function fallbackEnvLabel(key: string): string {
+  return key
+    .replace(/(?:_API_KEY|_TOKEN|_KEY)$/i, '')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function displayEnvDescription(key: string, info: EnvVarInfo): string {
+  return ENV_DESCRIPTIONS[key] ?? info.description?.trim() ?? ''
+}
 
 export const isKeyVar = (key: string, info: EnvVarInfo) =>
   info.is_password || /(?:_API_KEY|_TOKEN|_KEY)$/.test(key)
 
-export const friendlyFieldLabel = (key: string, info: EnvVarInfo) =>
-  info.description?.trim() ||
-  key
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, c => c.toUpperCase())
+export const friendlyFieldLabel = (key: string, _info: EnvVarInfo) => ENV_LABELS[key] ?? fallbackEnvLabel(key)
 
 export const credentialPlaceholder = (key: string, info: EnvVarInfo, label: string): string =>
   isKeyVar(key, info)
     ? translateNow('settings.credentials.pasteLabelKey', label)
     : /URL$/i.test(key)
-      ? 'https://…'
+      ? 'https://'
       : translateNow('settings.credentials.optional')
 
-// A single credential field: a set key shows as a filled read-only input
-// (redacted value) that edits in place on click. Save appears once typed; a set
-// key also offers Remove, and Esc cancels without closing the overlay.
 export function KeyField({
   info,
   placeholder,
@@ -142,7 +171,6 @@ function CredentialDocsLink({ href }: { href: string }) {
   )
 }
 
-/** One credential row — collapsible; description and docs link expand on click. */
 export function CredentialKeyCard({
   expanded,
   info,
@@ -154,7 +182,7 @@ export function CredentialKeyCard({
   varKey
 }: CredentialKeyCardProps) {
   const docsUrl = info.url?.trim()
-  const description = info.description?.trim()
+  const description = displayEnvDescription(varKey, info)
   const expandable = Boolean(description || docsUrl)
 
   return (
@@ -230,7 +258,6 @@ export function CredentialKeyCard({
   )
 }
 
-/** Provider API key group — collapsible card; description, docs link, and advanced fields expand on click. */
 export function ProviderKeyRows({ expanded, group, onExpand, onToggle, rowProps }: ProviderKeyRowsProps) {
   const { t } = useI18n()
   const docsUrl = group.docsUrl?.trim()
@@ -309,9 +336,7 @@ export function ProviderKeyRows({ expanded, group, onExpand, onToggle, rowProps 
           )}
 
           {group.advanced.map(([key, info]) => {
-            const fieldLabel = isKeyVar(key, info)
-              ? prettyName(key.replace(/(?:_API_KEY|_TOKEN|_KEY)$/i, ''))
-              : friendlyFieldLabel(key, info)
+            const fieldLabel = friendlyFieldLabel(key, info)
 
             return (
               <ListRow
@@ -337,11 +362,7 @@ export function ProviderKeyRows({ expanded, group, onExpand, onToggle, rowProps 
 }
 
 export function credentialRowLabel(varKey: string, info: EnvVarInfo): string {
-  if (isKeyVar(varKey, info)) {
-    return prettyName(varKey.replace(/(?:_API_KEY|_TOKEN|_KEY)$/i, ''))
-  }
-
-  return prettyName(varKey)
+  return friendlyFieldLabel(varKey, info)
 }
 
 interface CredentialKeyCardProps {

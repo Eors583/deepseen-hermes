@@ -52,6 +52,7 @@ const SESSION_INLINE_LIMIT = 7
 /** Live `/` completions backed by the gateway's `complete.slash` RPC. */
 export function useSlashCompletions(options: {
   gateway: HermesGateway | null
+  sessionId?: string | null
   /** Desktop theme list — `/skin` is owned client-side, so its arg completions
    *  come from here, not the backend (whose skin list is CLI/TUI-only). */
   skinThemes?: DesktopThemeCommandOption[]
@@ -60,7 +61,7 @@ export function useSlashCompletions(options: {
   adapter: Unstable_TriggerAdapter
   loading: boolean
 } {
-  const { gateway, skinThemes, activeSkin } = options
+  const { gateway, sessionId, skinThemes, activeSkin } = options
   const enabled = Boolean(gateway)
 
   const fetcher = useCallback(
@@ -82,7 +83,7 @@ export function useSlashCompletions(options: {
           text: entry.text,
           display: entry.display,
           meta: entry.meta,
-          group: 'Themes'
+          group: '主题'
         }))
 
         return { items, query }
@@ -111,7 +112,7 @@ export function useSlashCompletions(options: {
           text: `/resume ${session.id}`,
           display: sessionTitle(session),
           meta: (session.preview ?? '').trim(),
-          group: 'Sessions'
+          group: '会话'
         }))
 
         // Trailing "more" affordance (Cursor-style): picking it opens the full
@@ -119,9 +120,9 @@ export function useSlashCompletions(options: {
         // submitting it (Enter) still opens the overlay if the action is skipped.
         items.push({
           text: '/resume',
-          display: 'Browse all sessions…',
+          display: '浏览全部会话…',
           meta: '',
-          group: 'Sessions',
+          group: '会话',
           action: 'session-picker'
         })
 
@@ -130,7 +131,9 @@ export function useSlashCompletions(options: {
 
       try {
         if (!query) {
-          const catalog = filterDesktopCommandsCatalog(await gateway.request<CommandsCatalogLike>('commands.catalog'))
+          const catalog = filterDesktopCommandsCatalog(
+            await gateway.request<CommandsCatalogLike>('commands.catalog', { session_id: sessionId || undefined })
+          )
 
           // Prefer the categorized layout so the popover renders section headers
           // (Session, Tools & Skills, ...). Fall back to the flat list when the
@@ -153,7 +156,7 @@ export function useSlashCompletions(options: {
 
         const result = await gateway.request<{ items?: CompletionEntry[]; replace_from?: number }>(
           'complete.slash',
-          { text }
+          { session_id: sessionId || undefined, text }
         )
 
         // Arg-completion items (replace_from > 1) carry just the arg stub —
@@ -179,7 +182,7 @@ export function useSlashCompletions(options: {
             ...item,
             // Arg suggestions (e.g. `/handoff <platform>`) live under one
             // header; otherwise split skills out from built-in commands.
-            group: isArgCompletion ? 'Options' : isDesktopSlashExtensionCommand(item.text) ? 'Skills' : 'Commands',
+            group: isArgCompletion ? '选项' : isDesktopSlashExtensionCommand(item.text) ? '技能' : '命令',
             // Arg items carry their own meta (the personality/toolset/platform
             // blurb). Only command rows get the registry description — looking
             // one up for `/personality none` would clobber it with the parent
@@ -189,7 +192,7 @@ export function useSlashCompletions(options: {
 
         // Keep each group contiguous so headers render once: Commands before
         // Skills (stable within a group, preserving backend relevance order).
-        const groupOrder = ['Commands', 'Skills', 'Options']
+        const groupOrder = ['命令', '技能', '选项']
 
         const items = isArgCompletion
           ? decorated
@@ -200,7 +203,7 @@ export function useSlashCompletions(options: {
         return { items: [], query }
       }
     },
-    [gateway, skinThemes, activeSkin]
+    [gateway, sessionId, skinThemes, activeSkin]
   )
 
   const toItem = useCallback((entry: CompletionEntry, index: number): Unstable_TriggerItem => {

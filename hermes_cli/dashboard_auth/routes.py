@@ -6,20 +6,18 @@ allowlists everything under ``/auth/*`` and ``/api/auth/providers``.
 
 The routes:
 
-  GET  /login              → server-rendered login page
-  GET  /auth/login?provider=N → 302 to IDP, sets PKCE cookie
-  GET  /auth/callback?code,state → completes login, sets session cookies
-  POST /auth/logout        → clears cookies, best-effort revoke
-  GET  /api/auth/providers → list registered providers (login bootstrap)
-  GET  /api/auth/me        → current Session as JSON (auth-required)
+  GET  /login              鈫?server-rendered login page
+  GET  /auth/login?provider=N 鈫?302 to IDP, sets PKCE cookie
+  GET  /auth/callback?code,state 鈫?completes login, sets session cookies
+  POST /auth/logout        鈫?clears cookies, best-effort revoke
+  GET  /api/auth/providers 鈫?list registered providers (login bootstrap)
+  GET  /api/auth/me        鈫?current Session as JSON (auth-required)
 """
 from __future__ import annotations
 
 import logging
-import threading
 import time
-from collections import defaultdict, deque
-from typing import Any, Deque, Dict, Tuple
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -32,7 +30,6 @@ from hermes_cli.dashboard_auth import (
 from hermes_cli.dashboard_auth.audit import AuditEvent, audit_log
 from hermes_cli.dashboard_auth.base import (
     InvalidCodeError,
-    InvalidCredentialsError,
     ProviderError,
 )
 from hermes_cli.dashboard_auth.cookies import (
@@ -61,22 +58,22 @@ def _redirect_uri(request: Request) -> str:
     Three resolution tiers:
 
       1. ``HERMES_DASHBOARD_PUBLIC_URL`` env var or
-         ``dashboard.public_url`` in config.yaml — when set, this is
+         ``dashboard.public_url`` in config.yaml 鈥?when set, this is
          the complete authority (scheme + host + optional path prefix)
          and we append ``/auth/callback`` verbatim. ``X-Forwarded-Prefix``
          is IGNORED on this code path because the operator has declared
-         the public URL — we no longer need to guess from proxy headers,
+         the public URL 鈥?we no longer need to guess from proxy headers,
          and stacking the prefix on top would double-prefix the common
          case where the prefix is already baked into ``public_url``.
          Relief valve for deploys behind reverse proxies whose forwarded
          headers aren't reliable.
 
-      2. ``X-Forwarded-Prefix: /hermes`` (Mission Control deploys) — we
+      2. ``X-Forwarded-Prefix: /hermes`` (Mission Control deploys) 鈥?we
          prepend the prefix to the path FastAPI's ``url_for`` produces
-         (it doesn't natively honour this header — it isn't part of the
+         (it doesn't natively honour this header 鈥?it isn't part of the
          Starlette/uvicorn proxy_headers set).
 
-      3. Bare ``request.url_for("auth_callback")`` — under uvicorn's
+      3. Bare ``request.url_for("auth_callback")`` 鈥?under uvicorn's
          ``proxy_headers=True`` this picks up the public https URL from
          ``X-Forwarded-Host`` plus ``X-Forwarded-Proto``. Fly.io's
          default path.
@@ -135,7 +132,7 @@ def _prefix(request: Request) -> str:
 async def login_page(request: Request) -> HTMLResponse:
     # Read the ``next=`` query the gate's ``_unauth_response`` set on
     # the redirect URL. Validate against the same same-origin rules the
-    # callback applies (defence in depth — the gate already filters,
+    # callback applies (defence in depth 鈥?the gate already filters,
     # but /login is reachable directly too).
     next_path = _validate_post_login_target(
         request.query_params.get("next", "")
@@ -165,9 +162,7 @@ async def api_auth_providers() -> Any:
             {
                 "name": p.name,
                 "display_name": p.display_name,
-                "supports_password": bool(
-                    getattr(p, "supports_password", False)
-                ),
+                "supports_password": False,
             }
             for p in providers
         ],
@@ -217,7 +212,7 @@ async def auth_login(request: Request, provider: str, next: str = ""):
         pkce = f"provider={provider};{pkce}" if pkce else f"provider={provider}"
     # Carry ``next=`` through the round trip in the PKCE cookie. Real
     # IDPs only echo back ``code`` + ``state`` on the callback URL, so
-    # query-string transport would lose the value — the cookie is the
+    # query-string transport would lose the value 鈥?the cookie is the
     # only server-controlled channel that survives. Validate before we
     # store it so an attacker who reaches /auth/login directly with
     # ``next=//evil.example`` can't poison the cookie.
@@ -252,7 +247,7 @@ async def auth_callback(
             detail="Missing PKCE state cookie",
         )
 
-    # Parse ``provider=...;state=...;verifier=...;next=...`` — the
+    # Parse ``provider=...;state=...;verifier=...;next=...`` 鈥?the
     # ``next`` segment is optional (only present when /auth/login was
     # given a next= query). All keys live in the same flat namespace;
     # ``next`` carries a URL-encoded path so it never contains ``;``.
@@ -339,7 +334,7 @@ async def auth_callback(
     expires_in = max(60, session.expires_at - int(time.time()))
     # Honour the ``next=`` value the gate's _unauth_response set in the
     # /login redirect URL and that /auth/login persisted into the PKCE
-    # cookie. We re-validate against the same-origin rules here — the
+    # cookie. We re-validate against the same-origin rules here 鈥?the
     # cookie is server-set so this is defence in depth, but a regression
     # that lets attacker-controlled bytes into the cookie would otherwise
     # produce an open redirect.
@@ -360,7 +355,7 @@ async def auth_callback(
 def _validate_post_login_target(raw: str) -> str:
     """Return ``raw`` if it's a safe same-origin path, else empty string.
 
-    The ``next`` query param survives a full OAuth round trip — the gate
+    The ``next`` query param survives a full OAuth round trip 鈥?the gate
     encodes it into the /login redirect, the login page emits it back into
     /auth/login, and the IDP preserves it across /authorize/callback. We
     have to re-validate here because the value came back in via the
@@ -383,7 +378,7 @@ def _validate_post_login_target(raw: str) -> str:
     # already filters these out before they reach the cookie, but a
     # malicious or stale ``next=`` value that re-enters via the
     # callback URL must not be honoured: a successful redirect to an
-    # API endpoint renders raw JSON in the browser address bar — never
+    # API endpoint renders raw JSON in the browser address bar 鈥?never
     # a useful post-login destination, and indistinguishable from an
     # attacker trying to weaponise the redirect.
     if decoded == "/api" or decoded.startswith("/api/"):
@@ -392,150 +387,8 @@ def _validate_post_login_target(raw: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Public: password (non-redirect) login
+# Public: logout
 # ---------------------------------------------------------------------------
-#
-# Brute-force throttle. The OAuth flow has no guessable secret on our side
-# (the IDP owns credentials), but ``/auth/password-login`` accepts a
-# password we verify locally, so it's a credential-stuffing target. A
-# simple in-process sliding-window limiter per client IP raises the cost
-# of online guessing without any external dependency. It is intentionally
-# best-effort: process-local (resets on restart), and behind a trusting
-# proxy the IP is the proxy's unless X-Forwarded-For is set — which is why
-# this is defence-in-depth on top of the provider's own constant-time
-# verify, not the only line of defence.
-
-_PW_RATE_MAX_ATTEMPTS = 10
-_PW_RATE_WINDOW_SEC = 60.0
-_pw_attempts: Dict[str, Deque[float]] = defaultdict(deque)
-_pw_attempts_lock = threading.Lock()
-
-
-def _password_rate_limited(ip: str) -> bool:
-    """True if ``ip`` has exceeded the password-login attempt budget.
-
-    Sliding window: prune attempts older than the window, then check the
-    count. Records the attempt timestamp when allowed. An empty IP (no
-    discernible client) shares a single bucket — fail-safe toward
-    throttling rather than letting unattributable traffic through
-    unmetered.
-    """
-    now = time.monotonic()
-    cutoff = now - _PW_RATE_WINDOW_SEC
-    key = ip or "_unknown_"
-    with _pw_attempts_lock:
-        bucket = _pw_attempts[key]
-        while bucket and bucket[0] < cutoff:
-            bucket.popleft()
-        if len(bucket) >= _PW_RATE_MAX_ATTEMPTS:
-            return True
-        bucket.append(now)
-        return False
-
-
-def _reset_password_rate_limit() -> None:
-    """Test-only: clear all rate-limit buckets."""
-    with _pw_attempts_lock:
-        _pw_attempts.clear()
-
-
-class _PasswordLoginBody(BaseModel):
-    provider: str
-    username: str
-    password: str
-    next: str = ""
-
-
-@router.post("/auth/password-login", name="auth_password_login")
-async def auth_password_login(request: Request, body: _PasswordLoginBody):
-    """Authenticate a username/password against a password provider.
-
-    Mirrors the cookie-minting tail of ``/auth/callback`` but skips the
-    PKCE/state/code machinery (those are OAuth-only). On success sets the
-    session cookies and returns JSON ``{"ok": true, "next": <path>}`` —
-    the credential form POSTs via fetch and navigates client-side, so a
-    302 (which fetch follows opaquely) is the wrong shape here.
-
-    Failure modes, all deliberately generic so the endpoint can't be used
-    as a username oracle or a provider-enumeration oracle:
-      * unknown provider / provider lacks password support → 404
-      * bad credentials → 401 ("Invalid credentials")
-      * backing store unreachable → 503
-      * too many attempts from this IP → 429
-    """
-    ip = _client_ip(request)
-    if _password_rate_limited(ip):
-        audit_log(
-            AuditEvent.LOGIN_FAILURE,
-            provider=body.provider,
-            reason="rate_limited",
-            ip=ip,
-        )
-        raise HTTPException(
-            status_code=429,
-            detail="Too many login attempts. Try again shortly.",
-        )
-
-    p = get_provider(body.provider)
-    if p is None or not getattr(p, "supports_password", False):
-        # Don't leak which providers exist or which support passwords —
-        # same 404 whether the provider is unknown or OAuth-only.
-        audit_log(
-            AuditEvent.LOGIN_FAILURE,
-            provider=body.provider,
-            reason="unknown_password_provider",
-            ip=ip,
-        )
-        raise HTTPException(status_code=404, detail="Unknown provider")
-
-    try:
-        session = p.complete_password_login(
-            username=body.username, password=body.password
-        )
-    except InvalidCredentialsError:
-        audit_log(
-            AuditEvent.LOGIN_FAILURE,
-            provider=body.provider,
-            reason="invalid_credentials",
-            ip=ip,
-        )
-        # Generic message — never distinguish unknown-user from wrong-password.
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    except NotImplementedError:
-        # supports_password was True but the method isn't actually
-        # implemented — a provider bug, not a client error.
-        raise HTTPException(status_code=500, detail="Provider misconfigured")
-    except ProviderError as e:
-        audit_log(
-            AuditEvent.LOGIN_FAILURE,
-            provider=body.provider,
-            reason="provider_unreachable",
-            ip=ip,
-        )
-        raise HTTPException(status_code=503, detail=f"Provider unreachable: {e}")
-
-    audit_log(
-        AuditEvent.LOGIN_SUCCESS,
-        provider=body.provider,
-        user_id=session.user_id,
-        email=session.email,
-        org_id=session.org_id,
-        ip=ip,
-    )
-
-    expires_in = max(60, session.expires_at - int(time.time()))
-    landing = _validate_post_login_target(body.next) or "/"
-    resp = JSONResponse({"ok": True, "next": landing})
-    set_session_cookies(
-        resp,
-        access_token=session.access_token,
-        refresh_token=session.refresh_token,
-        access_token_expires_in=expires_in,
-        use_https=detect_https(request),
-        prefix=_prefix(request),
-    )
-    return resp
-
 
 @router.post("/auth/logout", name="auth_logout")
 async def auth_logout(request: Request):
@@ -547,7 +400,7 @@ async def auth_logout(request: Request):
         for provider in list_providers():
             try:
                 provider.revoke_session(refresh_token=rt)
-            except Exception as e:  # noqa: BLE001 — best-effort
+            except Exception as e:  # noqa: BLE001 鈥?best-effort
                 _log.warning(
                     "dashboard-auth: revoke on %r failed: %s",
                     provider.name, e,

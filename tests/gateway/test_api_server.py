@@ -35,6 +35,9 @@ from gateway.platforms.api_server import (
     security_headers_middleware,
 )
 
+_PG_ENV_KEYS = ("HERMES_DATABASE_URL", "DATABASE_URL", "POSTGRES_URL", "POSTGRESQL_URL")
+_HAS_POSTGRES = any(os.environ.get(key) for key in _PG_ENV_KEYS)
+
 
 # ---------------------------------------------------------------------------
 # check_api_server_requirements
@@ -55,6 +58,7 @@ class TestCheckRequirements:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.skipif(not _HAS_POSTGRES, reason="ResponseStore uses PostgreSQL storage")
 class TestResponseStore:
     def test_put_and_get(self):
         store = ResponseStore(max_size=10)
@@ -129,7 +133,7 @@ class TestResponseStore:
         # resp_2 mapping should still be intact
         assert store.get_conversation("chat-b") == "resp_2"
 
-    @pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits are platform-specific")
+    @pytest.mark.skip(reason="ResponseStore no longer creates local SQLite files")
     def test_file_store_created_owner_only_under_permissive_umask(self, tmp_path):
         """response_store.db must be 0o600 on creation even under umask 022."""
         db_path = tmp_path / "response_store.db"
@@ -3185,6 +3189,7 @@ class TestConversationParameter:
                 assert adapter._response_store.get_conversation("ephemeral-chat") is None
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(not _HAS_POSTGRES, reason="ResponseStore uses PostgreSQL storage")
     async def test_conversation_reuse_after_eviction_no_404(self, adapter):
         """After eviction clears a conversation mapping, reusing that name starts fresh (no 404)."""
         adapter._response_store = ResponseStore(max_size=1)

@@ -66,7 +66,7 @@ describe('SkillsView toolset management', () => {
   it('renders a switch for each toolset and toggles it off', async () => {
     await renderSkills()
 
-    const sw = await screen.findByRole('switch', { name: 'Toggle Web Search toolset' })
+    const sw = await screen.findByRole('switch', { name: '切换 网页搜索 工具集' })
     expect(sw.getAttribute('aria-checked')).toBe('true')
 
     fireEvent.click(sw)
@@ -81,21 +81,21 @@ describe('SkillsView toolset management', () => {
 
     await renderSkills()
 
-    expect(await screen.findByText('Cron Jobs')).toBeTruthy()
+    expect(await screen.findByText('定时任务')).toBeTruthy()
     expect(screen.queryByText(/⏰/)).toBeNull()
   })
 
   it('keeps the configured pill alongside the switch', async () => {
     await renderSkills()
 
-    await screen.findByRole('switch', { name: 'Toggle Web Search toolset' })
-    expect(screen.getByText('Configured')).toBeTruthy()
+    await screen.findByRole('switch', { name: '切换 网页搜索 工具集' })
+    expect(screen.getByText('已配置')).toBeTruthy()
   })
 
   it('expands the provider config panel when the configured pill is clicked', async () => {
     await renderSkills()
 
-    const configureBtn = await screen.findByRole('button', { name: 'Configure Web Search' })
+    const configureBtn = await screen.findByRole('button', { name: '配置 网页搜索' })
     fireEvent.click(configureBtn)
 
     await waitFor(() => expect(getToolsetConfig).toHaveBeenCalledWith('web'))

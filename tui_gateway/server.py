@@ -21,7 +21,9 @@ from hermes_constants import (
     get_hermes_home,
     get_hermes_home_override,
     reset_hermes_home_override,
+    reset_runtime_skills_dir,
     set_hermes_home_override,
+    set_runtime_skills_dir,
 )
 from hermes_cli.env_loader import load_hermes_dotenv
 from utils import is_truthy_value
@@ -914,9 +916,15 @@ def _start_agent_build(sid: str, session: dict) -> None:
         worker = None
         notify_registered = False
         home_token = None
+        runtime_token = None
         profile_home = current.get("profile_home")
         try:
-            tokens = _set_session_context(key)
+            tokens = _set_session_context(
+                key,
+                enterprise_user_id=str(current.get("enterprise_user_id") or ""),
+                enterprise_organization_id=str(current.get("enterprise_organization_id") or ""),
+            )
+            runtime_token = set_runtime_skills_dir(current.get("runtime_skills_dir"))
             # Build against the session's profile (global-remote): bind its
             # HERMES_HOME so config/skills/model resolve to it, and hand the
             # agent that profile's db so turns persist to the right state.db.
@@ -983,6 +991,8 @@ def _start_agent_build(sid: str, session: dict) -> None:
             current["agent_error"] = str(e)
             _emit("error", sid, {"message": f"agent init failed: {e}"})
         finally:
+            if runtime_token is not None:
+                reset_runtime_skills_dir(runtime_token)
             if home_token is not None:
                 reset_hermes_home_override(home_token)
             # _attach_worker already closed the worker if this session was
@@ -1265,6 +1275,156 @@ def _load_cfg() -> dict:
     return {}
 
 
+_ENTERPRISE_PROPOSAL_INTENTS: tuple[str, ...] = (
+    "沉淀",
+    "保存为技能",
+    "保存成技能",
+    "转成技能",
+    "转为技能",
+    "企业技能",
+    "知识库",
+    "形成流程",
+    "形成sop",
+    "形成SOP",
+    "sop",
+    "SOP",
+    "playbook",
+    "runbook",
+)
+
+
+def _enterprise_auto_proposals_enabled() -> bool:
+    cfg = _load_cfg()
+    enterprise_cfg = cfg.get("enterprise_skills") if isinstance(cfg, dict) else None
+    if not isinstance(enterprise_cfg, dict):
+        return True
+    return is_truthy_value(enterprise_cfg.get("auto_proposals", True))
+
+
+def _enterprise_proposal_requested(text: str) -> bool:
+    body = (text or "").strip()
+    if not body:
+        return False
+    lower = body.lower()
+    return any(intent in body or intent.lower() in lower for intent in _ENTERPRISE_PROPOSAL_INTENTS)
+
+
+def _enterprise_reusable_trace(user_text: str, assistant_text: str) -> bool:
+    cfg = _load_cfg()
+    enterprise_cfg = cfg.get("enterprise_skills") if isinstance(cfg, dict) else {}
+    strategy = str((enterprise_cfg or {}).get("auto_proposal_strategy") or "suggestive").strip().lower()
+    if strategy in {"off", "intent_only"}:
+        return False
+    combined = f"{user_text}\n{assistant_text}"
+    if len(combined.strip()) < 260:
+        return False
+    workflow_markers = (
+        "步骤",
+        "流程",
+        "先",
+        "然后",
+        "最后",
+        "输入",
+        "输出",
+        "适用",
+        "注意事项",
+        "校验",
+        "复用",
+        "SOP",
+        "sop",
+        "checklist",
+        "workflow",
+    )
+    numbered_steps = sum(1 for line in assistant_text.splitlines() if line.strip().startswith(("1.", "2.", "3.", "4.", "-", "*")))
+    marker_hits = sum(1 for item in workflow_markers if item in combined)
+    return numbered_steps >= 3 or marker_hits >= 4
+
+
+def _enterprise_proposal_title(user_text: str) -> str:
+    first_line = next((line.strip() for line in user_text.splitlines() if line.strip()), "")
+    for prefix in ("请", "帮我", "把", "将"):
+        if first_line.startswith(prefix):
+            first_line = first_line[len(prefix):].strip()
+    title = first_line or "智能体沉淀技能提案"
+    return title[:48]
+
+
+def _enterprise_proposal_content(user_text: str, assistant_text: str) -> str:
+    prompt = (user_text or "").strip()
+    answer = (assistant_text or "").strip()
+    if len(prompt) > 1600:
+        prompt = f"{prompt[:1600].rstrip()}\n..."
+    if len(answer) > 5000:
+        answer = f"{answer[:5000].rstrip()}\n..."
+    return (
+        "# 智能体沉淀技能草稿\n\n"
+        "## 适用场景\n"
+        "根据当前对话沉淀，可由审核人员进一步整理为企业 Skill。\n\n"
+        "## 原始需求\n"
+        f"{prompt}\n\n"
+        "## 智能体输出\n"
+        f"{answer}\n\n"
+        "## 审核提示\n"
+        "请审核人员确认适用范围、工具权限、输出格式和安全边界后再发布。\n"
+    )
+
+
+def _maybe_create_enterprise_skill_proposal(session: dict, user_text: str, assistant_text: str) -> None:
+    if not _enterprise_auto_proposals_enabled():
+        return
+    explicit_request = _enterprise_proposal_requested(user_text)
+    if not explicit_request and not _enterprise_reusable_trace(user_text, assistant_text):
+        return
+    if not assistant_text.strip():
+        return
+    try:
+        from hermes_cli.enterprise_skills.db import transaction
+        from hermes_cli.enterprise_skills.governance import scan_skill_content
+        from hermes_cli.enterprise_skills.service import safe_skill_name_hint, service
+
+        title = _enterprise_proposal_title(user_text)
+        content_md = _enterprise_proposal_content(user_text, assistant_text)
+        findings = scan_skill_content(content_md)
+        high_risk = [item for item in findings if item.level == "high"]
+        if high_risk:
+            logger.info("Enterprise skill proposal skipped by governance scan: %s", high_risk[0].message)
+            return
+
+        source_session_id = str(session.get("session_key") or "")
+        actor_user_id = str(session.get("enterprise_user_id") or os.environ.get("HERMES_WEB_USER_ID") or "default")
+        organization_id = str(session.get("enterprise_organization_id") or os.environ.get("HERMES_ENTERPRISE_ORGANIZATION_ID") or "default")
+        with transaction() as conn:
+            existing = conn.execute(
+                """
+                SELECT id FROM skill_proposals
+                WHERE organization_id = ?
+                  AND source_session_id = ?
+                  AND title = ?
+                  AND status IN ('pending', 'approved')
+                LIMIT 1
+                """,
+                (organization_id, source_session_id, title),
+            ).fetchone()
+            if existing:
+                return
+            service.create_proposal(
+                conn,
+                title=title,
+                content_md=content_md,
+                proposed_by=actor_user_id,
+                organization_id=organization_id,
+                source_type="agent",
+                source_session_id=source_session_id,
+                description="由智能体对话自动沉淀，等待审核人员整理发布。",
+                suggested_name=safe_skill_name_hint(title),
+                suggested_category="agent-generated",
+                source_summary=(user_text[:500] if explicit_request else "系统根据稳定流程轨迹自动建议沉淀，等待人工审核。"),
+                suggested_scope={"scope_type": "organization", "scope_id": organization_id, "access_level": "use"},
+            )
+    except Exception as exc:
+        logger.warning("Enterprise skill auto proposal failed: %s", exc)
+
+
 def _save_cfg(cfg: dict):
     global _cfg_cache, _cfg_mtime, _cfg_path
     import yaml
@@ -1297,7 +1457,12 @@ def _cwd_for_session_key(session_key: str) -> str:
     return ""
 
 
-def _set_session_context(session_key: str, cwd: str | None = None) -> list:
+def _set_session_context(
+    session_key: str,
+    cwd: str | None = None,
+    enterprise_user_id: str | None = None,
+    enterprise_organization_id: str | None = None,
+) -> list:
     try:
         from gateway.session_context import set_session_vars
 
@@ -1306,7 +1471,12 @@ def _set_session_context(session_key: str, cwd: str | None = None) -> list:
         # know the parent workspace pass it explicitly so spawned agents inherit
         # it instead of falling back to the gateway launch dir.
         resolved = cwd if cwd is not None else _cwd_for_session_key(session_key)
-        return set_session_vars(session_key=session_key, cwd=resolved)
+        return set_session_vars(
+            session_key=session_key,
+            cwd=resolved,
+            enterprise_user_id=enterprise_user_id or "",
+            enterprise_organization_id=enterprise_organization_id or "",
+        )
     except Exception:
         return []
 
@@ -3050,7 +3220,11 @@ def _preview_restart_callbacks(parent: str, task_id: str) -> dict:
 
 
 def _reset_session_agent(sid: str, session: dict) -> dict:
-    tokens = _set_session_context(session["session_key"])
+    tokens = _set_session_context(
+        session["session_key"],
+        enterprise_user_id=str(session.get("enterprise_user_id") or ""),
+        enterprise_organization_id=str(session.get("enterprise_organization_id") or ""),
+    )
     try:
         new_agent = _make_agent(
             sid,
@@ -3637,6 +3811,34 @@ def _(rid, params: dict) -> dict:
     # and each turn re-bind HERMES_HOME. None/own profile → launch (unchanged).
     profile = (params.get("profile") or "").strip() or None
     profile_home = _profile_home(profile)
+    enterprise_runtime_skills_dir = None
+    try:
+        from hermes_cli.enterprise_skills.db import transaction
+        from hermes_cli.enterprise_skills.runtime_adapter import (
+            create_runtime_snapshot,
+        )
+
+        enterprise_user_id = str(
+            params.get("user_id")
+            or os.environ.get("HERMES_WEB_USER_ID")
+            or "default"
+        )
+        enterprise_organization_id = str(
+            params.get("organization_id")
+            or os.environ.get("HERMES_ENTERPRISE_ORGANIZATION_ID")
+            or "default"
+        )
+        with transaction() as conn:
+            snapshot = create_runtime_snapshot(
+                conn,
+                organization_id=enterprise_organization_id,
+                user_id=enterprise_user_id,
+                session_id=sid,
+                profile_id=profile,
+            )
+        enterprise_runtime_skills_dir = snapshot.get("runtime_skills_dir")
+    except Exception:
+        enterprise_runtime_skills_dir = None
 
     ready = threading.Event()
     now = time.time()
@@ -3658,6 +3860,7 @@ def _(rid, params: dict) -> dict:
                         "lazy": True,
                         "desktop_contract": DESKTOP_BACKEND_CONTRACT,
                         "profile_name": _current_profile_name(),
+                        "runtime_skills_dir": existing.get("runtime_skills_dir"),
                     },
                 },
             )
@@ -3677,6 +3880,8 @@ def _(rid, params: dict) -> dict:
             "created_at": now,
             "edit_snapshots": {},
             "explicit_cwd": explicit_cwd,
+            "enterprise_user_id": enterprise_user_id,
+            "enterprise_organization_id": enterprise_organization_id,
             "history": history,
             "history_lock": threading.Lock(),
             "history_version": 0,
@@ -3686,6 +3891,7 @@ def _(rid, params: dict) -> dict:
             "last_active": now,
             "pending_title": title or None,
             "profile_home": str(profile_home) if profile_home is not None else None,
+            "runtime_skills_dir": enterprise_runtime_skills_dir,
             "running": False,
             "session_key": key,
             "show_reasoning": _load_show_reasoning(),
@@ -3730,6 +3936,7 @@ def _(rid, params: dict) -> dict:
                 "lazy": True,
                 "desktop_contract": DESKTOP_BACKEND_CONTRACT,
                 "profile_name": _current_profile_name(),
+                "runtime_skills_dir": enterprise_runtime_skills_dir,
             },
         },
     )
@@ -5348,6 +5555,7 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
         approval_token = None
         session_tokens = []
         home_token = None  # per-turn HERMES_HOME override for a resumed remote profile
+        runtime_token = None
         goal_followup = None  # set by the post-turn goal hook below
         try:
             from tools.approval import (
@@ -5356,7 +5564,12 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
             )
 
             approval_token = set_current_session_key(session["session_key"])
-            session_tokens = _set_session_context(session["session_key"])
+            session_tokens = _set_session_context(
+                session["session_key"],
+                enterprise_user_id=str(session.get("enterprise_user_id") or ""),
+                enterprise_organization_id=str(session.get("enterprise_organization_id") or ""),
+            )
+            runtime_token = set_runtime_skills_dir(session.get("runtime_skills_dir"))
             _profile_home_str = session.get("profile_home")
             if _profile_home_str:
                 home_token = set_hermes_home_override(_profile_home_str)
@@ -5555,6 +5768,8 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
             with session["history_lock"]:
                 _clear_inflight_turn(session)
             _emit("message.complete", sid, payload)
+            if status == "complete" and isinstance(text, str) and isinstance(raw, str):
+                _maybe_create_enterprise_skill_proposal(session, text, raw)
 
             # ── /goal continuation (Ralph-style loop) ─────────────────
             # After every TUI turn, if a /goal is active, ask the judge
@@ -5690,6 +5905,8 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
                 pass
             if home_token is not None:
                 reset_hermes_home_override(home_token)
+            if runtime_token is not None:
+                reset_runtime_skills_dir(runtime_token)
             _clear_session_context(session_tokens)
             with session["history_lock"]:
                 session["running"] = False
@@ -6375,7 +6592,12 @@ def _(rid, params: dict) -> dict:
     task_id = f"bg_{uuid.uuid4().hex[:6]}"
 
     def run():
-        session_tokens = _set_session_context(task_id, cwd=_session_cwd(session))
+        session_tokens = _set_session_context(
+            task_id,
+            cwd=_session_cwd(session),
+            enterprise_user_id=str(session.get("enterprise_user_id") or ""),
+            enterprise_organization_id=str(session.get("enterprise_organization_id") or ""),
+        )
         try:
             from run_agent import AIAgent
 
@@ -6472,7 +6694,12 @@ def _(rid, params: dict) -> dict:
     def run():
         # Pin the validated preview cwd, else the parent workspace — never an
         # invalid client path, which would silently fall back to the launch dir.
-        session_tokens = _set_session_context(task_id, cwd=(preview_cwd or _session_cwd(session)))
+        session_tokens = _set_session_context(
+            task_id,
+            cwd=(preview_cwd or _session_cwd(session)),
+            enterprise_user_id=str(session.get("enterprise_user_id") or ""),
+            enterprise_organization_id=str(session.get("enterprise_organization_id") or ""),
+        )
         try:
             from run_agent import AIAgent
             from tools.terminal_tool import register_task_env_overrides
@@ -7436,6 +7663,17 @@ _PENDING_INPUT_COMMANDS: frozenset[str] = frozenset(
 _WORKER_BLOCKED_COMMANDS: frozenset[str] = frozenset({"snapshot", "snap"})
 
 
+@contextlib.contextmanager
+def _session_runtime_skills_scope(session_id: str | None):
+    session = _sessions.get(str(session_id or ""))
+    runtime_dir = session.get("runtime_skills_dir") if session else None
+    token = set_runtime_skills_dir(runtime_dir)
+    try:
+        yield
+    finally:
+        reset_runtime_skills_dir(token)
+
+
 @method("commands.catalog")
 def _(rid, params: dict) -> dict:
     """Registry-backed slash metadata for the TUI — categorized, no aliases."""
@@ -7509,9 +7747,16 @@ def _(rid, params: dict) -> dict:
         try:
             from agent.skill_commands import scan_skill_commands
 
-            for k, info in sorted(scan_skill_commands().items()):
+            bucket = "Skills"
+            if bucket not in cat_map:
+                cat_map[bucket] = []
+                cat_order.append(bucket)
+            with _session_runtime_skills_scope(params.get("session_id")):
+                skill_commands = scan_skill_commands()
+            for k, info in sorted(skill_commands.items()):
                 d = str(info.get("description", "Skill"))
                 all_pairs.append([k, d[:120] + ("…" if len(d) > 120 else "")])
+                cat_map[bucket].append([k, d[:120] + ("..." if len(d) > 120 else "")])
                 skill_count += 1
         except Exception as e:
             warning = f"skill discovery unavailable: {e}"
@@ -7665,7 +7910,8 @@ def _(rid, params: dict) -> dict:
             build_skill_invocation_message,
         )
 
-        cmds = scan_skill_commands()
+        with _session_runtime_skills_scope(params.get("session_id")):
+            cmds = scan_skill_commands()
         key = f"/{name}"
         if key in cmds:
             msg = build_skill_invocation_message(
@@ -8374,11 +8620,15 @@ def _(rid, params: dict) -> dict:
         from prompt_toolkit.document import Document
         from prompt_toolkit.formatted_text import to_plain_text
 
-        from agent.skill_commands import get_skill_commands
+        from agent.skill_commands import scan_skill_commands
         from agent.skill_bundles import get_skill_bundles
 
+        def _session_skill_commands():
+            with _session_runtime_skills_scope(params.get("session_id")):
+                return scan_skill_commands()
+
         completer = SlashCommandCompleter(
-            skill_commands_provider=lambda: get_skill_commands(),
+            skill_commands_provider=_session_skill_commands,
             skill_bundles_provider=lambda: get_skill_bundles(),
         )
         doc = Document(text, len(text))

@@ -3,8 +3,8 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const DEFAULT_TIMEOUT_MS = 3600000
-const VIDEO_TIMEOUT_MS = 3600000
+const DEFAULT_TIMEOUT_MS = 7200000
+const VIDEO_TIMEOUT_MS = 7200000
 const EMPTY_TEXT_VALUES = new Set([
   '无',
   '没有',
@@ -77,6 +77,32 @@ function optionalText(value) {
   if (typeof cleaned !== 'string') return cleaned
   if (cleaned.includes('不限') || cleaned.includes('无要求')) return undefined
   return cleaned
+}
+
+function looksLikeLocalPath(value) {
+  if (typeof value !== 'string') return false
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  return /^[A-Za-z]:[\\/]/.test(trimmed) ||
+    trimmed.startsWith('\\\\') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('./') ||
+    trimmed.startsWith('../')
+}
+
+function splitUrlsAndLocalPaths(values) {
+  const urls = []
+  const localPaths = []
+  for (const value of values || []) {
+    const cleaned = clean(value)
+    if (typeof cleaned !== 'string') continue
+    if (looksLikeLocalPath(cleaned)) {
+      localPaths.push(cleaned)
+    } else {
+      urls.push(cleaned)
+    }
+  }
+  return { urls, localPaths }
 }
 
 function normalizeSampleTier(value) {
@@ -732,16 +758,33 @@ async function main() {
   }
 
   if (action === 'video_recreation') {
-    const product = await uploadMany(client, args.product_local_paths || args.local_paths, 'product_image')
+    const productImageInput = splitUrlsAndLocalPaths(args.product_images)
+    const assetUrlInput = splitUrlsAndLocalPaths(args.asset_urls)
+    const localProductPaths = [
+      ...(args.product_local_paths || []),
+      ...(args.local_paths || []),
+      ...productImageInput.localPaths,
+      ...assetUrlInput.localPaths
+    ]
+    const product = await uploadMany(client, localProductPaths, 'product_image')
     let competitorVideoUrl = args.competitor_video_url
     let referenceUpload = null
+    if (looksLikeLocalPath(competitorVideoUrl)) {
+      if (args.reference_video_local_path) {
+        throw Object.assign(new Error('competitor_video_url must be a public URL. Put local reference videos in reference_video_local_path.'), {
+          code: 'local_path_in_url_field'
+        })
+      }
+      args.reference_video_local_path = competitorVideoUrl
+      competitorVideoUrl = undefined
+    }
     if (!competitorVideoUrl && args.reference_video_local_path) {
       referenceUpload = await client.files.upload(args.reference_video_local_path, 'reference_video')
       competitorVideoUrl = referenceUpload.url
     }
     const job = await client.video.recreations.create(clean({
       competitorVideoUrl,
-      productImages: [...(args.product_images || []), ...(args.asset_urls || []), ...product.urls],
+      productImages: [...productImageInput.urls, ...assetUrlInput.urls, ...product.urls],
       productFileIds: [...(args.product_file_ids || []), ...product.ids],
       model: args.model,
       groupCount: args.group_count,

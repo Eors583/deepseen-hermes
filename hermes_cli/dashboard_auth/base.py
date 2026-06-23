@@ -12,7 +12,7 @@ class Session:
 
     All fields are mandatory. Providers that don't have a concept of orgs
     should set ``org_id`` to an empty string. ``access_token`` and
-    ``refresh_token`` are opaque to Hermes — provider-specific.
+    ``refresh_token`` are opaque to Hermes 鈥?provider-specific.
     """
 
     user_id: str
@@ -31,9 +31,9 @@ class LoginStart:
 
     ``redirect_url`` is the URL the browser must navigate to (e.g. the
     Portal's ``/oauth/authorize``). ``cookie_payload`` is a dict of cookie
-    name → serialised value that the auth route will ``Set-Cookie`` on the
+    name 鈫?serialised value that the auth route will ``Set-Cookie`` on the
     response. Used for PKCE state, CSRF nonces, etc. Cookies set here MUST
-    be HttpOnly + Secure (when over HTTPS) + SameSite=Lax with a TTL ≤ 10
+    be HttpOnly + Secure (when over HTTPS) + SameSite=Lax with a TTL 鈮?10
     minutes (the login lifetime).
     """
 
@@ -58,17 +58,15 @@ class InvalidCodeError(Exception):
 class InvalidCredentialsError(Exception):
     """A username/password pair was rejected by a password provider.
 
-    Raised by :meth:`DashboardAuthProvider.complete_password_login`. The
-    ``/auth/password-login`` route translates this to HTTP 401 with a
-    deliberately generic detail (never distinguishing "unknown user" from
-    "wrong password") so the endpoint can't be used as a username oracle.
+    Deprecated compatibility exception for legacy password providers. Herbound
+    no longer exposes the ``/auth/password-login`` route.
     """
 
 
 class RefreshExpiredError(Exception):
     """The refresh token is dead.
 
-    Middleware clears cookies and forces re-login (302 → ``/login``).
+    Middleware clears cookies and forces re-login (302 鈫?``/login``).
     """
 
 
@@ -76,17 +74,17 @@ class DashboardAuthProvider(ABC):
     """Protocol every dashboard-auth provider plugin implements.
 
     Lifecycle:
-      1. ``start_login`` — user clicks "Log in with X" on the login page.
+      1. ``start_login`` 鈥?user clicks "Log in with X" on the login page.
          Provider returns a redirect URL and any PKCE/CSRF state to stash
          in short-lived cookies.
       2. Browser bounces through the OAuth IDP and lands at /auth/callback.
-      3. ``complete_login`` — exchange the code + verifier for a Session.
-      4. ``verify_session`` — called on every request to validate the
+      3. ``complete_login`` 鈥?exchange the code + verifier for a Session.
+      4. ``verify_session`` 鈥?called on every request to validate the
          access token in the cookie. Returns ``None`` if the token is
          expired or invalid (middleware then triggers refresh or logout).
-      5. ``refresh_session`` — called when the access token is near expiry.
+      5. ``refresh_session`` 鈥?called when the access token is near expiry.
          Returns a new Session with rotated tokens.
-      6. ``revoke_session`` — called on /auth/logout. Best-effort.
+      6. ``revoke_session`` 鈥?called on /auth/logout. Best-effort.
 
     Failure semantics:
       * ``start_login`` may raise ``ProviderError`` if the IDP is
@@ -95,8 +93,8 @@ class DashboardAuthProvider(ABC):
         ``ProviderError`` if the IDP is unreachable.
       * ``verify_session`` returns ``None`` on expiry / unknown token;
         raises ``ProviderError`` if the IDP is unreachable. Middleware
-        treats expiry and unreachable differently (expiry → refresh;
-        unreachable → 503).
+        treats expiry and unreachable differently (expiry 鈫?refresh;
+        unreachable 鈫?503).
       * ``refresh_session`` raises ``RefreshExpiredError`` when the
         refresh token is also invalid; middleware then forces re-login.
         Raises ``ProviderError`` on network failure.
@@ -105,30 +103,18 @@ class DashboardAuthProvider(ABC):
     Subclasses MUST set ``name`` (lowercase identifier, stable forever)
     and ``display_name`` (user-facing label on the login page).
 
-    Password (non-redirect) providers:
-      A provider that authenticates with a username + password instead of
-      an OAuth redirect sets ``supports_password = True`` and implements
-      ``complete_password_login``. The login page then renders a
-      credential form (POSTing to ``/auth/password-login``) instead of a
-      "Log in with X" redirect button. Everything downstream of login —
-      ``verify_session`` / ``refresh_session`` / ``revoke_session``, the
-      session cookies, the WS-ticket mint — is identical to the OAuth
-      path, because a password session is just a :class:`Session` with
-      provider-minted opaque tokens. The OAuth methods (``start_login`` /
-      ``complete_login``) remain abstract; a pure-password provider that
-      will never be reached via the redirect flow may implement them as
-      stubs that raise ``NotImplementedError``.
+    Legacy password-provider compatibility:
+      ``supports_password`` and ``complete_password_login`` remain on the
+      protocol so older plugins can import, but Herbound no longer renders a
+      password-provider form or dispatches legacy password login. Product login
+      goes through the FastAPI/JWT ``/api/auth/login`` endpoint.
     """
 
     name: str = ""
     display_name: str = ""
 
-    # When True, this provider authenticates via username + password
-    # (``complete_password_login``) rather than (or in addition to) the
-    # OAuth redirect flow. The login page renders a credential form for
-    # such providers; the ``/auth/password-login`` route dispatches to
-    # ``complete_password_login``. OAuth-only providers leave this False
-    # and are completely unaffected.
+    # Deprecated compatibility flag. The dashboard no longer renders provider
+    # password forms; /api/auth/login is the supported product login path.
     supports_password: bool = False
 
     @abstractmethod
@@ -158,11 +144,8 @@ class DashboardAuthProvider(ABC):
     ) -> "Session":
         """Verify a username/password pair and mint a :class:`Session`.
 
-        Only called when ``supports_password`` is True (the
-        ``/auth/password-login`` route guards on the flag). The default
-        raises ``NotImplementedError`` so an OAuth-only provider that
-        forgets to set the flag fails loudly rather than silently
-        accepting credentials.
+        Deprecated compatibility hook. Herbound no longer calls this from an
+        HTTP route; product login is handled by the FastAPI/JWT auth module.
 
         The returned ``Session`` carries provider-minted opaque
         ``access_token`` / ``refresh_token`` exactly like the OAuth path,
@@ -170,11 +153,11 @@ class DashboardAuthProvider(ABC):
         ws-tickets, logout) is identical.
 
         Failure semantics:
-          * ``InvalidCredentialsError`` — username/password rejected. The
+          * ``InvalidCredentialsError`` 鈥?username/password rejected. The
             route surfaces a generic 401 (no user-vs-password
             distinction). Implementations SHOULD spend constant time on
             unknown users (dummy hash verify) to avoid a timing oracle.
-          * ``ProviderError`` — the backing credential store is
+          * ``ProviderError`` 鈥?the backing credential store is
             unreachable (LDAP/DB down); the route surfaces 503.
         """
         raise NotImplementedError(

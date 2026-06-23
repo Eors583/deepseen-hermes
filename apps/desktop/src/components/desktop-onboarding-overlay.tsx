@@ -91,7 +91,7 @@ const API_KEY_OPTIONS: ApiKeyOption[] = [
   },
   {
     id: 'local',
-    name: 'Local / custom endpoint',
+    name: '本地或自定义接口',
     envKey: 'OPENAI_BASE_URL',
     docsUrl: 'https://github.com/NousResearch/hermes-agent#bring-your-own-endpoint',
     placeholder: 'http://127.0.0.1:8000/v1'

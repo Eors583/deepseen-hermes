@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { deleteEnvVar, getEnvVars, revealEnvVar, setEnvVar } from '@/hermes'
+import { deleteDeepSeenApiKey, deleteEnvVar, getDeepSeenKeyStatus, getEnvVars, revealEnvVar, setDeepSeenApiKey, setEnvVar } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { type IconComponent } from '@/lib/icons'
 import { notify, notifyError } from '@/store/notifications'
@@ -9,6 +9,29 @@ import type { EnvVarInfo } from '@/types/hermes'
 import { asText, includesQuery, redactedValue, withoutKey } from './helpers'
 import { Pill } from './primitives'
 import type { EnvRowProps } from './types'
+
+const DEEPSEEN_API_KEY = 'DEEPSEEN_API_KEY'
+
+function applyDeepSeenStatus(vars: Record<string, EnvVarInfo>, status: Awaited<ReturnType<typeof getDeepSeenKeyStatus>>) {
+  const current = vars[DEEPSEEN_API_KEY]
+
+  if (!current) {
+    return vars
+  }
+
+  return {
+    ...vars,
+    [DEEPSEEN_API_KEY]: {
+      ...current,
+      category: 'provider',
+      description: '用于调用 DeepSeen 跨境工具的用户密钥，会保存到用户凭证数据库，不写入环境变量。',
+      is_password: true,
+      is_set: status.configured,
+      redacted_value: status.configured ? status.redacted_value || '••••••••' : null,
+      url: current.url || 'https://deepseen.ai/'
+    }
+  }
+}
 
 // Shared filter used by every credential surface (Providers + Keys pages):
 // category gate first, then a free-text match across key name + description.
@@ -65,7 +88,8 @@ export function useEnvCredentials(): UseEnvCredentials {
 
     void (async () => {
       try {
-        const next = await getEnvVars()
+        const [envVars, deepseenStatus] = await Promise.all([getEnvVars(), getDeepSeenKeyStatus()])
+        const next = applyDeepSeenStatus(envVars, deepseenStatus)
 
         if (!cancelled) {
           setVars(next)
@@ -76,7 +100,7 @@ export function useEnvCredentials(): UseEnvCredentials {
     })()
 
     return () => void (cancelled = true)
-  }, [])
+  }, [t.settings.keys.failedLoad])
 
   function patchVar(key: string, patch: Partial<Pick<EnvVarInfo, 'is_set' | 'redacted_value'>>) {
     setVars(c => (c ? { ...c, [key]: { ...c[key], ...patch } } : c))
@@ -97,8 +121,14 @@ export function useEnvCredentials(): UseEnvCredentials {
     setSaving(key)
 
     try {
-      await setEnvVar(key, value)
-      patchVar(key, { is_set: true, redacted_value: redactedValue(value) })
+      if (key === DEEPSEEN_API_KEY) {
+        const status = await setDeepSeenApiKey(value)
+        patchVar(key, { is_set: status.configured, redacted_value: status.redacted_value || redactedValue(value) })
+      } else {
+        await setEnvVar(key, value)
+        patchVar(key, { is_set: true, redacted_value: redactedValue(value) })
+      }
+
       clearLocalState(key)
       notify({ kind: 'success', title: toolsets.savedTitle, message: toolsets.savedMessage(key) })
     } catch (err) {
@@ -121,8 +151,14 @@ export function useEnvCredentials(): UseEnvCredentials {
     setSaving(key)
 
     try {
-      await setEnvVar(key, trimmed)
-      patchVar(key, { is_set: true, redacted_value: redactedValue(trimmed) })
+      if (key === DEEPSEEN_API_KEY) {
+        const status = await setDeepSeenApiKey(trimmed)
+        patchVar(key, { is_set: status.configured, redacted_value: status.redacted_value || redactedValue(trimmed) })
+      } else {
+        await setEnvVar(key, trimmed)
+        patchVar(key, { is_set: true, redacted_value: redactedValue(trimmed) })
+      }
+
       clearLocalState(key)
       notify({ kind: 'success', message: toolsets.savedMessage(key), title: toolsets.savedTitle })
 
@@ -144,7 +180,12 @@ export function useEnvCredentials(): UseEnvCredentials {
     setSaving(key)
 
     try {
-      await deleteEnvVar(key)
+      if (key === DEEPSEEN_API_KEY) {
+        await deleteDeepSeenApiKey()
+      } else {
+        await deleteEnvVar(key)
+      }
+
       patchVar(key, { is_set: false, redacted_value: null })
       clearLocalState(key)
       notify({ kind: 'success', title: toolsets.removedTitle, message: toolsets.removedMessage(key) })

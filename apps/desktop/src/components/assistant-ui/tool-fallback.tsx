@@ -365,7 +365,7 @@ function ToolEntry({ part }: ToolEntryProps) {
                 {view.detailLabel && <p className={TOOL_SECTION_LABEL_CLASS}>{view.detailLabel}</p>}
                 {view.stdout && (
                   <div className="space-y-0.5">
-                    {view.stderr && <p className={TOOL_SECTION_LABEL_CLASS}>stdout</p>}
+                    {view.stderr && <p className={TOOL_SECTION_LABEL_CLASS}>标准输出</p>}
                     <pre className={cn(TOOL_SECTION_PRE_CLASS, 'whitespace-pre-wrap wrap-anywhere')}>
                       {view.rendersAnsi ? <AnsiText text={view.stdout} /> : view.stdout}
                     </pre>
@@ -373,7 +373,7 @@ function ToolEntry({ part }: ToolEntryProps) {
                 )}
                 {view.stderr && (
                   <div className={cn('space-y-0.5', view.stdout && 'mt-1.5')}>
-                    <p className={TOOL_SECTION_LABEL_CLASS}>stderr</p>
+                    <p className={TOOL_SECTION_LABEL_CLASS}>标准错误</p>
                     <pre
                       className={cn(
                         TOOL_SECTION_PRE_CLASS,

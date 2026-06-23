@@ -41,6 +41,7 @@ test('connectionScopeKey trims to a name or null for the global scope', () => {
 
 test('normAuthMode coerces to token unless explicitly oauth', () => {
   assert.equal(normAuthMode('oauth'), 'oauth')
+  assert.equal(normAuthMode('jwt'), 'jwt')
   assert.equal(normAuthMode('token'), 'token')
   assert.equal(normAuthMode(undefined), 'token')
   assert.equal(normAuthMode('weird'), 'token')
@@ -162,11 +163,13 @@ test('authModeFromStatus returns token when auth_required is false/missing', () 
 // --- resolveAuthMode ---
 
 test('resolveAuthMode: explicit input wins over existing', () => {
+  assert.equal(resolveAuthMode('jwt', 'token'), 'jwt')
   assert.equal(resolveAuthMode('oauth', 'token'), 'oauth')
   assert.equal(resolveAuthMode('token', 'oauth'), 'token')
 })
 
 test('resolveAuthMode: falls back to existing when input absent', () => {
+  assert.equal(resolveAuthMode(undefined, 'jwt'), 'jwt')
   assert.equal(resolveAuthMode(undefined, 'oauth'), 'oauth')
   assert.equal(resolveAuthMode(undefined, 'token'), 'token')
   assert.equal(resolveAuthMode('', 'oauth'), 'oauth')

@@ -240,6 +240,54 @@ if (INSTALL_STAMP) {
 // HERMES_DESKTOP_USER_DATA_DIR (used by test:desktop:fresh) puts the sandbox
 // HERMES_HOME beneath the throwaway userData dir so a fresh-install run never
 // touches the user's real ~/.hermes / %LOCALAPPDATA%\hermes.
+// Build-time production backend default. Written by
+// apps/desktop/scripts/write-production-connection.cjs and bundled into
+// packaged apps as resources/production-connection.json. It is only a default:
+// a user-saved connection.json still wins.
+const PRODUCTION_CONNECTION_SCHEMA_VERSION = 1
+function loadProductionConnectionConfig() {
+  const candidates = [
+    process.resourcesPath ? path.join(process.resourcesPath, 'production-connection.json') : null,
+    path.join(APP_ROOT, 'build', 'production-connection.json')
+  ].filter(Boolean)
+
+  for (const p of candidates) {
+    try {
+      const raw = fs.readFileSync(p, 'utf8')
+      const parsed = JSON.parse(raw)
+      if (!parsed || typeof parsed !== 'object' || parsed.enabled === false) {
+        continue
+      }
+      if (parsed.schemaVersion !== PRODUCTION_CONNECTION_SCHEMA_VERSION) {
+        console.warn(
+          `[hermes] production-connection.json schemaVersion ${parsed.schemaVersion} != expected ${PRODUCTION_CONNECTION_SCHEMA_VERSION}; ignoring`
+        )
+        continue
+      }
+      const remote = parsed.remote && typeof parsed.remote === 'object' ? parsed.remote : parsed
+      const url = normalizeRemoteBaseUrl(remote.url)
+      const authMode = normAuthMode(remote.authMode || 'jwt')
+      return Object.freeze({
+        mode: 'remote',
+        remote: { url, authMode, token: remote.token },
+        profiles: {},
+        sourcePath: p
+      })
+    } catch {
+      // Missing, disabled, or malformed production defaults should not break a
+      // dev checkout. Try the next candidate, then fall back to local.
+    }
+  }
+
+  return null
+}
+const PRODUCTION_CONNECTION_CONFIG = loadProductionConnectionConfig()
+if (PRODUCTION_CONNECTION_CONFIG) {
+  console.log(
+    `[hermes] production desktop backend default: ${PRODUCTION_CONNECTION_CONFIG.remote.url} (${PRODUCTION_CONNECTION_CONFIG.remote.authMode})`
+  )
+}
+
 function resolveHermesHome() {
   if (process.env.HERMES_HOME) return path.resolve(process.env.HERMES_HOME)
   if (USER_DATA_OVERRIDE) return path.join(path.resolve(USER_DATA_OVERRIDE), 'hermes-home')
@@ -2471,6 +2519,12 @@ function fetchJson(url, token, options = {}) {
     const parsed = new URL(url)
     const client = parsed.protocol === 'https:' ? https : http
     const timeoutMs = resolveTimeoutMs(options.timeoutMs, DEFAULT_FETCH_TIMEOUT_MS)
+    const authToken = typeof options.authToken === 'string' ? options.authToken.trim() : ''
+    const authHeaders = authToken
+      ? { Authorization: `Bearer ${authToken}` }
+      : token
+        ? { 'X-Hermes-Session-Token': token }
+        : {}
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       reject(new Error(`Unsupported Hermes backend URL protocol: ${parsed.protocol}`))
@@ -2483,7 +2537,7 @@ function fetchJson(url, token, options = {}) {
         method: options.method || 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'X-Hermes-Session-Token': token,
+          ...authHeaders,
           ...(body ? { 'Content-Length': String(body.length) } : {})
         }
       },
@@ -3851,13 +3905,33 @@ async function mintGatewayWsTicket(baseUrl) {
   return ticket
 }
 
+async function mintGatewayWsTicketWithAuthToken(baseUrl, authToken) {
+  const token = typeof authToken === 'string' ? authToken.trim() : ''
+  if (!token) {
+    const err = new Error('Herbound login token is required before opening the gateway WebSocket.')
+    err.needsLogin = true
+    throw err
+  }
+  const body = await fetchJson(`${baseUrl}/api/auth/ws-ticket`, null, {
+    method: 'POST',
+    body: { token },
+    authToken: token,
+    timeoutMs: 8_000
+  })
+  const ticket = body?.ticket
+  if (!ticket || typeof ticket !== 'string') {
+    throw new Error('Gateway did not return a WS ticket.')
+  }
+  return ticket
+}
+
 // Build a fresh WS URL for the *current* connection. Critical for reconnects:
 // OAuth WS tickets are single-use with a ~30s TTL, so the ticket baked into
 // the cached connection's wsUrl is stale on the second connect. The renderer
 // calls this immediately before every gateway.connect() so each WS upgrade
 // carries a freshly-minted ticket. For local/token connections this just
 // reuses the static token (no minting needed).
-async function freshGatewayWsUrl(profile) {
+async function freshGatewayWsUrl(profile, authToken) {
   // Mint for the requested profile's backend, NOT always the primary. The
   // renderer re-mints right before every gateway.connect(); when swapping to a
   // pooled profile we must return THAT backend's ws URL, otherwise the connect
@@ -3867,6 +3941,10 @@ async function freshGatewayWsUrl(profile) {
   const connection = await ensureBackend(profile)
   if (connection.authMode === 'oauth') {
     const ticket = await mintGatewayWsTicket(connection.baseUrl)
+    return buildGatewayWsUrlWithTicket(connection.baseUrl, ticket)
+  }
+  if (connection.authMode === 'jwt') {
+    const ticket = await mintGatewayWsTicketWithAuthToken(connection.baseUrl, authToken)
     return buildGatewayWsUrlWithTicket(connection.baseUrl, ticket)
   }
   // Local/token: the cached wsUrl already carries the (long-lived) token.
@@ -3946,7 +4024,13 @@ function readDesktopConnectionConfig() {
     return connectionConfigCache
   }
 
-  let config = { mode: 'local', remote: {}, profiles: {} }
+  let config = PRODUCTION_CONNECTION_CONFIG
+    ? {
+        mode: 'remote',
+        remote: { ...PRODUCTION_CONNECTION_CONFIG.remote },
+        profiles: {}
+      }
+    : { mode: 'local', remote: {}, profiles: {} }
 
   try {
     const raw = fs.readFileSync(DESKTOP_CONNECTION_CONFIG_PATH, 'utf8')
@@ -3954,10 +4038,10 @@ function readDesktopConnectionConfig() {
 
     if (parsed && typeof parsed === 'object') {
       const remote = parsed.remote && typeof parsed.remote === 'object' ? parsed.remote : {}
-      // authMode lives on the remote sub-object: 'oauth' (cookie + ws-ticket)
-      // or 'token' (legacy static session token). Default to 'token' for
-      // backward compatibility with configs written before OAuth support.
-      remote.authMode = remote.authMode === 'oauth' ? 'oauth' : 'token'
+      // authMode lives on the remote sub-object: 'jwt' (Herbound/FastAPI
+      // login), 'oauth' (cookie + ws-ticket), or 'token' (legacy static
+      // session token). Default to 'token' for old user-saved configs.
+      remote.authMode = normAuthMode(remote.authMode)
       config = {
         mode: parsed.mode === 'remote' ? 'remote' : 'local',
         remote,
@@ -4028,7 +4112,7 @@ async function sanitizeDesktopConnectionConfig(config = readDesktopConnectionCon
   const envOverride = key ? false : Boolean(process.env.HERMES_DESKTOP_REMOTE_URL)
 
   const remoteToken = decryptDesktopSecret(block.token)
-  const authMode = normAuthMode(block.authMode)
+  const authMode = envOverride ? normAuthMode(process.env.HERMES_DESKTOP_REMOTE_AUTH_MODE || 'token') : normAuthMode(block.authMode)
   const remoteUrl = envOverride ? String(process.env.HERMES_DESKTOP_REMOTE_URL || '') : String(block.url || '')
   const mode = envOverride || (key ? scoped?.mode : config.mode) === 'remote' ? 'remote' : 'local'
 
@@ -4064,7 +4148,7 @@ async function sanitizeDesktopConnectionConfig(config = readDesktopConnectionCon
 // authenticate via the login-window session cookie (verified at connect time in
 // resolveRemoteBackend), so only token-auth remotes require a saved token.
 function buildRemoteBlock(remoteUrl, authMode, token) {
-  if (authMode !== 'oauth' && !decryptDesktopSecret(token)) {
+  if (authMode === 'token' && !decryptDesktopSecret(token)) {
     throw new Error('Remote gateway session token is required.')
   }
   return { url: normalizeRemoteBaseUrl(remoteUrl), authMode, token }
@@ -4115,6 +4199,17 @@ function coerceDesktopConnectionConfig(input = {}, existing = readDesktopConnect
 // for diagnostics ('profile' | 'env' | 'settings').
 async function buildRemoteConnection(rawUrl, authMode, token, source) {
   const baseUrl = normalizeRemoteBaseUrl(rawUrl)
+
+  if (authMode === 'jwt') {
+    return {
+      baseUrl,
+      mode: 'remote',
+      source,
+      authMode: 'jwt',
+      token: null,
+      wsUrl: ''
+    }
+  }
 
   if (authMode === 'oauth') {
     // OAuth gateway: auth comes from the session cookies in the OAuth
@@ -4189,21 +4284,23 @@ async function resolveRemoteBackend(profile) {
   //    reaches its intended backend.
   const override = profileRemoteOverride(config, profile)
   if (override) {
-    const token = override.authMode === 'oauth' ? null : decryptDesktopSecret(override.token)
+    const token = override.authMode === 'oauth' || override.authMode === 'jwt' ? null : decryptDesktopSecret(override.token)
     return buildRemoteConnection(override.url, override.authMode, token, 'profile')
   }
 
-  // 2. Env override (global, token-auth only).
+  // 2. Env override (global). Defaults to the legacy static-token mode, but
+  // production wrappers can set HERMES_DESKTOP_REMOTE_AUTH_MODE=jwt.
   const rawEnvUrl = process.env.HERMES_DESKTOP_REMOTE_URL
   const rawEnvToken = process.env.HERMES_DESKTOP_REMOTE_TOKEN
+  const rawEnvAuthMode = normAuthMode(process.env.HERMES_DESKTOP_REMOTE_AUTH_MODE || 'token')
   if (rawEnvUrl) {
-    if (!rawEnvToken) {
+    if (rawEnvAuthMode === 'token' && !rawEnvToken) {
       throw new Error(
         'HERMES_DESKTOP_REMOTE_URL is set but HERMES_DESKTOP_REMOTE_TOKEN is not. ' +
           'Both must be provided to connect to a remote Hermes backend.'
       )
     }
-    return buildRemoteConnection(rawEnvUrl, 'token', rawEnvToken, 'env')
+    return buildRemoteConnection(rawEnvUrl, rawEnvAuthMode, rawEnvToken, 'env')
   }
 
   // 3. Global remote.
@@ -4211,7 +4308,7 @@ async function resolveRemoteBackend(profile) {
     return null
   }
   const authMode = normAuthMode(config.remote?.authMode)
-  const token = authMode === 'oauth' ? null : decryptDesktopSecret(config.remote?.token)
+  const token = authMode === 'oauth' || authMode === 'jwt' ? null : decryptDesktopSecret(config.remote?.token)
   return buildRemoteConnection(config.remote?.url, authMode, token, 'settings')
 }
 
@@ -4344,6 +4441,14 @@ async function testDesktopConnectionConfig(input = {}) {
     authMode = normAuthMode(remote.authMode)
   }
   const status = await fetchJson(`${baseUrl}/api/status`, token, { timeoutMs: 8_000 })
+
+  if (authMode === 'jwt') {
+    return {
+      ok: true,
+      baseUrl,
+      version: status?.version || null
+    }
+  }
 
   // The HTTP status check above proves the backend is reachable, but the chat
   // surface only works once the renderer's live WebSocket to ``/api/ws``
@@ -5151,7 +5256,7 @@ ipcMain.handle('hermes:backend:touch', async (_event, profile) => {
   touchPoolBackend(profile)
   return { ok: true }
 })
-ipcMain.handle('hermes:gateway:ws-url', async (_event, profile) => freshGatewayWsUrl(profile))
+ipcMain.handle('hermes:gateway:ws-url', async (_event, profile, authToken) => freshGatewayWsUrl(profile, authToken))
 ipcMain.handle('hermes:window:openSession', async (_event, sessionId) => {
   if (typeof sessionId !== 'string' || !sessionId.trim()) {
     return { ok: false, error: 'invalid-session-id' }
@@ -5437,7 +5542,7 @@ ipcMain.handle('hermes:api', async (_event, request) => {
   // the OAuth partition — route through Electron's net stack bound to that
   // session so the cookie attaches automatically. Token/local modes keep using
   // the static session-token header.
-  if (connection.authMode === 'oauth') {
+  if (connection.authMode === 'oauth' && !request?.authToken) {
     return fetchJsonViaOauthSession(url, {
       method: request?.method,
       body: request?.body,
@@ -5447,7 +5552,8 @@ ipcMain.handle('hermes:api', async (_event, request) => {
   return fetchJson(url, connection.token, {
     method: request?.method,
     body: request?.body,
-    timeoutMs
+    timeoutMs,
+    authToken: request?.authToken
   })
 })
 

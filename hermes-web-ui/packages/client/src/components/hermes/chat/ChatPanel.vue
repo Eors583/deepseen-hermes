@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { renameSession, setSessionWorkspace, batchDeleteSessions, exportSession } from "@/api/hermes/sessions";
+import { renameSession, batchDeleteSessions, exportSession } from "@/api/hermes/sessions";
 import type { AvailableModelGroup } from "@/api/hermes/system";
 import { fetchCodingAgentsStatus, type CodingAgentId } from "@/api/coding-agents";
 import { useChatStore, type Session } from "@/stores/hermes/chat";
@@ -25,7 +25,6 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { copyToClipboard } from "@/utils/clipboard";
-import FolderPicker from "./FolderPicker.vue";
 import ChatInput from "./ChatInput.vue";
 import ConversationMonitorPane from "./ConversationMonitorPane.vue";
 import MessageList from "./MessageList.vue";
@@ -237,7 +236,6 @@ const newChatModel = ref<string>("");
 const newChatBaseUrl = ref<string>("");
 const newChatApiKey = ref<string>("");
 const newChatApiMode = ref<"chat_completions" | "codex_responses" | "anthropic_messages">("codex_responses");
-const newChatWorkspace = ref("");
 const newChatLoading = ref(false);
 const CODING_AGENT_AUTH_PROVIDER_KEYS = new Set(["openai-codex", "copilot", "xai-oauth", "nous"]);
 
@@ -413,7 +411,6 @@ async function openNewChatModal() {
     if (appStore.modelGroups.length === 0 && appStore.profileModelGroups.length === 0) {
       await appStore.loadModels();
     }
-    newChatWorkspace.value = "";
     newChatProfile.value = normalizeProfileName(
       profilesStore.activeProfileName ||
       profilesStore.profiles.find((profile) => profile.active)?.name ||
@@ -477,7 +474,6 @@ async function confirmNewChat() {
     agent,
     codingAgentId: newChatAgent.value === "hermes" ? undefined : newChatAgent.value,
     codingAgentMode: source === "coding_agent" ? newChatAgentMode.value : undefined,
-    workspace: newChatWorkspace.value || null,
     baseUrl: source === "coding_agent" && !isGlobalCodingAgent ? group?.base_url || newChatBaseUrl.value.trim() || undefined : undefined,
     apiKey: source === "coding_agent" && !isGlobalCodingAgent ? group?.api_key || newChatApiKey.value.trim() || undefined : undefined,
     apiMode: source === "coding_agent" && !isGlobalCodingAgent ? newChatApiMode.value : undefined,
@@ -639,8 +635,7 @@ const contextMenuOptions = computed(() => {
     label: t(contextSessionPinned.value ? "chat.unpin" : "chat.pin"),
     key: "pin",
   },
-  { label: t("chat.rename"), key: "rename" },
-  { label: t("chat.setWorkspace"), key: "workspace" }]
+  { label: t("chat.rename"), key: "rename" }]
 
   if (contextSession.value?.source === "cli") {
     options.push({ label: t("chat.setModel"), key: "model" })
@@ -718,13 +713,6 @@ async function handleContextMenuSelect(key: string) {
       loadingMsg?.destroy();
       message.error(t("chat.exportFailed"));
     }
-  } else if (key === "workspace") {
-    const session = chatStore.sessions.find(
-      (s) => s.id === contextSessionId.value,
-    );
-    workspaceSessionId.value = contextSessionId.value;
-    workspaceValue.value = session?.workspace || "";
-    showWorkspaceModal.value = true;
   } else if (key === "model") {
     await openSessionModelModal(contextSessionId.value);
   } else if (key === "rename") {
@@ -763,31 +751,6 @@ async function handleRenameConfirm() {
     message.error(t("chat.renameFailed"));
   }
   showRenameModal.value = false;
-}
-
-const showWorkspaceModal = ref(false);
-const workspaceValue = ref("");
-const workspaceSessionId = ref<string | null>(null);
-
-async function handleWorkspaceConfirm() {
-  if (!workspaceSessionId.value) return;
-  const ok = await setSessionWorkspace(
-    resolveNativeSessionId(workspaceSessionId.value),
-    workspaceValue.value || null,
-  );
-  if (ok) {
-    const session = chatStore.sessions.find(
-      (s) => s.id === workspaceSessionId.value,
-    );
-    if (session) session.workspace = workspaceValue.value || null;
-    if (chatStore.activeSession?.id === workspaceSessionId.value) {
-      chatStore.activeSession.workspace = workspaceValue.value || null;
-    }
-    message.success(t("chat.workspaceSet"));
-  } else {
-    message.error(t("chat.workspaceSetFailed"));
-  }
-  showWorkspaceModal.value = false;
 }
 
 const showSessionModelModal = ref(false);
@@ -1134,18 +1097,6 @@ async function handleSessionModelCustomSubmit() {
     </NModal>
 
     <NModal
-      v-model:show="showWorkspaceModal"
-      preset="dialog"
-      :title="t('chat.setWorkspaceTitle')"
-      :positive-text="t('common.ok')"
-      :negative-text="t('common.cancel')"
-      style="width: 520px"
-      @positive-click="handleWorkspaceConfirm"
-    >
-      <FolderPicker v-model="workspaceValue" />
-    </NModal>
-
-    <NModal
       v-model:show="showSessionModelModal"
       preset="card"
       :title="t('chat.setModelTitle')"
@@ -1323,10 +1274,6 @@ async function handleSessionModelCustomSubmit() {
               :placeholder="t('models.apiKeyPlaceholder')"
             />
           </label>
-          <div class="new-chat-field">
-            <span class="new-chat-label">{{ t("chat.workspace") }}</span>
-            <FolderPicker v-model="newChatWorkspace" />
-          </div>
         </div>
         <template #footer>
           <div class="new-chat-actions">
@@ -1370,16 +1317,6 @@ async function handleSessionModelCustomSubmit() {
             </template>
           </NButton>
           <span class="header-session-title">{{ headerTitle }}</span>
-          <span
-            v-if="chatStore.activeSession?.workspace"
-            class="workspace-badge"
-            :title="chatStore.activeSession.workspace"
-            >📁
-            {{
-              chatStore.activeSession.workspace.split("/").pop() ||
-              chatStore.activeSession.workspace
-            }}</span
-          >
         </div>
         <div class="header-actions">
           <!-- chat/live mode toggle hidden -->
@@ -2420,19 +2357,6 @@ async function handleSessionModelCustomSubmit() {
   .chat-header {
     padding: 16px 12px 16px 52px;
   }
-}
-
-.workspace-badge {
-  font-size: 11px;
-  color: $text-muted;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 8px;
-  border-radius: 4px;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: default;
 }
 
 // ─── Drawer button ─────────────────────────────────────────────

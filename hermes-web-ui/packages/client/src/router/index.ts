@@ -78,6 +78,18 @@ const router = createRouter({
       component: () => import('@/views/hermes/SkillsView.vue'),
     },
     {
+      path: '/hermes/enterprise-skills',
+      name: 'hermes.enterpriseSkills',
+      component: () => import('@/views/hermes/EnterpriseSkillsView.vue'),
+      meta: { requiresSuperAdmin: true },
+    },
+    {
+      path: '/hermes/skill-review',
+      name: 'hermes.skillReview',
+      component: () => import('@/views/hermes/SkillReviewView.vue'),
+      meta: { requiresSuperAdmin: true },
+    },
+    {
       path: '/hermes/plugins',
       name: 'hermes.plugins',
       component: () => import('@/views/hermes/PluginsView.vue'),

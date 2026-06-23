@@ -1,0 +1,749 @@
+
+> hermes@0.15.1 dev
+> concurrently -k "npm:dev:renderer" "npm:dev:electron"
+
+[dev:renderer] 
+[dev:renderer] > hermes@0.15.1 dev:renderer
+[dev:renderer] > node scripts/assert-root-install.cjs && vite --host 127.0.0.1 --port 5174
+[dev:renderer] 
+[dev:electron] 
+[dev:electron] > hermes@0.15.1 dev:electron
+[dev:electron] > wait-on http://127.0.0.1:5174 && cross-env XCURSOR_SIZE=24 HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .
+[dev:electron] 
+[dev:renderer] 
+[dev:renderer]   VITE v8.0.10  ready in 476 ms
+[dev:renderer] 
+[dev:renderer]   ➜  Local:   http://127.0.0.1:5174/
+[dev:electron] 
+[dev:electron] (electron) 'console-message' arguments are deprecated and will be removed. Please use Event<WebContentsConsoleMessageEventParams> object instead.
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:electron] Error occurred in handler for 'hermes:api': Error: Timed out connecting to Hermes backend after 15000ms
+[dev:electron]     at ClientRequest.<anonymous> (D:\Users\Administrator\Desktop\hermes-agent-main\apps\desktop\electron\main.cjs:2534:19)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at ClientRequest.emit (node:events:508:28)
+[dev:electron]     at Socket.emitRequestTimeout (node:_http_client:927:9)
+[dev:electron]     at Object.onceWrapper (node:events:622:28)
+[dev:electron]     at Socket.emit (node:events:520:35)
+[dev:electron]     at Socket._onTimeout (node:net:604:8)
+[dev:electron]     at listOnTimeout (node:internal/timers:605:17)
+[dev:electron]     at process.processTimers (node:internal/timers:541:7)
+[dev:renderer] 11:34:10 [vite] (client) hmr update /src/app/auth/auth-gate.tsx, /src/styles.css
+[dev:renderer] 11:34:10 [vite] (client) hmr update /src/styles.css, /src/app/desktop-controller.tsx
+[dev:renderer] 11:34:45 [vite] (client) hmr update /src/styles.css, /src/app/desktop-controller.tsx
+[dev:renderer] 12:07:22 [vite] (client) hmr update /src/styles.css, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/components/prompt-overlays.tsx, /src/components/assistant-ui/clarify-tool.tsx, /src/components/assistant-ui/tool-approval.tsx
+[dev:renderer] 12:07:22 [vite] (client) hmr invalidate /src/themes/context.tsx Could not Fast Refresh ("getBaseColors" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:22 [vite] (client) page reload src/themes/context.tsx
+[dev:renderer] 12:07:22 [vite] (client) hmr invalidate /src/components/assistant-ui/tool-approval.tsx Could not Fast Refresh ("APPROVAL_TOOLS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:22 [vite] (client) hmr update /src/components/assistant-ui/tool-fallback.tsx
+[dev:renderer] 12:07:31 [vite] (client) hmr update /src/app/auth/auth-gate.tsx, /src/i18n/context.tsx, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/app/updates-overlay.tsx, /src/app/command-palette/index.tsx, /src/app/shell/model-menu-panel.tsx, /src/components/desktop-onboarding-overlay.tsx, /src/components/prompt-overlays.tsx and 13 more
+[dev:renderer] 12:07:31 [vite] (client) hmr invalidate /src/i18n/context.tsx Could not Fast Refresh ("getConfigDisplayLanguage" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:31 [vite] (client) page reload src/i18n/context.tsx
+[dev:renderer] 12:07:31 [vite] (client) hmr invalidate /src/themes/context.tsx Could not Fast Refresh ("getBaseColors" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:31 [vite] (client) page reload src/themes/context.tsx
+[dev:renderer] 12:07:31 [vite] (client) hmr invalidate /src/components/desktop-onboarding-overlay.tsx Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:31 [vite] (client) hmr update /src/app/desktop-controller.tsx
+[dev:renderer] 12:07:31 [vite] (client) hmr invalidate /src/components/assistant-ui/tool-approval.tsx Could not Fast Refresh ("APPROVAL_TOOLS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:31 [vite] (client) hmr update /src/components/assistant-ui/tool-fallback.tsx
+[dev:renderer] 12:07:31 [vite] (client) hmr invalidate /src/app/profiles/create-profile-dialog.tsx Could not Fast Refresh ("isValidProfileName" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:31 [vite] (client) hmr update /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/rename-profile-dialog.tsx
+[dev:renderer] 12:07:49 [vite] (client) hmr update /src/app/auth/auth-gate.tsx, /src/i18n/context.tsx, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/app/updates-overlay.tsx, /src/app/command-palette/index.tsx, /src/app/shell/model-menu-panel.tsx, /src/components/desktop-onboarding-overlay.tsx, /src/components/prompt-overlays.tsx and 13 more
+[dev:renderer] 12:07:50 [vite] (client) hmr invalidate /src/i18n/context.tsx Could not Fast Refresh ("getConfigDisplayLanguage" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:50 [vite] (client) page reload src/i18n/context.tsx
+[dev:renderer] 12:07:50 [vite] (client) hmr invalidate /src/themes/context.tsx Could not Fast Refresh ("getBaseColors" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:50 [vite] (client) page reload src/themes/context.tsx
+[dev:renderer] 12:07:50 [vite] (client) hmr invalidate /src/components/desktop-onboarding-overlay.tsx Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:50 [vite] (client) hmr update /src/app/desktop-controller.tsx
+[dev:renderer] 12:07:50 [vite] (client) hmr invalidate /src/components/assistant-ui/tool-approval.tsx Could not Fast Refresh ("APPROVAL_TOOLS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:50 [vite] (client) hmr update /src/components/assistant-ui/tool-fallback.tsx
+[dev:renderer] 12:07:50 [vite] (client) hmr invalidate /src/app/profiles/create-profile-dialog.tsx Could not Fast Refresh ("isValidProfileName" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:07:50 [vite] (client) hmr update /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/rename-profile-dialog.tsx
+[dev:renderer] 12:07:50 [vite] (client) [console.error] RangeError: Maximum call stack size exceeded
+[dev:renderer]     at Set.has (<anonymous>)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:11:60)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer] 
+[dev:renderer] The above error occurred in the <I18nProvider> component.
+[dev:renderer] 
+[dev:renderer] React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+[dev:renderer] 
+[dev:renderer] 12:07:50 [vite] (client) [console.error] [error-boundary:root] RangeError: Maximum call stack size exceeded
+[dev:renderer]     at Set.has (<anonymous>)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:11:60)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9) 
+[dev:renderer]     at I18nProvider (http://127.0.0.1:5174/src/i18n/context.tsx?t=1782187669808:53:32)
+[dev:renderer]     at QueryClientProvider (http://127.0.0.1:5174/node_modules/.vite/deps/@tanstack_react-query.js?v=e4ceaa74:2549:30)
+[dev:renderer]     at ErrorBoundary (http://127.0.0.1:5174/src/components/error-boundary.tsx?t=1782187669808:8:8)
+[dev:renderer] 12:07:50 [vite] (client) [console.error] RangeError: Maximum call stack size exceeded
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:11:24)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer] 
+[dev:renderer] The above error occurred in the <I18nProvider> component.
+[dev:renderer] 
+[dev:renderer] React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+[dev:renderer] 
+[dev:renderer] 12:07:50 [vite] (client) [console.error] [error-boundary:root] RangeError: Maximum call stack size exceeded
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:11:24)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9) 
+[dev:renderer]     at I18nProvider (http://127.0.0.1:5174/src/i18n/context.tsx?t=1782187669808:53:32)
+[dev:renderer]     at QueryClientProvider (http://127.0.0.1:5174/node_modules/.vite/deps/@tanstack_react-query.js?v=e4ceaa74:2549:30)
+[dev:renderer]     at ErrorBoundary (http://127.0.0.1:5174/src/components/error-boundary.tsx?t=1782187669808:8:8)
+[dev:renderer] 12:07:50 [vite] (client) [console.error] RangeError: Maximum call stack size exceeded
+[dev:renderer]     at Set.has (<anonymous>)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:11:60)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer] 
+[dev:renderer] The above error occurred in the <I18nProvider> component.
+[dev:renderer] 
+[dev:renderer] React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+[dev:renderer] 
+[dev:renderer] 12:07:50 [vite] (client) [console.error] [error-boundary:root] RangeError: Maximum call stack size exceeded
+[dev:renderer]     at Set.has (<anonymous>)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:11:60)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9)
+[dev:renderer]     at desktopApi (http://127.0.0.1:5174/src/hermes.ts?t=1782187669808:12:9) 
+[dev:renderer]     at I18nProvider (http://127.0.0.1:5174/src/i18n/context.tsx?t=1782187669808:53:32)
+[dev:renderer]     at QueryClientProvider (http://127.0.0.1:5174/node_modules/.vite/deps/@tanstack_react-query.js?v=e4ceaa74:2549:30)
+[dev:renderer]     at ErrorBoundary (http://127.0.0.1:5174/src/components/error-boundary.tsx?t=1782187669808:8:8)
+[dev:renderer] 12:08:22 [vite] (client) hmr update /src/app/auth/auth-gate.tsx, /src/i18n/context.tsx, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/app/updates-overlay.tsx, /src/app/command-palette/index.tsx, /src/app/shell/model-menu-panel.tsx, /src/components/desktop-onboarding-overlay.tsx, /src/components/prompt-overlays.tsx and 13 more
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] (client) Pre-transform error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer] 12:08:22 [vite] Internal server error: Transform failed with 2 errors:
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Invalid Character `⁴`
+[dev:renderer]  -  in src/hermes.ts at 42..45
+[dev:renderer] 
+[dev:renderer] [31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+[dev:renderer]  -  in src/hermes.ts at 42..42
+[dev:renderer]  [38;5;240m │[0m 
+[dev:renderer]  [38;5;240m │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[dev:renderer] 
+[dev:renderer]   Plugin: vite:oxc
+[dev:renderer]   File: D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/src/hermes.ts
+[dev:renderer]       at transformWithOxc (file:///D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/node_modules/vite/dist/node/chunks/node.js:3343:19)
+[dev:renderer]       at TransformPluginContext.transform (file:///D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/node_modules/vite/dist/node/chunks/node.js:3411:26)
+[dev:renderer]       at EnvironmentPluginContainer.transform (file:///D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/node_modules/vite/dist/node/chunks/node.js:30164:51)
+[dev:renderer]       at async loadAndTransform (file:///D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/node_modules/vite/dist/node/chunks/node.js:24512:26)
+[dev:renderer]       at async viteTransformMiddleware (file:///D:/Users/Administrator/Desktop/hermes-agent-main/apps/desktop/node_modules/vite/dist/node/chunks/node.js:24306:20)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/session-picker.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/command-palette/index.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/chat/index.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/updates-overlay.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/chat/sidebar/cron-jobs-section.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/themes/context.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/i18n/context.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/assistant-ui/thread.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/chat/sidebar/profile-switcher.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/profiles/delete-profile-dialog.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/desktop-onboarding-overlay.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/desktop-controller.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/model-visibility-dialog.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/chat/sidebar/session-actions-menu.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/shell/model-menu-panel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/model-picker.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/chat/sidebar/index.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/auth/auth-gate.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/profiles/create-profile-dialog.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/profiles/rename-profile-dialog.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/chat/composer/voice-activity.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/assistant-ui/tool-approval.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/assistant-ui/clarify-tool.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/app/chat/composer/index.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/boot-failure-overlay.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:08:22 [vite] (client) [console.error] [vite] Failed to reload /src/components/prompt-overlays.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[dev:renderer] 12:09:01 [vite] (client) hmr update /src/app/auth/auth-gate.tsx, /src/i18n/context.tsx, /src/app/desktop-controller.tsx, /src/themes/context.tsx, /src/app/chat/sidebar/index.tsx, /src/components/assistant-ui/thread.tsx, /src/app/chat/index.tsx, /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/delete-profile-dialog.tsx, /src/app/updates-overlay.tsx, /src/app/command-palette/index.tsx, /src/app/shell/model-menu-panel.tsx, /src/components/desktop-onboarding-overlay.tsx, /src/components/prompt-overlays.tsx and 13 more
+[dev:renderer] 12:09:01 [vite] (client) hmr invalidate /src/i18n/context.tsx Could not Fast Refresh ("getConfigDisplayLanguage" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:09:01 [vite] (client) page reload src/i18n/context.tsx
+[dev:renderer] 12:09:01 [vite] (client) hmr invalidate /src/themes/context.tsx Could not Fast Refresh ("getBaseColors" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:09:01 [vite] (client) page reload src/themes/context.tsx
+[dev:renderer] 12:09:01 [vite] (client) hmr invalidate /src/components/desktop-onboarding-overlay.tsx Could not Fast Refresh ("sortProviders" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:09:01 [vite] (client) hmr update /src/app/desktop-controller.tsx
+[dev:renderer] 12:09:01 [vite] (client) hmr invalidate /src/components/assistant-ui/tool-approval.tsx Could not Fast Refresh ("APPROVAL_TOOLS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:09:01 [vite] (client) hmr update /src/components/assistant-ui/tool-fallback.tsx
+[dev:renderer] 12:09:01 [vite] (client) hmr invalidate /src/app/profiles/create-profile-dialog.tsx Could not Fast Refresh ("isValidProfileName" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[dev:renderer] 12:09:01 [vite] (client) hmr update /src/app/chat/sidebar/profile-switcher.tsx, /src/app/profiles/rename-profile-dialog.tsx

@@ -10,7 +10,6 @@ import hashlib
 import hmac
 import json
 import secrets
-import sqlite3
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
@@ -20,6 +19,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from hermes_constants import get_hermes_home
+from hermes_cli import postgres_store
 
 UserRole = Literal["super_admin", "admin"]
 UserStatus = Literal["active", "disabled"]
@@ -46,10 +46,6 @@ def _auth_dir() -> Path:
     return path
 
 
-def _db_path() -> Path:
-    return _auth_dir() / "auth.db"
-
-
 def _secret_path() -> Path:
     return _auth_dir() / "jwt.secret"
 
@@ -58,27 +54,24 @@ def _lock_path() -> Path:
     return _auth_dir() / "login-lock.json"
 
 
-def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(_db_path())
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    _init_db(conn)
+def _connect() -> Any:
+    conn = postgres_store.connect()
+    _init_db_postgres(conn)
     return conn
 
 
-def _init_db(conn: sqlite3.Connection) -> None:
+def _init_db_postgres(conn: Any) -> None:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id BIGSERIAL PRIMARY KEY,
             username TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL CHECK(role IN ('super_admin', 'admin')),
             status TEXT NOT NULL CHECK(status IN ('active', 'disabled')),
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL,
-            last_login_at INTEGER,
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL,
+            last_login_at BIGINT,
             avatar TEXT NOT NULL DEFAULT ''
         )
         """
@@ -86,13 +79,32 @@ def _init_db(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS user_profiles (
-            user_id INTEGER NOT NULL,
+            user_id BIGINT NOT NULL,
             profile_name TEXT NOT NULL,
             is_default INTEGER NOT NULL DEFAULT 0,
-            created_at INTEGER NOT NULL,
+            created_at BIGINT NOT NULL,
             PRIMARY KEY (user_id, profile_name),
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_credentials (
+            user_key TEXT NOT NULL,
+            provider TEXT NOT NULL,
+            key_name TEXT NOT NULL,
+            secret_value TEXT NOT NULL,
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL,
+            PRIMARY KEY (user_key, provider, key_name)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_user_credentials_provider
+        ON user_credentials (provider, key_name)
         """
     )
     conn.commit()
@@ -157,7 +169,7 @@ def _b64url_decode(data: str) -> bytes:
     return base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))
 
 
-def _issue_jwt(user: sqlite3.Row) -> str:
+def _issue_jwt(user: Any) -> str:
     now = int(time.time())
     header = {"alg": "HS256", "typ": "JWT"}
     payload = {
@@ -192,7 +204,7 @@ def _verify_jwt(token: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def _row_to_user(row: sqlite3.Row) -> Dict[str, Any]:
+def _row_to_user(row: Any) -> Dict[str, Any]:
     return {
         "id": int(row["id"]),
         "username": row["username"],
@@ -216,7 +228,7 @@ def _list_profile_names() -> List[str]:
         return ["default"]
 
 
-def _list_user_profiles(conn: sqlite3.Connection, user_id: int) -> List[sqlite3.Row]:
+def _list_user_profiles(conn: Any, user_id: int) -> List[Any]:
     return conn.execute(
         "SELECT * FROM user_profiles WHERE user_id = ? ORDER BY is_default DESC, profile_name ASC",
         (user_id,),
@@ -224,7 +236,7 @@ def _list_user_profiles(conn: sqlite3.Connection, user_id: int) -> List[sqlite3.
 
 
 def _replace_user_profiles(
-    conn: sqlite3.Connection,
+    conn: Any,
     user_id: int,
     profiles: List[str],
     default_profile: Optional[str] = None,
@@ -244,7 +256,7 @@ def _replace_user_profiles(
         )
 
 
-def _user_summary(conn: sqlite3.Connection, row: sqlite3.Row) -> Dict[str, Any]:
+def _user_summary(conn: Any, row: Any) -> Dict[str, Any]:
     profiles = _list_user_profiles(conn, int(row["id"]))
     return {
         "id": int(row["id"]),
@@ -259,18 +271,24 @@ def _user_summary(conn: sqlite3.Connection, row: sqlite3.Row) -> Dict[str, Any]:
     }
 
 
-def _list_users(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
+def _list_users(conn: Any) -> List[Dict[str, Any]]:
     rows = conn.execute(
         "SELECT id, username, role, status, created_at, updated_at, last_login_at FROM users ORDER BY id ASC"
     ).fetchall()
     return [_user_summary(conn, row) for row in rows]
 
 
-def _count_users(conn: sqlite3.Connection) -> int:
-    return int(conn.execute("SELECT COUNT(*) FROM users").fetchone()[0])
+def _scalar(row: Any) -> Any:
+    if isinstance(row, dict):
+        return next(iter(row.values()))
+    return row[0]
 
 
-def _count_active_super_admins(conn: sqlite3.Connection, exclude_id: Optional[int] = None) -> int:
+def _count_users(conn: Any) -> int:
+    return int(_scalar(conn.execute("SELECT COUNT(*) FROM users").fetchone()))
+
+
+def _count_active_super_admins(conn: Any, exclude_id: Optional[int] = None) -> int:
     if exclude_id:
         row = conn.execute(
             "SELECT COUNT(*) FROM users WHERE role = 'super_admin' AND status = 'active' AND id != ?",
@@ -280,10 +298,10 @@ def _count_active_super_admins(conn: sqlite3.Connection, exclude_id: Optional[in
         row = conn.execute(
             "SELECT COUNT(*) FROM users WHERE role = 'super_admin' AND status = 'active'"
         ).fetchone()
-    return int(row[0])
+    return int(_scalar(row))
 
 
-def _find_user(conn: sqlite3.Connection, user_id: Any) -> Optional[sqlite3.Row]:
+def _find_user(conn: Any, user_id: Any) -> Optional[Any]:
     try:
         uid = int(user_id)
     except Exception:
@@ -291,28 +309,29 @@ def _find_user(conn: sqlite3.Connection, user_id: Any) -> Optional[sqlite3.Row]:
     return conn.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
 
 
-def _find_user_by_username(conn: sqlite3.Connection, username: str) -> Optional[sqlite3.Row]:
+def _find_user_by_username(conn: Any, username: str) -> Optional[Any]:
     return conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
 
 def _create_user(
-    conn: sqlite3.Connection,
+    conn: Any,
     username: str,
     password: str,
     role: UserRole = "admin",
     status: UserStatus = "active",
     profiles: Optional[List[str]] = None,
     default_profile: Optional[str] = None,
-) -> sqlite3.Row:
+) -> Any:
     now = _now_ms()
-    cur = conn.execute(
+    row = conn.execute(
         """
         INSERT INTO users (username, password_hash, role, status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?)
+        RETURNING id
         """,
         (username, _hash_password(password), role, status, now, now),
-    )
-    user_id = int(cur.lastrowid)
+    ).fetchone()
+    user_id = int(row["id"])
     _replace_user_profiles(conn, user_id, [] if role == "super_admin" else (profiles or []), default_profile)
     conn.commit()
     row = _find_user(conn, user_id)
