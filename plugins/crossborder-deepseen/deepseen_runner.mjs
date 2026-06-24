@@ -115,6 +115,43 @@ function normalizeSampleTier(value) {
   return cleaned
 }
 
+function normalizeMarket(value) {
+  const cleaned = optionalText(value)
+  if (typeof cleaned !== 'string') return cleaned
+  const compact = cleaned
+    .trim()
+    .replace(/[\s_\-]+/g, '')
+    .replace(/(\u5e02\u573a|\u7ad9\u70b9|\u5730\u533a|\u533a\u57df|\u7ad9)$/g, '')
+    .toLowerCase()
+  if (!compact) return undefined
+  if (/^[a-z]{2}$/.test(compact)) return compact.toUpperCase()
+
+  const aliases = [
+    ['US', ['us', 'usa', 'unitedstates', 'america', '\u7f8e\u56fd', '\u7f8e\u533a', '\u5317\u7f8e']],
+    ['GB', ['gb', 'uk', 'unitedkingdom', 'britain', 'england', '\u82f1\u56fd', '\u82f1\u533a']],
+    ['DE', ['de', 'germany', '\u5fb7\u56fd', '\u5fb7\u533a']],
+    ['FR', ['fr', 'france', '\u6cd5\u56fd', '\u6cd5\u533a']],
+    ['IT', ['it', 'italy', '\u610f\u5927\u5229', '\u610f\u533a']],
+    ['ES', ['es', 'spain', '\u897f\u73ed\u7259', '\u897f\u533a']],
+    ['CA', ['ca', 'canada', '\u52a0\u62ff\u5927', '\u52a0\u533a']],
+    ['MX', ['mx', 'mexico', '\u58a8\u897f\u54e5']],
+    ['BR', ['br', 'brazil', '\u5df4\u897f']],
+    ['JP', ['jp', 'japan', '\u65e5\u672c', '\u65e5\u533a']],
+    ['KR', ['kr', 'korea', 'southkorea', '\u97e9\u56fd', '\u97e9\u533a']],
+    ['AU', ['au', 'australia', '\u6fb3\u5927\u5229\u4e9a', '\u6fb3\u6d32', '\u6fb3\u533a']],
+    ['SG', ['sg', 'singapore', '\u65b0\u52a0\u5761', '\u65b0\u533a']],
+    ['TH', ['th', 'thailand', '\u6cf0\u56fd', '\u6cf0\u533a']],
+    ['VN', ['vn', 'vietnam', '\u8d8a\u5357']],
+    ['MY', ['my', 'malaysia', '\u9a6c\u6765\u897f\u4e9a', '\u9a6c\u6765', '\u9a6c\u533a']],
+    ['PH', ['ph', 'philippines', '\u83f2\u5f8b\u5bbe', '\u83f2\u533a']],
+    ['ID', ['id', 'indonesia', '\u5370\u5c3c', '\u5370\u5ea6\u5c3c\u897f\u4e9a']]
+  ]
+  for (const [code, values] of aliases) {
+    if (values.some(alias => compact === alias || compact.includes(alias))) return code
+  }
+  return cleaned
+}
+
 function outputUrls(job) {
   return Array.isArray(job?.outputs) ? job.outputs.map(item => item?.url).filter(Boolean) : []
 }
@@ -934,7 +971,7 @@ async function main() {
   if (action === 'smart_image') {
     const uploaded = await uploadMany(client, args.local_paths, 'product_image')
     const job = await client.smartImage.recreations.create(clean({
-      region: args.region,
+      region: normalizeMarket(args.region),
       keywords: args.keywords,
       productImages: [...(args.product_images || []), ...(args.asset_urls || []), ...uploaded.urls],
       productFileIds: [...(args.product_file_ids || []), ...uploaded.ids],
@@ -951,7 +988,7 @@ async function main() {
   if (action === 'smart_video') {
     const uploaded = await uploadMany(client, args.local_paths, 'product_image')
     const job = await client.smartVideo.recreations.create(clean({
-      region: args.region,
+      region: normalizeMarket(args.region),
       productTitle: args.product_title,
       productImages: [...(args.product_images || []), ...(args.asset_urls || []), ...uploaded.urls],
       productFileIds: [...(args.product_file_ids || []), ...uploaded.ids],
@@ -1033,7 +1070,7 @@ async function main() {
     const uploaded = await uploadMany(client, args.local_paths, 'product_image')
     const job = await client.productReports.create(clean({
       productName: args.product_name,
-      targetMarket: args.target_market,
+      targetMarket: normalizeMarket(args.target_market),
       targetAudience: args.target_audience,
       platform: args.platform,
       sellingPoints: args.selling_points,
@@ -1054,7 +1091,7 @@ async function main() {
   if (action === 'competitor_single') {
     const job = await client.competitors.analyze(clean({
       productUrl: args.product_url,
-      region: args.region
+      region: normalizeMarket(args.region)
     }))
     console.log(JSON.stringify(summarize(await job.wait({ pollIntervalMs: Number(args.poll_interval_ms || 8000), timeoutMs: Number(args.timeout_ms || DEFAULT_TIMEOUT_MS) }))))
     return
@@ -1063,7 +1100,7 @@ async function main() {
   if (action === 'competitor_multi') {
     const job = await client.competitors.analyzeMulti(clean({
       productKeyword: args.product_keyword,
-      region: args.region
+      region: normalizeMarket(args.region)
     }))
     console.log(JSON.stringify(summarize(await job.wait({ pollIntervalMs: Number(args.poll_interval_ms || 8000), timeoutMs: Number(args.timeout_ms || DEFAULT_TIMEOUT_MS) }))))
     return
@@ -1072,7 +1109,7 @@ async function main() {
   if (action === 'creator_analysis') {
     const job = await client.creators.analyze(clean({
       productName: optionalText(args.product_name),
-      targetMarket: optionalText(args.target_market),
+      targetMarket: normalizeMarket(args.target_market),
       targetProductPrice: optionalText(args.target_product_price),
       categoryLevel1: optionalText(args.category_level1),
       categoryLevel2: optionalText(args.category_level2),
@@ -1094,7 +1131,7 @@ async function main() {
     }
     const job = await client.creatorScores.create(clean({
       productName: args.product_name,
-      targetMarket: args.target_market,
+      targetMarket: normalizeMarket(args.target_market),
       targetProductPrice: args.target_product_price,
       categoryLevel1: args.category_level1,
       categoryLevel2: args.category_level2,
@@ -1118,7 +1155,7 @@ async function main() {
       source: args.source,
       sourceUrl: args.source_url,
       videoUrl,
-      targetMarket: args.target_market,
+      targetMarket: normalizeMarket(args.target_market),
       title: args.title
     }))
     console.log(JSON.stringify({ ...summarize(await job.wait({ pollIntervalMs: Number(args.poll_interval_ms || 8000), timeoutMs: Number(args.timeout_ms || DEFAULT_TIMEOUT_MS) })), uploaded_file: uploaded }))
