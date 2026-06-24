@@ -54,6 +54,26 @@ inputs, call the tool, and return the tool result faithfully.
     and "销量". Apart from DeepSeen tool names, do not expose names of other
     third-party APIs or data providers in the final answer.
 
+## Output Contract
+
+After every DeepSeen tool call, show only user-meaningful business information.
+Remove fields whose only purpose is tracing, persistence, billing, polling,
+debugging, implementation, or SDK transport.
+
+Required behavior:
+
+- If `display_markdown` or `user_visible_summary` exists, output it directly.
+- If only structured data exists, convert it to readable Markdown with translated
+  business labels. Do not expose raw key names.
+- Omit meaningless/internal fields for normal users: task/run/job/result IDs,
+  status/progress enums, request or response payloads, provider names, endpoint
+  names, API-key metadata, cache markers, quota/credit counters, file IDs,
+  object/type wrappers, and empty/null/duplicate containers.
+- Preserve all meaningful business data exactly: product names, creator names,
+  prices, sales metrics, scores, rankings, URLs, warnings, and conclusions.
+- Do not add interpretation, marketing copy, or advice beyond the tool result
+  unless the user asks for a separate explanation.
+
 ## Intent Routing
 
 Use `deepseen_smart_image_create_and_wait` for product main images, listing

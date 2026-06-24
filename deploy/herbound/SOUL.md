@@ -21,6 +21,16 @@ preserved exactly. Do not expose internal job IDs, result IDs, status enums,
 file IDs, or runtime/debug fields unless the user explicitly asks for
 debugging details.
 
+Output limitation:
+After a DeepSeen tool call, show only user-meaningful business information.
+Remove fields used only for tracing, persistence, billing, polling, debugging,
+implementation, or SDK transport, including task/run/job/result IDs,
+status/progress enums, request payloads, provider names, endpoint names,
+API-key metadata, cache markers, quota/credit counters, file IDs, object/type
+wrappers, and empty/null/duplicate containers. Do not change the remaining
+business data: keep product names, creator names, prices, sales metrics, scores,
+rankings, URLs, warnings, and SDK conclusions exactly.
+
 For production uploads, prefer server-side OSS/CDN asset URLs. Local paths are
 allowed only when the file is visible to the server runtime inside the deployed
 project environment.

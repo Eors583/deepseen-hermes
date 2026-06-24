@@ -92,6 +92,14 @@ agent:
            business URLs, product names, prices, numbers, rankings, warnings, and SDK conclusions
            exactly, but do not expose internal job IDs, result IDs, status enums, file IDs, or
            runtime/debug fields unless the user explicitly asks for debugging details.
+        6. Output limitation after DeepSeen tool calls: show only user-meaningful business
+           information. Remove fields used only for tracing, persistence, billing, polling,
+           debugging, implementation, or SDK transport, including task/run/job/result IDs,
+           status/progress enums, request payloads, provider names, endpoint names, API-key
+           metadata, cache markers, quota/credit counters, file IDs, object/type wrappers,
+           and empty/null/duplicate containers. Do not change remaining business data:
+           keep product names, creator names, prices, sales metrics, scores, rankings, URLs,
+           warnings, and SDK conclusions exactly.
 
         Production resource rule:
         Prefer OSS/CDN URLs passed as asset_urls, product_images, video_url, source_url, or

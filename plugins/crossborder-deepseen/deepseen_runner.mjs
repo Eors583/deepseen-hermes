@@ -198,6 +198,18 @@ const HIDDEN_FIELD_NAMES = new Set([
   'raw',
   'original',
   'standardSnapshot',
+  'standard_id',
+  'standardId',
+  'run_id',
+  'runId',
+  'task_id',
+  'taskId',
+  'request_id',
+  'requestId',
+  'trace_id',
+  'traceId',
+  'correlation_id',
+  'correlationId',
   'inputRows',
   'scoredRows',
   'productFileIds',
@@ -207,6 +219,12 @@ const HIDDEN_FIELD_NAMES = new Set([
   'webhookUrl',
   'webhook_url',
   'metadata',
+  'provider',
+  'providerMessage',
+  'endpoint',
+  'requestBody',
+  'headers',
+  'authorization',
   'analysis_mode',
   'source_notes',
   'sourceNotes',
@@ -221,6 +239,12 @@ const HIDDEN_FIELD_NAMES = new Set([
   'data_request_count',
   'data_quota_units',
   'data_charge_credits',
+  'creditTransactionId',
+  'credit_transaction_id',
+  'prepaidCredits',
+  'prepaid_credits',
+  'usedThisMonth',
+  'quotaMonthly',
   'creatorKey',
   'userId',
   'user_id',
@@ -234,6 +258,10 @@ const HIDDEN_FIELD_NAMES = new Set([
   'file_id',
   'fileId',
   'variant_id',
+  'errorCode',
+  'error_code',
+  'errorMessage',
+  'error_message',
   'index'
 ])
 
@@ -257,6 +285,14 @@ const OPTIONAL_RUNTIME_FIELDS = new Set([
   'updatedAt',
   'logs'
 ])
+
+const INTERNAL_FIELD_PATTERNS = [
+  /(^|_)(debug|runtime|internal|raw|trace|request|response|metadata)($|_)/i,
+  /^(api|secret|token|authorization|webhook|idempotency)/i,
+  /(hash|password|credential|signature)$/i,
+  /^(task|job|run|result|file|variant|standard|credit|quota).*id$/i,
+  /.*(task|job|run|result|file|variant|standard|credit|quota)id$/i
+]
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -590,7 +626,11 @@ function toUserVisibleValue(value, hiddenFields, path = '') {
   const out = {}
   for (const [key, item] of Object.entries(value)) {
     const fieldPath = path ? `${path}.${key}` : key
-    if (HIDDEN_FIELD_NAMES.has(key) || OPTIONAL_RUNTIME_FIELDS.has(key)) {
+    if (
+      HIDDEN_FIELD_NAMES.has(key) ||
+      OPTIONAL_RUNTIME_FIELDS.has(key) ||
+      INTERNAL_FIELD_PATTERNS.some(pattern => pattern.test(key))
+    ) {
       hiddenFields.add(fieldPath)
       continue
     }
