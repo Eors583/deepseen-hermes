@@ -105,6 +105,10 @@ export function persistAuthToken(token: string | null) {
   }
 }
 
+export function clearAuthToken(): void {
+  persistAuthToken(null)
+}
+
 export function isAuthTokenExpired(token: string, skewSeconds = 30): boolean {
   const payload = decodePayload(token)
   const exp = Number(payload?.exp || 0)

@@ -9,12 +9,12 @@ import { type AuthUser, getCurrentAuthUser, loginUser } from '@/hermes'
 import {
   AUTH_TOKEN_CHANGED_EVENT,
   authTokenExpiresAt,
+  clearAuthToken,
   getStoredAuthToken,
   isAuthTokenExpired,
   persistAuthToken
 } from '@/lib/auth-token'
 import { setGatewayAuthToken } from '@/lib/gateway-ws-url'
-import { LogOut } from '@/lib/icons'
 
 interface AuthGateProps {
   children: ReactNode
@@ -70,7 +70,7 @@ export function AuthGate({ children }: AuthGateProps) {
   const expiryLabel = useMemo(() => formatExpiry(token), [token])
 
   const logout = useCallback(() => {
-    persistAuthToken(null)
+    clearAuthToken()
     setGatewayAuthToken(null)
     setToken(null)
     setUser(null)
@@ -170,14 +170,10 @@ export function AuthGate({ children }: AuthGateProps) {
     return (
       <>
         {children}
-        <div className="fixed right-3 top-3 z-50 flex max-w-[min(22rem,calc(100vw-1.5rem))] items-center gap-2 rounded-md border border-border bg-card/95 px-2.5 py-2 text-xs text-foreground shadow-sm backdrop-blur">
+        <div className="fixed right-3 top-3 z-50 flex max-w-[min(18rem,calc(100vw-1.5rem))] items-center gap-2 rounded-md border border-border bg-card/95 px-2.5 py-2 text-xs text-foreground shadow-sm backdrop-blur">
           <span className="min-w-0 truncate text-muted-foreground" title={user.username}>
             {user.username}
           </span>
-          <Button className="h-7 gap-1.5 px-2 text-xs" onClick={logout} title="退出登录" variant="outline">
-            <LogOut className="size-3.5" />
-            退出
-          </Button>
         </div>
       </>
     )

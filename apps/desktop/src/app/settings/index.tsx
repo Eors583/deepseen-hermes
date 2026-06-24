@@ -14,6 +14,7 @@ import { OverlayMain, OverlayNavItem, OverlaySidebar, OverlaySplitLayout } from 
 import { OverlayView } from '../overlays/overlay-view'
 
 import { AboutSettings } from './about-settings'
+import { AccountSettings } from './account-settings'
 import { AppearanceSettings } from './appearance-settings'
 import { ConfigSettings } from './config-settings'
 import { SECTIONS } from './constants'
@@ -26,6 +27,7 @@ import type { SettingsPageProps, SettingsView as SettingsViewId } from './types'
 
 const SETTINGS_VIEWS: readonly SettingsViewId[] = [
   ...SECTIONS.map(s => `config:${s.id}` as SettingsViewId),
+  'account',
   'providers',
   'gateway',
   'keys',
@@ -102,6 +104,12 @@ export function SettingsView({ gateway, onClose, onConfigSaved, onMainModelChang
             )
           })}
           <div className="my-2 h-px bg-border/30" />
+          <OverlayNavItem
+            active={activeView === 'account'}
+            icon={Sparkles}
+            label="账号"
+            onClick={() => setActiveView('account')}
+          />
           <OverlayNavItem
             active={activeView === 'providers'}
             icon={Zap}
@@ -208,6 +216,8 @@ export function SettingsView({ gateway, onClose, onConfigSaved, onMainModelChang
         <OverlayMain className="px-0 pb-0 pt-[calc(var(--titlebar-height)+1rem)]">
           {activeView === 'config:appearance' ? (
             <AppearanceSettings />
+          ) : activeView === 'account' ? (
+            <AccountSettings />
           ) : activeView === 'about' ? (
             <AboutSettings />
           ) : activeView === 'gateway' ? (
