@@ -167,16 +167,7 @@ export function AuthGate({ children }: AuthGateProps) {
   }
 
   if (status === 'ready' && user) {
-    return (
-      <>
-        {children}
-        <div className="fixed right-3 top-3 z-50 flex max-w-[min(18rem,calc(100vw-1.5rem))] items-center gap-2 rounded-md border border-border bg-card/95 px-2.5 py-2 text-xs text-foreground shadow-sm backdrop-blur">
-          <span className="min-w-0 truncate text-muted-foreground" title={user.username}>
-            {user.username}
-          </span>
-        </div>
-      </>
-    )
+    return <>{children}</>
   }
 
   return (
