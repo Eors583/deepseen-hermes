@@ -10,7 +10,9 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+import bcrypt
 from hermes_cli import web_server
+from hermes_cli import web_auth
 from hermes_cli.dashboard_auth import (
     DashboardAuthProvider,
     InvalidCredentialsError,
@@ -107,3 +109,104 @@ def test_legacy_password_login_route_is_not_available(gated_app):
         follow_redirects=False,
     )
     assert resp.status_code in {302, 404, 405}
+
+
+class _FakeCursor:
+    def __init__(self, rows):
+        self._rows = list(rows)
+
+    def fetchone(self):
+        return self._rows[0] if self._rows else None
+
+    def fetchall(self):
+        return list(self._rows)
+
+
+class _FakeDeepSeenConnection:
+    def __init__(self, user):
+        self.user = user
+        self.updated_last_login = False
+        self.updated_refresh_token = False
+
+    def execute(self, sql, params=None):
+        if 'COUNT(*) FROM "User"' in sql:
+            return _FakeCursor([{"count": 1}])
+        if 'lower(email) = lower(?)' in sql:
+            return _FakeCursor([self.user] if params and params[0].lower() == self.user["email"].lower() else [])
+        if 'WHERE id = ?' in sql and 'FROM "User"' in sql:
+            return _FakeCursor([self.user] if params and params[0] == self.user["id"] else [])
+        if 'UPDATE "User"' in sql and '"lastLoginAt"' in sql:
+            self.updated_last_login = True
+            if '"refreshToken"' in sql and params:
+                self.updated_refresh_token = True
+                self.user["refreshToken"] = params[0]
+            return _FakeCursor([])
+        raise AssertionError(f"unexpected SQL: {sql}")
+
+    def commit(self):
+        return None
+
+    def rollback(self):
+        return None
+
+    def close(self):
+        return None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+
+def test_deepseen_auth_mode_uses_deepseen_user_table(monkeypatch):
+    password_hash = bcrypt.hashpw(b"secret123", bcrypt.gensalt()).decode("utf-8")
+    conn = _FakeDeepSeenConnection(
+        {
+            "id": "deepseen-user-1",
+            "email": "user@example.com",
+            "name": "Example User",
+            "password": password_hash,
+            "role": "USER",
+            "status": "ACTIVE",
+            "image": None,
+            "createdAt": None,
+            "updatedAt": None,
+            "lastLoginAt": None,
+            "refreshToken": "existing-refresh-token",
+        }
+    )
+    monkeypatch.setenv("HERBOUND_AUTH_PROVIDER", "deepseen")
+    monkeypatch.setattr(web_auth.postgres_store, "connect", lambda: conn)
+    monkeypatch.setattr(web_auth, "_jwt_secret", lambda: b"test-secret")
+
+    assert web_auth._deepseen_count_users(web_auth._connect()) == 1
+    row = web_auth._deepseen_find_login_user(conn, "USER@example.com")
+    assert row["id"] == "deepseen-user-1"
+    assert web_auth._deepseen_verify_password("secret123", row["password"]) is True
+
+    token = web_auth._issue_jwt(web_auth._deepseen_auth_user(row))
+    authed = web_auth.authenticate_bearer_token(token)
+    assert authed == {
+        "id": "deepseen-user-1",
+        "username": "user@example.com",
+        "role": "user",
+        "email": "user@example.com",
+        "display_name": "Example User",
+    }
+
+    payload = web_auth._verify_jwt(token)
+    assert payload is not None
+    assert payload["userId"] == "deepseen-user-1"
+    assert payload["email"] == "user@example.com"
+    assert payload["type"] == "access"
+    assert payload["iss"] == "viralforge"
+
+    refresh_token = web_auth._issue_deepseen_refresh_token(web_auth._deepseen_auth_user(row))
+    web_auth._deepseen_update_last_login(conn, "deepseen-user-1", refresh_token)
+    assert conn.updated_last_login is True
+    assert conn.updated_refresh_token is True
+    assert conn.user["refreshToken"] == refresh_token
+
+    conn.user["refreshToken"] = None
+    assert web_auth.authenticate_bearer_token(token) is None

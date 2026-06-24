@@ -40,10 +40,10 @@ function toolset(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function renderSkills() {
+function renderSkills(initialEntry = '/skills?tab=toolsets') {
   return import('./index').then(({ SkillsView }) =>
     render(
-      <MemoryRouter initialEntries={['/skills?tab=toolsets']}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <SkillsView />
       </MemoryRouter>
     )
@@ -63,6 +63,55 @@ afterEach(() => {
 })
 
 describe('SkillsView toolset management', () => {
+  it('highlights DeepSeen skills ahead of supporting skills', async () => {
+    getSkills.mockResolvedValue([
+      {
+        name: 'codex',
+        description: 'coding skill',
+        category: 'software-development',
+        enabled: true
+      },
+      {
+        name: 'crossborder-deepseen',
+        description: 'DeepSeen crossborder analysis',
+        category: 'crossborder-deepseen',
+        enabled: true
+      }
+    ])
+
+    await renderSkills('/skills?tab=skills')
+
+    expect(await screen.findByText('DeepSeen 核心技能')).toBeTruthy()
+    expect(screen.getByText('辅助技能')).toBeTruthy()
+    expect(screen.getByText('展开高级辅助技能')).toBeTruthy()
+    expect(screen.queryByText('Codex 协作')).toBeNull()
+
+    fireEvent.click(screen.getByText('展开高级辅助技能'))
+    expect(await screen.findByText('Codex 协作')).toBeTruthy()
+  })
+
+  it('highlights DeepSeen toolsets ahead of supporting toolsets', async () => {
+    getToolsets.mockResolvedValue([
+      toolset(),
+      toolset({
+        name: 'deepseen',
+        label: 'DeepSeen Tools',
+        description: 'deepseen tools',
+        tools: ['deepseen_competitor_analyze_multi_and_wait']
+      })
+    ])
+
+    await renderSkills()
+
+    expect(await screen.findByText('DeepSeen 工具链')).toBeTruthy()
+    expect(screen.getByText('辅助工具')).toBeTruthy()
+    expect(screen.getByText('展开高级辅助工具')).toBeTruthy()
+    expect(screen.queryByText('网页搜索')).toBeNull()
+
+    fireEvent.click(screen.getByText('展开高级辅助工具'))
+    expect(await screen.findByText('网页搜索')).toBeTruthy()
+  })
+
   it('renders a switch for each toolset and toggles it off', async () => {
     await renderSkills()
 

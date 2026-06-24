@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from hermes_cli.config import get_env_value
-from hermes_cli.deepseen_credentials import get_deepseen_api_key
+from hermes_cli.deepseen_credentials import ensure_deepseen_api_key
 
 _PLUGIN_DIR = Path(__file__).resolve().parent
 _RUNNER = _PLUGIN_DIR / "deepseen_runner.mjs"
@@ -27,11 +27,19 @@ def _is_deepseen_configurable() -> bool:
 
 
 def _deepseen_user_key() -> str:
+    try:
+        from gateway.session_context import get_session_env
+
+        value = str(get_session_env("HERMES_WEB_USER_ID", "") or "").strip()
+        if value:
+            return value
+    except Exception:
+        pass
     return str(os.environ.get("HERMES_DEEPSEEN_USER_KEY") or "").strip()
 
 
 def _deepseen_api_key() -> str:
-    return get_deepseen_api_key(_deepseen_user_key())
+    return ensure_deepseen_api_key(_deepseen_user_key())
 
 
 def _has_deepseen_key() -> bool:

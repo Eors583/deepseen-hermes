@@ -9,6 +9,7 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import secrets
 import time
 from pathlib import Path
@@ -21,7 +22,7 @@ from pydantic import BaseModel
 from hermes_constants import get_hermes_home
 from hermes_cli import postgres_store
 
-UserRole = Literal["super_admin", "admin"]
+UserRole = Literal["super_admin", "admin", "vip", "user"]
 UserStatus = Literal["active", "disabled"]
 
 DEFAULT_USERNAME = "admin"
@@ -56,8 +57,16 @@ def _lock_path() -> Path:
 
 def _connect() -> Any:
     conn = postgres_store.connect()
-    _init_db_postgres(conn)
+    if not _deepseen_auth_enabled():
+        _init_db_postgres(conn)
     return conn
+
+
+def _deepseen_auth_enabled() -> bool:
+    provider = os.environ.get("HERBOUND_AUTH_PROVIDER", "").strip().lower()
+    if provider:
+        return provider in {"deepseen", "deepseen-users", "shared-deepseen"}
+    return os.environ.get("DEEPSEEN_SHARED_AUTH", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _init_db_postgres(conn: Any) -> None:
@@ -147,6 +156,11 @@ def _verify_password(password: str, password_hash: str) -> bool:
 
 
 def _jwt_secret() -> bytes:
+    if _deepseen_auth_enabled():
+        raw = os.environ.get("JWT_SECRET", "").strip()
+        value = raw or "viralforge-dev-secret-change-in-production"
+        return value.encode("utf-8")
+
     path = _secret_path()
     if path.exists():
         value = path.read_text(encoding="utf-8").strip()
@@ -172,10 +186,42 @@ def _b64url_decode(data: str) -> bytes:
 def _issue_jwt(user: Any) -> str:
     now = int(time.time())
     header = {"alg": "HS256", "typ": "JWT"}
+    if _deepseen_auth_enabled():
+        payload = {
+            "userId": str(user["id"]),
+            "email": str(user.get("email") or user.get("username") or ""),
+            "type": "access",
+            "iss": "viralforge",
+            "sub": str(user["id"]),
+            "username": user["username"],
+            "role": user["role"],
+            "iat": now,
+            "exp": now + JWT_TTL_SECONDS,
+        }
+    else:
+        payload = {
+            "sub": str(user["id"]),
+            "username": user["username"],
+            "role": user["role"],
+            "iat": now,
+            "exp": now + JWT_TTL_SECONDS,
+        }
+    signing_input = ".".join([
+        _b64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8")),
+        _b64url_encode(json.dumps(payload, separators=(",", ":")).encode("utf-8")),
+    ])
+    signature = hmac.new(_jwt_secret(), signing_input.encode("ascii"), hashlib.sha256).digest()
+    return f"{signing_input}.{_b64url_encode(signature)}"
+
+
+def _issue_deepseen_refresh_token(user: Any) -> str:
+    now = int(time.time())
+    header = {"alg": "HS256", "typ": "JWT"}
     payload = {
-        "sub": str(user["id"]),
-        "username": user["username"],
-        "role": user["role"],
+        "userId": str(user["id"]),
+        "email": str(user.get("email") or user.get("username") or ""),
+        "type": "refresh",
+        "iss": "viralforge",
         "iat": now,
         "exp": now + JWT_TTL_SECONDS,
     }
@@ -185,6 +231,139 @@ def _issue_jwt(user: Any) -> str:
     ])
     signature = hmac.new(_jwt_secret(), signing_input.encode("ascii"), hashlib.sha256).digest()
     return f"{signing_input}.{_b64url_encode(signature)}"
+
+
+def _deepseen_role(value: Any) -> UserRole:
+    role = str(value or "").upper()
+    if role == "SUPER_ADMIN":
+        return "super_admin"
+    if role == "ADMIN":
+        return "admin"
+    if role == "VIP":
+        return "vip"
+    return "user"
+
+
+def _deepseen_status(value: Any) -> UserStatus:
+    return "active" if str(value or "").upper() == "ACTIVE" else "disabled"
+
+
+def _deepseen_username(row: Any) -> str:
+    return str(row.get("email") or row.get("name") or row.get("id") or "")
+
+
+def _deepseen_avatar(row: Any) -> str:
+    image = row.get("image") or ""
+    if not image:
+        return ""
+    if isinstance(image, str) and image.startswith("data:image/"):
+        return json.dumps({"type": "image", "dataUrl": image}, ensure_ascii=False, separators=(",", ":"))
+    return json.dumps({"type": "default", "seed": _deepseen_username(row)}, ensure_ascii=False, separators=(",", ":"))
+
+
+def _deepseen_auth_user(row: Any) -> Dict[str, Any]:
+    return {
+        "id": str(row["id"]),
+        "username": _deepseen_username(row),
+        "role": _deepseen_role(row.get("role")),
+        "status": _deepseen_status(row.get("status")),
+        "created_at": _datetime_to_ms(row.get("createdAt")),
+        "updated_at": _datetime_to_ms(row.get("updatedAt")),
+        "last_login_at": _datetime_to_ms(row.get("lastLoginAt")),
+        "avatar": _deepseen_avatar(row),
+        "email": row.get("email") or "",
+        "display_name": row.get("name") or row.get("email") or "",
+    }
+
+
+def _datetime_to_ms(value: Any) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return int(value)
+    try:
+        return int(value.timestamp() * 1000)
+    except Exception:
+        return None
+
+
+def _deepseen_row_to_user(row: Any) -> Dict[str, Any]:
+    user = _deepseen_auth_user(row)
+    out = dict(user)
+    out["requiresCredentialChange"] = False
+    return out
+
+
+def _deepseen_verify_password(password: str, password_hash: str | None) -> bool:
+    if not password_hash:
+        return False
+    try:
+        import bcrypt
+
+        return bool(bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8")))
+    except Exception:
+        return False
+
+
+def _deepseen_verify_dummy_password(password: str) -> None:
+    """Match DeepSeen's missing-user bcrypt work to avoid an obvious timing gap."""
+    dummy_hash = "$2b$12$CwTycUXWue0Thq9StjUM0uJ8N9ZQxWYrJ7IY6zWfJXzfs7ZQ2d6rC"
+    try:
+        _deepseen_verify_password(password or "dummy", dummy_hash)
+    except Exception:
+        pass
+
+
+def _deepseen_find_user(conn: Any, user_id: Any) -> Optional[Any]:
+    user_id_str = str(user_id or "").strip()
+    if not user_id_str:
+        return None
+    return conn.execute(
+        'SELECT * FROM "User" WHERE id = ?',
+        (user_id_str,),
+    ).fetchone()
+
+
+def _deepseen_find_login_user(conn: Any, username: str) -> Optional[Any]:
+    candidate = username.strip().lower()
+    if not candidate:
+        return None
+    return conn.execute(
+        'SELECT * FROM "User" WHERE lower(email) = lower(?) LIMIT 1',
+        (candidate,),
+    ).fetchone()
+
+
+def _deepseen_count_users(conn: Any) -> int:
+    return int(_scalar(conn.execute('SELECT COUNT(*) FROM "User"').fetchone()))
+
+
+def _deepseen_update_last_login(conn: Any, user_id: str, refresh_token: str | None = None) -> None:
+    try:
+        if refresh_token:
+            conn.execute(
+                """
+                UPDATE "User"
+                SET "lastLoginAt" = CURRENT_TIMESTAMP,
+                    "updatedAt" = CURRENT_TIMESTAMP,
+                    "refreshToken" = ?,
+                    "previousRefreshToken" = NULL,
+                    "previousRefreshTokenExpiresAt" = NULL
+                WHERE id = ?
+                """,
+                (refresh_token, user_id),
+            )
+        else:
+            conn.execute(
+                'UPDATE "User" SET "lastLoginAt" = CURRENT_TIMESTAMP, "updatedAt" = CURRENT_TIMESTAMP WHERE id = ?',
+                (user_id,),
+            )
+        conn.commit()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
 
 def _verify_jwt(token: str) -> Optional[Dict[str, Any]]:
@@ -197,8 +376,15 @@ def _verify_jwt(token: str) -> Optional[Dict[str, Any]]:
         payload = json.loads(_b64url_decode(payload_b64).decode("utf-8"))
         if int(payload.get("exp") or 0) < int(time.time()):
             return None
-        if payload.get("role") not in {"super_admin", "admin"}:
-            return None
+        if _deepseen_auth_enabled():
+            token_type = str(payload.get("type") or "access")
+            if token_type != "access":
+                return None
+            if str(payload.get("iss") or "viralforge") != "viralforge":
+                return None
+        else:
+            if payload.get("role") not in {"super_admin", "admin"}:
+                return None
         return payload
     except Exception:
         return None
@@ -477,6 +663,20 @@ def authenticate_bearer_token(token: str) -> Optional[Dict[str, Any]]:
     if not payload:
         return None
     with _connect() as conn:
+        if _deepseen_auth_enabled():
+            user = _deepseen_find_user(conn, payload.get("sub") or payload.get("userId"))
+            if not user or _deepseen_status(user.get("status")) != "active":
+                return None
+            if user.get("refreshToken") is None:
+                return None
+            mapped = _deepseen_auth_user(user)
+            return {
+                "id": mapped["id"],
+                "username": mapped["username"],
+                "role": mapped["role"],
+                "email": mapped["email"],
+                "display_name": mapped["display_name"],
+            }
         user = _find_user(conn, payload.get("sub"))
         if not user or user["status"] != "active":
             return None
@@ -563,6 +763,8 @@ class ManagedUserBody(BaseModel):
 @router.get("/api/auth/status")
 async def auth_status():
     with _connect() as conn:
+        if _deepseen_auth_enabled():
+            return {"hasPasswordLogin": True, "hasUsers": _deepseen_count_users(conn) > 0}
         return {"hasPasswordLogin": True, "hasUsers": _count_users(conn) > 0}
 
 
@@ -578,6 +780,23 @@ async def login(request: Request, body: LoginBody):
         raise HTTPException(status_code=status, detail="Too many login attempts, please try again later")
 
     with _connect() as conn:
+        if _deepseen_auth_enabled():
+            user = _deepseen_find_login_user(conn, username)
+            if (
+                not user
+                or _deepseen_status(user.get("status")) != "active"
+                or not _deepseen_verify_password(password, user.get("password"))
+            ):
+                if not user or not user.get("password"):
+                    _deepseen_verify_dummy_password(password)
+                _record_password_failure(ip)
+                raise HTTPException(status_code=401, detail="Invalid username or password")
+            mapped = _deepseen_auth_user(user)
+            token = _issue_jwt(mapped)
+            refresh_token = _issue_deepseen_refresh_token(mapped)
+            _deepseen_update_last_login(conn, mapped["id"], refresh_token)
+            _record_password_success(ip)
+            return {"token": token, "refreshToken": refresh_token}
         user_count = _count_users(conn)
         user = None
         if user_count == 0:
@@ -597,6 +816,11 @@ async def login(request: Request, body: LoginBody):
 
 @router.post("/api/auth/register")
 async def register(request: Request, body: RegisterBody):
+    if _deepseen_auth_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail="Registration is managed by DeepSeen. Please create the account in DeepSeen first.",
+        )
     username = body.username.strip()
     password = body.password
     if len(username) < 2:
@@ -626,6 +850,11 @@ async def register(request: Request, body: RegisterBody):
 async def current_user(request: Request):
     authed = current_request_user(request)
     with _connect() as conn:
+        if _deepseen_auth_enabled():
+            user = _deepseen_find_user(conn, authed["id"])
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            return {"user": _deepseen_row_to_user(user)}
         user = _find_user(conn, authed["id"])
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -640,6 +869,9 @@ async def current_user(request: Request):
 async def get_avatar(request: Request):
     authed = current_request_user(request)
     with _connect() as conn:
+        if _deepseen_auth_enabled():
+            user = _deepseen_find_user(conn, authed["id"])
+            return {"avatar": (_deepseen_avatar(user) if user else "") or ""}
         user = _find_user(conn, authed["id"])
         return {"avatar": (user["avatar"] if user else "") or ""}
 
@@ -650,6 +882,12 @@ async def update_avatar(request: Request, body: AvatarBody):
     candidate = body.avatar if body.avatar is not None else {}
     avatar_json = validate_avatar(candidate)
     with _connect() as conn:
+        if _deepseen_auth_enabled():
+            parsed = json.loads(avatar_json)
+            image_value = parsed.get("dataUrl") if parsed.get("type") == "image" else None
+            conn.execute('UPDATE "User" SET image = ?, "updatedAt" = CURRENT_TIMESTAMP WHERE id = ?', (image_value, authed["id"]))
+            conn.commit()
+            return {"success": True, "avatar": avatar_json}
         conn.execute("UPDATE users SET avatar = ?, updated_at = ? WHERE id = ?", (avatar_json, _now_ms(), authed["id"]))
         conn.commit()
     return {"success": True, "avatar": avatar_json}
@@ -662,6 +900,8 @@ async def setup_password():
 
 @router.post("/api/auth/change-password")
 async def change_password(request: Request, body: PasswordBody):
+    if _deepseen_auth_enabled():
+        raise HTTPException(status_code=403, detail="Password changes are managed by DeepSeen.")
     if len(body.newPassword) < 6:
         raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
     authed = current_request_user(request)
@@ -679,6 +919,8 @@ async def change_password(request: Request, body: PasswordBody):
 
 @router.post("/api/auth/change-username")
 async def change_username(request: Request, body: UsernameBody):
+    if _deepseen_auth_enabled():
+        raise HTTPException(status_code=403, detail="Account profile changes are managed by DeepSeen.")
     new_username = body.newUsername.strip()
     if len(new_username) < 2:
         raise HTTPException(status_code=400, detail="Username must be at least 2 characters")
@@ -723,11 +965,18 @@ def _validate_profiles(profiles: List[str]) -> None:
 async def list_managed_users(request: Request):
     require_super_admin(request)
     with _connect() as conn:
+        if _deepseen_auth_enabled():
+            rows = conn.execute(
+                'SELECT * FROM "User" ORDER BY "createdAt" ASC'
+            ).fetchall()
+            return {"users": [_deepseen_row_to_user(row) for row in rows], "profiles": _list_profile_names()}
         return {"users": _list_users(conn), "profiles": _list_profile_names()}
 
 
 @router.post("/api/auth/users")
 async def create_managed_user(request: Request, body: ManagedUserBody):
+    if _deepseen_auth_enabled():
+        raise HTTPException(status_code=403, detail="User management is managed by DeepSeen.")
     require_super_admin(request)
     username = (body.username or "").strip()
     password = body.password or ""
@@ -748,6 +997,8 @@ async def create_managed_user(request: Request, body: ManagedUserBody):
 
 @router.put("/api/auth/users/{user_id}")
 async def update_managed_user(user_id: int, request: Request, body: ManagedUserBody):
+    if _deepseen_auth_enabled():
+        raise HTTPException(status_code=403, detail="User management is managed by DeepSeen.")
     authed = require_super_admin(request)
     with _connect() as conn:
         user = _find_user(conn, user_id)
@@ -787,6 +1038,8 @@ async def update_managed_user(user_id: int, request: Request, body: ManagedUserB
 
 @router.delete("/api/auth/users/{user_id}")
 async def delete_managed_user(user_id: int, request: Request):
+    if _deepseen_auth_enabled():
+        raise HTTPException(status_code=403, detail="User management is managed by DeepSeen.")
     authed = require_super_admin(request)
     if user_id == int(authed["id"]):
         raise HTTPException(status_code=400, detail="You cannot delete your own account")

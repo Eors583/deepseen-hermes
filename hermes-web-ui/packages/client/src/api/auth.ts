@@ -120,7 +120,7 @@ export async function removePassword(): Promise<void> {
   })
 }
 
-export type UserRole = 'super_admin' | 'admin'
+export type UserRole = 'super_admin' | 'admin' | 'vip' | 'user'
 export type UserStatus = 'active' | 'disabled'
 
 export interface ManagedUser {

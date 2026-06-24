@@ -1,5 +1,13 @@
 import type { HermesConnection } from '@/global'
-import { getStoredAuthToken } from '@/lib/auth-token'
+import { getRuntimeAuthToken, getStoredAuthToken, persistAuthToken, setRuntimeAuthToken } from '@/lib/auth-token'
+
+let gatewayAuthToken: string | null = null
+
+export function setGatewayAuthToken(token: string | null): void {
+  gatewayAuthToken = token && token.trim() ? token.trim() : null
+  setRuntimeAuthToken(gatewayAuthToken)
+  console.info(`[auth] gateway token ${gatewayAuthToken ? `set len=${gatewayAuthToken.length}` : 'cleared'}`)
+}
 
 /**
  * The desktop main process exposes `getGatewayWsUrl()` to re-mint a WebSocket
@@ -41,11 +49,40 @@ export class GatewayReauthRequiredError extends Error {
   }
 }
 
+export class GatewayLoginRequiredError extends Error {
+  readonly needsLogin = true
+
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options)
+    this.name = 'GatewayLoginRequiredError'
+  }
+}
+
 export function isGatewayReauthRequired(error: unknown): error is GatewayReauthRequiredError {
   return (
     error instanceof GatewayReauthRequiredError ||
     (typeof error === 'object' && error !== null && (error as { needsOauthLogin?: unknown }).needsOauthLogin === true)
   )
+}
+
+export function isGatewayLoginRequired(error: unknown): error is GatewayLoginRequiredError {
+  return (
+    error instanceof GatewayLoginRequiredError ||
+    (typeof error === 'object' && error !== null && (error as { needsLogin?: unknown }).needsLogin === true)
+  )
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error || '')
+}
+
+function isAuthFailure(error: unknown): boolean {
+  const statusCode = typeof error === 'object' && error !== null ? (error as { statusCode?: unknown }).statusCode : null
+  if (statusCode === 401 || statusCode === 403) {
+    return true
+  }
+
+  return /\b(?:401|403)\b/.test(errorMessage(error))
 }
 
 export async function resolveGatewayWsUrl(
@@ -58,7 +95,7 @@ export async function resolveGatewayWsUrl(
   // backend.
   const profile = conn.profile ?? null
 
-  if (conn.authMode === 'oauth' || conn.authMode === 'jwt') {
+  if (conn.authMode === 'oauth') {
     if (!mint) {
       // OAuth gateway but no way to mint a fresh ticket: the cached ticket is
       // dead, so connecting with it cannot succeed. Surface a reauth error
@@ -69,12 +106,41 @@ export async function resolveGatewayWsUrl(
     }
 
     try {
-      return await mint(profile, conn.authMode === 'jwt' ? getStoredAuthToken() || undefined : undefined)
+      return await mint(profile)
     } catch (error) {
       throw new GatewayReauthRequiredError(
         'Your remote gateway session has expired. Open Settings → Gateway and click "Sign in" again.',
         { cause: error }
       )
+    }
+  }
+
+  if (conn.authMode === 'jwt') {
+    if (!mint) {
+      persistAuthToken(null)
+      throw new GatewayLoginRequiredError('登录已过期，请重新登录。')
+    }
+
+    const authToken = gatewayAuthToken || getRuntimeAuthToken() || getStoredAuthToken()
+
+    if (!authToken) {
+      console.info('[auth] gateway ws ticket mint skipped: missing token')
+      persistAuthToken(null)
+      throw new GatewayLoginRequiredError('登录已过期，请重新登录。')
+    }
+
+    try {
+      console.info(`[auth] minting gateway ws ticket token len=${authToken.length}`)
+      return await mint(profile, authToken)
+    } catch (error) {
+      if (isAuthFailure(error)) {
+        console.info(`[auth] gateway ws ticket auth failed: ${errorMessage(error)}`)
+        persistAuthToken(null)
+        throw new GatewayLoginRequiredError('登录已过期，请重新登录。', { cause: error })
+      }
+
+      console.info(`[auth] gateway ws ticket failed: ${errorMessage(error)}`)
+      throw new Error(`无法获取线上对话连接票据：${errorMessage(error)}`)
     }
   }
 

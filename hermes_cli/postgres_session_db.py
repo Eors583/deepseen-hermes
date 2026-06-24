@@ -258,6 +258,40 @@ class PostgresSessionDB:
         ).fetchall()
         return rows[0]["id"] if len(rows) == 1 else None
 
+    def resolve_resume_session_id(self, session_id: str) -> str:
+        if not session_id:
+            return session_id
+        row = self._conn.execute(
+            "SELECT 1 FROM messages WHERE session_id = ? LIMIT 1",
+            (session_id,),
+        ).fetchone()
+        if row is not None:
+            return session_id
+
+        current = session_id
+        seen = {current}
+        for _ in range(32):
+            child = self._conn.execute(
+                "SELECT id FROM sessions "
+                "WHERE parent_session_id = ? "
+                "ORDER BY started_at DESC, id DESC LIMIT 1",
+                (current,),
+            ).fetchone()
+            if child is None:
+                return session_id
+            child_id = child["id"]
+            if not child_id or child_id in seen:
+                return session_id
+            seen.add(child_id)
+            child_has_messages = self._conn.execute(
+                "SELECT 1 FROM messages WHERE session_id = ? LIMIT 1",
+                (child_id,),
+            ).fetchone()
+            if child_has_messages is not None:
+                return child_id
+            current = child_id
+        return session_id
+
     @classmethod
     def sanitize_title(cls, title: Optional[str]) -> Optional[str]:
         text = str(title or "").strip()
@@ -648,4 +682,3 @@ class PostgresSessionDB:
 
     def maybe_auto_prune_and_vacuum(self, *args, **kwargs) -> Dict[str, Any]:
         return {"pruned": 0, "vacuumed": False}
-

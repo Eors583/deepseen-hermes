@@ -24,6 +24,8 @@ import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 const SKILLS_MODES = ['skills', 'toolsets'] as const
 type SkillsMode = (typeof SKILLS_MODES)[number]
 
+const FEATURED_CAPABILITY_TERMS = ['deepseen', 'crossborder', 'crossborder-deepseen'] as const
+
 const CATEGORY_LABELS: Record<string, string> = {
   'agent-generated': '智能体沉淀',
   apple: 'Apple 生态',
@@ -114,6 +116,27 @@ const TOOLSET_DESCRIPTION_LABELS: Record<string, string> = {
   web: '允许智能体搜索网页并提取网页内容。'
 }
 
+function hasFeaturedTerm(...values: unknown[]): boolean {
+  return values
+    .map(value => asText(value).toLowerCase())
+    .some(value => FEATURED_CAPABILITY_TERMS.some(term => value.includes(term)))
+}
+
+function isFeaturedSkill(skill: SkillInfo): boolean {
+  return hasFeaturedTerm(skill.name, skill.category, skill.description, displaySkillName(skill), displaySkillDescription(skill))
+}
+
+function isFeaturedToolset(toolset: ToolsetInfo): boolean {
+  return hasFeaturedTerm(
+    toolset.name,
+    toolset.label,
+    toolset.description,
+    displayToolsetName(toolset),
+    displayToolsetDescription(toolset),
+    ...toolNames(toolset)
+  )
+}
+
 function categoryFor(skill: SkillInfo): string {
   return asText(skill.category) || 'general'
 }
@@ -168,7 +191,7 @@ function filteredSkills(skills: SkillInfo[], query: string, category: string | n
         includesQuery(displaySkillDescription(skill), q)
       )
     })
-    .sort((a, b) => displaySkillName(a).localeCompare(displaySkillName(b), 'zh-CN'))
+    .sort((a, b) => Number(isFeaturedSkill(b)) - Number(isFeaturedSkill(a)) || displaySkillName(a).localeCompare(displaySkillName(b), 'zh-CN'))
 }
 
 function filteredToolsets(toolsets: ToolsetInfo[], query: string): ToolsetInfo[] {
@@ -191,7 +214,7 @@ function filteredToolsets(toolsets: ToolsetInfo[], query: string): ToolsetInfo[]
         toolNames(toolset).some(name => includesQuery(name, q))
       )
     })
-    .sort((a, b) => displayToolsetName(a).localeCompare(displayToolsetName(b), 'zh-CN'))
+    .sort((a, b) => Number(isFeaturedToolset(b)) - Number(isFeaturedToolset(a)) || displayToolsetName(a).localeCompare(displayToolsetName(b), 'zh-CN'))
 }
 
 interface SkillsViewProps extends React.ComponentProps<'section'> {
@@ -209,6 +232,8 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
   const [savingSkill, setSavingSkill] = useState<string | null>(null)
   const [savingToolset, setSavingToolset] = useState<string | null>(null)
   const [expandedToolset, setExpandedToolset] = useState<string | null>(null)
+  const [showSupportingSkills, setShowSupportingSkills] = useState(false)
+  const [showSupportingToolsets, setShowSupportingToolsets] = useState(false)
 
   const refreshCapabilities = useCallback(async () => {
     setRefreshing(true)
@@ -243,7 +268,9 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
 
     const counts = new Map<string, number>()
 
-    for (const skill of skills) {
+    const source = skills.some(isFeaturedSkill) ? skills.filter(isFeaturedSkill) : skills
+
+    for (const skill of source) {
       const key = categoryFor(skill)
       counts.set(key, (counts.get(key) || 0) + 1)
     }
@@ -260,10 +287,12 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
 
   const visibleToolsets = useMemo(() => (toolsets ? filteredToolsets(toolsets, query) : []), [query, toolsets])
 
-  const skillGroups = useMemo(() => {
+  const featuredSkills = useMemo(() => visibleSkills.filter(isFeaturedSkill), [visibleSkills])
+  const supportingSkills = useMemo(() => visibleSkills.filter(skill => !isFeaturedSkill(skill)), [visibleSkills])
+  const supportingSkillGroups = useMemo(() => {
     const groups = new Map<string, SkillInfo[]>()
 
-    for (const skill of visibleSkills) {
+    for (const skill of supportingSkills) {
       const key = categoryFor(skill)
       groups.set(key, [...(groups.get(key) || []), skill])
     }
@@ -271,9 +300,16 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
     return Array.from(groups.entries()).sort(([a], [b]) =>
       displayCategory(a).localeCompare(displayCategory(b), 'zh-CN')
     )
-  }, [visibleSkills])
+  }, [supportingSkills])
+
+  const featuredToolsets = useMemo(() => visibleToolsets.filter(isFeaturedToolset), [visibleToolsets])
+  const supportingToolsets = useMemo(
+    () => visibleToolsets.filter(toolset => !isFeaturedToolset(toolset)),
+    [visibleToolsets]
+  )
 
   const totalSkills = skills?.length || 0
+  const primarySkillCount = skills?.some(isFeaturedSkill) ? skills.filter(isFeaturedSkill).length : totalSkills
   const enabledToolsets = toolsets?.filter(toolset => toolset.enabled).length || 0
 
   async function handleToggleSkill(skill: SkillInfo, enabled: boolean) {
@@ -322,7 +358,7 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
         mode === 'skills' && categories.length > 0 ? (
           <>
             <TextTab active={activeCategory === null} onClick={() => setActiveCategory(null)}>
-              {t.skills.all} <TextTabMeta>{totalSkills}</TextTabMeta>
+              {t.skills.all} <TextTabMeta>{primarySkillCount}</TextTabMeta>
             </TextTab>
             {categories.map(category => (
               <TextTab
@@ -373,38 +409,60 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
             <EmptyState description={t.skills.noSkillsDesc} title={t.skills.noSkillsTitle} />
           ) : (
             <div className="space-y-4">
-              {skillGroups.map(([category, list]) => (
-                <div className="space-y-1.5" key={category}>
-                  {activeCategory === null && (
-                    <div className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                      {displayCategory(category)}
-                    </div>
-                  )}
-                  <div>
-                    {list.map(skill => (
-                      <div
-                        className="grid gap-3 px-0 py-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                        key={skill.name}
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium">{displaySkillName(skill)}</div>
-                          <div className="mt-0.5 truncate font-mono text-[0.65rem] text-(--ui-text-tertiary)">
-                            {skill.name}
+              {featuredSkills.length > 0 && (
+                <CapabilitySection
+                  count={featuredSkills.length}
+                  subtitle="围绕跨境选品、竞品分析、达人分析、素材创作等 DeepSeen 业务链路优先展示。"
+                  title="DeepSeen 核心技能"
+                  tone="featured"
+                >
+                  {featuredSkills.map(skill => (
+                    <SkillRow
+                      featured
+                      key={skill.name}
+                      onToggle={handleToggleSkill}
+                      saving={savingSkill === skill.name}
+                      skill={skill}
+                    />
+                  ))}
+                </CapabilitySection>
+              )}
+              {supportingSkillGroups.length > 0 && (
+                <CapabilitySection
+                  count={supportingSkills.length}
+                  subtitle="保留给智能体执行辅助任务，默认降低展示权重。"
+                  title={featuredSkills.length > 0 ? '辅助技能' : '技能'}
+                  tone="supporting"
+                >
+                  {featuredSkills.length > 0 && !showSupportingSkills ? (
+                    <CollapsedSupporting
+                      count={supportingSkills.length}
+                      label="展开高级辅助技能"
+                      onClick={() => setShowSupportingSkills(true)}
+                    />
+                  ) : (
+                    supportingSkillGroups.map(([category, list]) => (
+                      <div className="space-y-1.5" key={category}>
+                        {activeCategory === null && (
+                          <div className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                            {displayCategory(category)}
                           </div>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            {displaySkillDescription(skill)}
-                          </p>
+                        )}
+                        <div>
+                          {list.map(skill => (
+                            <SkillRow
+                              key={skill.name}
+                              onToggle={handleToggleSkill}
+                              saving={savingSkill === skill.name}
+                              skill={skill}
+                            />
+                          ))}
                         </div>
-                        <Switch
-                          checked={skill.enabled}
-                          disabled={savingSkill === skill.name}
-                          onCheckedChange={checked => void handleToggleSkill(skill, checked)}
-                        />
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                    ))
+                  )}
+                </CapabilitySection>
+              )}
             </div>
           )}
         </div>
@@ -417,69 +475,261 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
               <div className="text-xs text-muted-foreground">
                 {t.skills.toolsetsEnabled(enabledToolsets, toolsets.length)}
               </div>
-              <div>
-                {visibleToolsets.map(toolset => {
-                  const tools = toolNames(toolset)
-                  const rawLabel = toolsetDisplayLabel(toolset)
-                  const label = displayToolsetName(toolset)
-                  const expanded = expandedToolset === toolset.name
-
-                  return (
-                    <div className="px-0 py-2.5" key={toolset.name}>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium">{label}</div>
-                          <div className="mt-0.5 truncate font-mono text-[0.65rem] text-(--ui-text-tertiary)">
-                            {toolset.name || rawLabel}
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          <button
-                            aria-expanded={expanded}
-                            aria-label={t.skills.configureToolset(label)}
-                            className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                            onClick={() =>
-                              setExpandedToolset(current => (current === toolset.name ? null : toolset.name))
-                            }
-                            type="button"
-                          >
-                            <StatusPill active={toolset.configured}>
-                              {toolset.configured ? t.skills.configured : t.skills.needsKeys}
-                            </StatusPill>
-                          </button>
-                          <Switch
-                            aria-label={t.skills.toggleToolset(label)}
-                            checked={toolset.enabled}
-                            disabled={savingToolset === toolset.name}
-                            onCheckedChange={checked => void handleToggleToolset(toolset, checked)}
-                          />
-                        </div>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {displayToolsetDescription(toolset)}
-                      </p>
-                      {tools.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {tools.map(name => (
-                            <span
-                              className="rounded-md bg-(--ui-bg-quinary) px-1.5 py-0.5 font-mono text-[0.65rem] text-(--ui-text-tertiary)"
-                              key={name}
-                            >
-                              {name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {expanded && <ToolsetConfigPanel onConfiguredChange={refreshToolsets} toolset={toolset.name} />}
-                    </div>
-                  )
-                })}
-              </div>
+              {featuredToolsets.length > 0 && (
+                <CapabilitySection
+                  count={featuredToolsets.length}
+                  subtitle="优先用于 DeepSeen 数据分析、图片/视频生成、结果回显和业务工具调用。"
+                  title="DeepSeen 工具链"
+                  tone="featured"
+                >
+                  {featuredToolsets.map(toolset => (
+                    <ToolsetRow
+                      configureToolset={t.skills.configureToolset}
+                      expanded={expandedToolset === toolset.name}
+                      featured
+                      key={toolset.name}
+                      needsKeys={t.skills.needsKeys}
+                      onConfiguredChange={refreshToolsets}
+                      onExpand={name => setExpandedToolset(current => (current === name ? null : name))}
+                      onToggle={handleToggleToolset}
+                      saving={savingToolset === toolset.name}
+                      statusLabel={toolset.configured ? t.skills.configured : t.skills.needsKeys}
+                      toggleToolset={t.skills.toggleToolset}
+                      toolset={toolset}
+                    />
+                  ))}
+                </CapabilitySection>
+              )}
+              {supportingToolsets.length > 0 && (
+                <CapabilitySection
+                  count={supportingToolsets.length}
+                  subtitle="作为智能体处理文件、网页、终端等通用任务时的辅助能力。"
+                  title={featuredToolsets.length > 0 ? '辅助工具' : '工具'}
+                  tone="supporting"
+                >
+                  {featuredToolsets.length > 0 && !showSupportingToolsets ? (
+                    <CollapsedSupporting
+                      count={supportingToolsets.length}
+                      label="展开高级辅助工具"
+                      onClick={() => setShowSupportingToolsets(true)}
+                    />
+                  ) : (
+                    supportingToolsets.map(toolset => (
+                      <ToolsetRow
+                        configureToolset={t.skills.configureToolset}
+                        expanded={expandedToolset === toolset.name}
+                        key={toolset.name}
+                        needsKeys={t.skills.needsKeys}
+                        onConfiguredChange={refreshToolsets}
+                        onExpand={name => setExpandedToolset(current => (current === name ? null : name))}
+                        onToggle={handleToggleToolset}
+                        saving={savingToolset === toolset.name}
+                        statusLabel={toolset.configured ? t.skills.configured : t.skills.needsKeys}
+                        toggleToolset={t.skills.toggleToolset}
+                        toolset={toolset}
+                      />
+                    ))
+                  )}
+                </CapabilitySection>
+              )}
             </div>
           )}
         </div>
       )}
     </PageSearchShell>
+  )
+}
+
+function CapabilitySection({
+  children,
+  count,
+  subtitle,
+  title,
+  tone
+}: {
+  children: React.ReactNode
+  count: number
+  subtitle: string
+  title: string
+  tone: 'featured' | 'supporting'
+}) {
+  return (
+    <section
+      className={cn(
+        'space-y-2',
+        tone === 'featured' && 'rounded-lg border border-sky-400/25 bg-gradient-to-b from-sky-400/[0.08] to-transparent p-3',
+        tone === 'supporting' && 'pt-1'
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div
+            className={cn(
+              'truncate text-xs font-semibold',
+              tone === 'featured' ? 'text-sky-700 dark:text-sky-200' : 'text-muted-foreground'
+            )}
+          >
+            {title}
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+        <Badge className={tone === 'featured' ? 'bg-sky-400/15 text-sky-700 dark:text-sky-200' : undefined}>
+          {count}
+        </Badge>
+      </div>
+      <div className="space-y-1">{children}</div>
+    </section>
+  )
+}
+
+function SkillRow({
+  featured = false,
+  onToggle,
+  saving,
+  skill
+}: {
+  featured?: boolean
+  onToggle: (skill: SkillInfo, enabled: boolean) => Promise<void>
+  saving: boolean
+  skill: SkillInfo
+}) {
+  return (
+    <div
+      className={cn(
+        'grid gap-3 px-0 py-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center',
+        featured && 'rounded-md border border-sky-400/25 bg-sky-400/[0.06] px-3 py-3'
+      )}
+    >
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          {featured && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />}
+          <div className={cn('truncate text-sm', featured ? 'font-semibold text-foreground' : 'font-medium')}>
+            {displaySkillName(skill)}
+          </div>
+        </div>
+        <div className="mt-0.5 truncate font-mono text-[0.65rem] text-(--ui-text-tertiary)">
+          {skill.name}
+        </div>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {displaySkillDescription(skill)}
+        </p>
+      </div>
+      <Switch
+        checked={skill.enabled}
+        disabled={saving}
+        onCheckedChange={checked => void onToggle(skill, checked)}
+      />
+    </div>
+  )
+}
+
+function CollapsedSupporting({
+  count,
+  label,
+  onClick
+}: {
+  count: number
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      className="flex w-full cursor-pointer items-center justify-between rounded-md border border-dashed border-(--ui-border-secondary) bg-(--ui-bg-secondary)/40 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-(--ui-bg-tertiary) hover:text-foreground"
+      onClick={onClick}
+      type="button"
+    >
+      <span>{label}</span>
+      <span className="font-mono text-[0.65rem]">{count}</span>
+    </button>
+  )
+}
+
+function ToolsetRow({
+  configureToolset,
+  expanded,
+  featured = false,
+  onConfiguredChange,
+  onExpand,
+  onToggle,
+  saving,
+  statusLabel,
+  toggleToolset,
+  toolset
+}: {
+  configureToolset: (label: string) => string
+  expanded: boolean
+  featured?: boolean
+  needsKeys: string
+  onConfiguredChange: () => void
+  onExpand: (name: string) => void
+  onToggle: (toolset: ToolsetInfo, enabled: boolean) => Promise<void>
+  saving: boolean
+  statusLabel: string
+  toggleToolset: (label: string) => string
+  toolset: ToolsetInfo
+}) {
+  const tools = toolNames(toolset)
+  const rawLabel = toolsetDisplayLabel(toolset)
+  const label = displayToolsetName(toolset)
+
+  return (
+    <div
+      className={cn(
+        'px-0 py-2.5',
+        featured && 'rounded-md border border-sky-400/25 bg-sky-400/[0.06] px-3 py-3',
+        !featured && 'opacity-80 transition-opacity hover:opacity-100'
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            {featured && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />}
+            <div className={cn('truncate text-sm', featured ? 'font-semibold text-foreground' : 'font-medium')}>
+              {label}
+            </div>
+          </div>
+          <div className="mt-0.5 truncate font-mono text-[0.65rem] text-(--ui-text-tertiary)">
+            {toolset.name || rawLabel}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            aria-expanded={expanded}
+            aria-label={configureToolset(label)}
+            className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            onClick={() => onExpand(toolset.name)}
+            type="button"
+          >
+            <StatusPill active={toolset.configured}>{statusLabel}</StatusPill>
+          </button>
+          <Switch
+            aria-label={toggleToolset(label)}
+            checked={toolset.enabled}
+            disabled={saving}
+            onCheckedChange={checked => void onToggle(toolset, checked)}
+          />
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {displayToolsetDescription(toolset)}
+      </p>
+      {tools.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {tools.map(name => (
+            <span
+              className={cn(
+                'rounded-md px-1.5 py-0.5 font-mono text-[0.65rem]',
+                featured ? 'bg-sky-400/10 text-sky-700 dark:text-sky-200' : 'bg-(--ui-bg-quinary) text-(--ui-text-tertiary)'
+              )}
+              key={name}
+            >
+              {name}
+            </span>
+          ))}
+        </div>
+      )}
+      {expanded && <ToolsetConfigPanel onConfiguredChange={onConfiguredChange} toolset={toolset.name} />}
+    </div>
   )
 }
 

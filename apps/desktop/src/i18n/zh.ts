@@ -167,7 +167,7 @@ export const zh: Translations = {
       'nav.commandCenter': '打开命令中心',
       'nav.settings': '打开设置',
       'nav.profiles': '打开配置',
-      'nav.skills': '打开技能',
+      'nav.skills': '打开 DeepSeen 能力',
       'nav.messaging': '打开消息',
       'nav.artifacts': '打开制品',
       'nav.cron': '打开定时任务',
@@ -861,7 +861,7 @@ export const zh: Translations = {
     nav: {
       newChat: { title: '新建会话', detail: '开始一个新会话' },
       settings: { title: '设置', detail: '配置 Herbound 桌面端' },
-      skills: { title: '技能与工具', detail: '启用技能、工具集与提供方' },
+      skills: { title: 'DeepSeen 能力', detail: '管理跨境电商智能体的核心技能与工具链' },
       messaging: { title: '消息平台', detail: '配置 Telegram、Slack、Discord 等' },
       artifacts: { title: '产物', detail: '浏览生成的输出' }
     },
@@ -1259,7 +1259,7 @@ export const zh: Translations = {
   sidebar: {
     nav: {
       'new-session': '新建会话',
-      skills: '技能与工具',
+      skills: 'DeepSeen 能力',
       messaging: '消息平台',
       artifacts: '产物'
     },

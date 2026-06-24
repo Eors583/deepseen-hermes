@@ -53,4 +53,27 @@ describe('auth token storage', () => {
     expect(isAuthTokenExpired(token, 0)).toBe(false)
     expect(getStoredAuthToken()).toBe(token)
   })
+
+  it('keeps the current token in memory when localStorage is unavailable', () => {
+    const token = jwt(Math.floor(Date.now() / 1000) + 3600)
+
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: () => {
+          throw new Error('blocked')
+        },
+        removeItem: () => {
+          throw new Error('blocked')
+        },
+        setItem: () => {
+          throw new Error('blocked')
+        }
+      }
+    })
+
+    persistAuthToken(token)
+
+    expect(getStoredAuthToken()).toBe(token)
+  })
 })

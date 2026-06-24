@@ -1243,6 +1243,7 @@ export default {
       saveFailed: '保存失败',
       noProviders: '暂无已配置的模型',
       deepseenTitle: 'DeepSeen SDK',
+      deepseenAutoManaged: '已使用当前登录的 DeepSeen 账号自动托管，无需手动输入 API Key。',
       deepseenDescription: 'Herbound 跨境工具调用 DeepSeen SDK 时使用的 API Key，覆盖产品报告、竞品调研、达人分析、图片生成、视频生成和视频分析。',
       deepseenPlaceholder: '输入 DEEPSEEN_API_KEY',
       deepseenCurrent: '当前 Key：',

@@ -6,7 +6,15 @@ import { PageLoader } from '@/components/page-loader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { type AuthUser, getCurrentAuthUser, loginUser, registerUser } from '@/hermes'
-import { authTokenExpiresAt, getStoredAuthToken, isAuthTokenExpired, persistAuthToken } from '@/lib/auth-token'
+import {
+  AUTH_TOKEN_CHANGED_EVENT,
+  authTokenExpiresAt,
+  getStoredAuthToken,
+  isAuthTokenExpired,
+  persistAuthToken
+} from '@/lib/auth-token'
+import { setGatewayAuthToken } from '@/lib/gateway-ws-url'
+import { LogOut } from '@/lib/icons'
 
 interface AuthGateProps {
   children: ReactNode
@@ -65,6 +73,7 @@ export function AuthGate({ children }: AuthGateProps) {
 
   const logout = useCallback(() => {
     persistAuthToken(null)
+    setGatewayAuthToken(null)
     setToken(null)
     setUser(null)
     setStatus('unauthenticated')
@@ -79,12 +88,16 @@ export function AuthGate({ children }: AuthGateProps) {
       }
 
       try {
+        console.info(`[auth] verifying stored token len=${candidate.length}`)
         const result = await getCurrentAuthUser(candidate)
 
+        setGatewayAuthToken(candidate)
         setUser(result.user)
         setToken(candidate)
         setStatus('ready')
+        console.info(`[auth] token verified user=${result.user.username}`)
       } catch {
+        console.info('[auth] stored token verification failed; logging out')
         logout()
       }
     },
@@ -93,6 +106,14 @@ export function AuthGate({ children }: AuthGateProps) {
 
   useEffect(() => {
     void verify()
+  }, [verify])
+
+  useEffect(() => {
+    const onTokenChanged = () => void verify()
+
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, onTokenChanged)
+
+    return () => window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, onTokenChanged)
   }, [verify])
 
   useEffect(() => {
@@ -132,14 +153,18 @@ export function AuthGate({ children }: AuthGateProps) {
     setBusy(true)
 
     try {
+      console.info(`[auth] submitting ${mode} username=${name}`)
       const result = mode === 'login' ? await loginUser(name, password) : await registerUser(name, password)
 
+      console.info(`[auth] ${mode} returned token=${result.token ? `yes len=${result.token.length}` : 'no'}`)
+      setGatewayAuthToken(result.token)
       persistAuthToken(result.token)
       setToken(result.token)
       setPassword('')
       setConfirmPassword('')
       await verify(result.token)
     } catch (err) {
+      console.info(`[auth] ${mode} failed: ${err instanceof Error ? err.message : String(err)}`)
       setError(errorMessage(err))
     } finally {
       setBusy(false)
@@ -151,7 +176,20 @@ export function AuthGate({ children }: AuthGateProps) {
   }
 
   if (status === 'ready' && user) {
-    return <>{children}</>
+    return (
+      <>
+        {children}
+        <div className="fixed right-3 top-3 z-50 flex max-w-[min(22rem,calc(100vw-1.5rem))] items-center gap-2 rounded-md border border-border bg-card/95 px-2.5 py-2 text-xs text-foreground shadow-sm backdrop-blur">
+          <span className="min-w-0 truncate text-muted-foreground" title={user.username}>
+            {user.username}
+          </span>
+          <Button className="h-7 gap-1.5 px-2 text-xs" onClick={logout} title="退出登录" variant="outline">
+            <LogOut className="size-3.5" />
+            退出
+          </Button>
+        </div>
+      </>
+    )
   }
 
   return (

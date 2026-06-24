@@ -2,6 +2,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: deepseen-hermes-postgres
+    profiles:
+      - standalone-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-hermes}
@@ -25,9 +27,6 @@ services:
     image: deepseen-hermes:prod
     container_name: deepseen-hermes
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     env_file:
       - path: .env.prod
         required: false
@@ -36,8 +35,9 @@ services:
       HERMES_WEB_DIST: /app/hermes_cli/web_dist
       HERMES_ENABLE_PROJECT_PLUGINS: "1"
       HERMES_WEB_PASSWORD_AUTH: "1"
-      HERMES_DATABASE_URL: postgresql://${POSTGRES_USER:-hermes}:${POSTGRES_PASSWORD:-change-me-before-prod}@postgres:5432/${POSTGRES_DB:-hermes}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-hermes}:${POSTGRES_PASSWORD:-change-me-before-prod}@postgres:5432/${POSTGRES_DB:-hermes}
+      HERBOUND_AUTH_PROVIDER: ${HERBOUND_AUTH_PROVIDER:-deepseen}
+      HERMES_DATABASE_URL: ${HERMES_DATABASE_URL:-postgresql://hermes:change-me-before-prod@postgres:5432/hermes}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://hermes:change-me-before-prod@postgres:5432/hermes}
       DEEPSEEN_BASE_URL: ${DEEPSEEN_BASE_URL:-https://deepseen.ai/v1}
     expose:
       - "9119"

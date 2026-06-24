@@ -6,6 +6,7 @@ import { ErrorIcon } from '@/components/ui/error-state'
 import { LogView } from '@/components/ui/log-view'
 import type { DesktopConnectionConfig } from '@/global'
 import { useI18n } from '@/i18n'
+import { persistAuthToken } from '@/lib/auth-token'
 import { FileText, Loader2, LogIn, RefreshCw, Wrench } from '@/lib/icons'
 import { $desktopBoot } from '@/store/boot'
 import { notify, notifyError } from '@/store/notifications'
@@ -15,6 +16,10 @@ import type { RemoteReauth } from './boot-failure-reauth'
 import { deriveProviderShape, isRemoteReauthFailure, signInLabel } from './boot-failure-reauth'
 
 type BusyAction = 'local' | 'repair' | 'retry' | 'signin' | null
+
+function isLoginRequiredBootFailure(error: string | null | undefined): boolean {
+  return /login token is required|登录已过期|needsLogin/i.test(error || '')
+}
 
 // A remote gateway whose access cookie has lapsed (e.g. the dashboard
 // restarted on the remote box) boots into this overlay with a reauth-shaped
@@ -37,6 +42,7 @@ export function BootFailureOverlay() {
   const [remoteReauth, setRemoteReauth] = useState<RemoteReauth | null>(null)
 
   const visible = Boolean(boot.error) && !boot.running
+  const loginRequired = isLoginRequiredBootFailure(boot.error)
   // While first-run onboarding owns the picker/flow we let it surface its own
   // progress; the recovery overlay is for hard failures, which it covers via a
   // higher z-index regardless of onboarding state.
@@ -52,6 +58,15 @@ export function BootFailureOverlay() {
       .then(res => setLogs(res.lines ?? []))
       .catch(() => undefined)
   }, [visible])
+
+  useEffect(() => {
+    if (!visible || !loginRequired) {
+      return
+    }
+
+    persistAuthToken(null)
+    window.setTimeout(() => window.location.reload(), 0)
+  }, [loginRequired, visible])
 
   // Resolve whether this boot failure is a remote-gateway reauth so we can
   // offer the actionable "Sign in" path instead of the local-only recovery
@@ -111,6 +126,13 @@ export function BootFailureOverlay() {
   }
 
   const retry = async () => {
+    if (loginRequired) {
+      persistAuthToken(null)
+      window.location.reload()
+
+      return
+    }
+
     setBusy('retry')
     await window.hermesDesktop?.resetBootstrap().catch(() => undefined)
     window.location.reload()

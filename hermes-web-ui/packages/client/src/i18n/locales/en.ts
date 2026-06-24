@@ -1251,6 +1251,7 @@ export default {
       saveFailed: 'Save failed',
       noProviders: 'No providers configured',
       deepseenTitle: 'DeepSeen SDK',
+      deepseenAutoManaged: 'Managed automatically with the current DeepSeen account. No API key input is required.',
       deepseenDescription: 'API key used by Herbound cross-border tools for product reports, competitor research, creator analysis, image generation, video generation, and video analysis.',
       deepseenPlaceholder: 'Enter DEEPSEEN_API_KEY',
       deepseenCurrent: 'Current key:',

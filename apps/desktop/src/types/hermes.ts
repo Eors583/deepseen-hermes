@@ -125,7 +125,7 @@ export interface AuthUser {
   id: number
   last_login_at: null | number
   requiresCredentialChange?: boolean
-  role: 'admin' | 'super_admin'
+  role: 'admin' | 'super_admin' | 'vip' | 'user'
   status: 'active' | 'disabled'
   updated_at: number
   username: string

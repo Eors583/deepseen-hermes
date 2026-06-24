@@ -1,4 +1,23 @@
 const AUTH_TOKEN_KEY = 'herbound_auth_token'
+export const AUTH_TOKEN_CHANGED_EVENT = 'herbound-auth-token-changed'
+
+let inMemoryAuthToken: string | null = null
+
+function authTokenGlobal(): { __HERBOUND_AUTH_TOKEN__?: string | null } {
+  return globalThis as typeof globalThis & { __HERBOUND_AUTH_TOKEN__?: string | null }
+}
+
+export function getRuntimeAuthToken(): string | null {
+  const token = inMemoryAuthToken || authTokenGlobal().__HERBOUND_AUTH_TOKEN__ || null
+
+  return token && !isAuthTokenExpired(token) ? token : null
+}
+
+export function setRuntimeAuthToken(token: string | null): void {
+  const normalized = token && token.trim() ? token.trim() : null
+  inMemoryAuthToken = normalized
+  authTokenGlobal().__HERBOUND_AUTH_TOKEN__ = normalized
+}
 
 interface JwtPayload {
   exp?: number
@@ -25,24 +44,64 @@ function decodePayload(token: string): JwtPayload | null {
 }
 
 export function getStoredAuthToken(): string | null {
+  const runtimeToken = getRuntimeAuthToken()
+
+  if (runtimeToken) {
+    console.info(`[auth] token read from runtime len=${runtimeToken.length}`)
+    return runtimeToken
+  }
+
   try {
     const token = window.localStorage.getItem(AUTH_TOKEN_KEY)
 
-    return token && !isAuthTokenExpired(token) ? token : null
+    if (token && !isAuthTokenExpired(token)) {
+      inMemoryAuthToken = token
+      authTokenGlobal().__HERBOUND_AUTH_TOKEN__ = token
+      console.info(`[auth] token read from localStorage len=${token.length}`)
+
+      return token
+    }
   } catch {
-    return null
+    // Fall through to null; storage can be unavailable under restricted origins.
   }
+
+  setRuntimeAuthToken(null)
+  console.info('[auth] no valid stored token')
+
+  return null
 }
 
 export function persistAuthToken(token: string | null) {
+  let changed = true
+  const normalized = token || null
+
+  changed = getRuntimeAuthToken() !== normalized
+  setRuntimeAuthToken(normalized)
+
   try {
-    if (token) {
-      window.localStorage.setItem(AUTH_TOKEN_KEY, token)
+    const previous = window.localStorage.getItem(AUTH_TOKEN_KEY)
+
+    if (normalized) {
+      window.localStorage.setItem(AUTH_TOKEN_KEY, normalized)
+      console.info(`[auth] token persisted len=${normalized.length}`)
     } else {
       window.localStorage.removeItem(AUTH_TOKEN_KEY)
+      console.info('[auth] token cleared')
     }
+
+    changed = changed || previous !== normalized
   } catch {
     // Login state is best-effort in restricted storage contexts.
+  }
+
+  if (!changed) {
+    return
+  }
+
+  try {
+    window.dispatchEvent(new Event(AUTH_TOKEN_CHANGED_EVENT))
+  } catch {
+    // The renderer can run in tests or restricted contexts without events.
   }
 }
 

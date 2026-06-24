@@ -961,15 +961,15 @@ class AIAgent:
     def _is_provider_stream_parse_error(self, error: BaseException) -> bool:
         """Return True for malformed provider streaming data from SDK parsers.
 
-        Some Anthropic-compatible streaming providers can send a malformed
-        event-stream frame.  The Anthropic SDK surfaces that as a plain
-        ``ValueError`` such as ``expected ident at line 1 column 149``.  That
-        is provider wire-format trouble, not local request validation, so it
-        should follow the same retry path as a truncated JSON body.
+        Some OpenAI/Anthropic-compatible streaming providers can send a
+        malformed event-stream frame. SDKs surface that as parser exceptions
+        rather than transport errors, but it is still provider wire-format
+        trouble and should follow the same retry/fallback path.
         """
-        if getattr(self, "api_mode", None) != "anthropic_messages":
-            return False
-        if not isinstance(error, ValueError):
+        api_mode = getattr(self, "api_mode", None)
+        if api_mode == "chat_completions" and isinstance(error, json.JSONDecodeError):
+            return True
+        if api_mode != "anthropic_messages" or not isinstance(error, ValueError):
             return False
         if isinstance(error, (UnicodeEncodeError, json.JSONDecodeError)):
             return False

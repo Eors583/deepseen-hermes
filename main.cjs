@@ -291,10 +291,6 @@ if (PRODUCTION_CONNECTION_CONFIG) {
 function resolveHermesHome() {
   if (process.env.HERMES_HOME) return path.resolve(process.env.HERMES_HOME)
   if (USER_DATA_OVERRIDE) return path.join(path.resolve(USER_DATA_OVERRIDE), 'hermes-home')
-  if (DEV_SERVER) {
-    const projectHermesHome = path.join(SOURCE_REPO_ROOT, '.hermes')
-    if (directoryExists(projectHermesHome)) return projectHermesHome
-  }
   if (IS_WINDOWS && process.env.LOCALAPPDATA) {
     const localappdata = path.join(process.env.LOCALAPPDATA, 'hermes')
     const legacy = path.join(app.getPath('home'), '.hermes')
@@ -633,7 +629,6 @@ let rendererReloadTimes = []
 // instead of re-running install.ps1 in a hot loop. Cleared explicitly by
 // the renderer's "Reload and retry" path or by quitting the app.
 let bootstrapFailure = null
-let desktopJwtAuthToken = null
 // Active first-launch install, so the renderer's Cancel button (and app quit)
 // can abort the in-flight install.sh/ps1 instead of leaving it running.
 let bootstrapAbortController = null
@@ -2553,9 +2548,7 @@ function fetchJson(url, token, options = {}) {
         res.on('end', () => {
           const text = Buffer.concat(chunks).toString('utf8')
           if ((res.statusCode || 500) >= 400) {
-            const err = new Error(`${res.statusCode}: ${text || res.statusMessage}`)
-            err.statusCode = res.statusCode || 500
-            reject(err)
+            reject(new Error(`${res.statusCode}: ${text || res.statusMessage}`))
             return
           }
           if (!text) {
@@ -3913,31 +3906,18 @@ async function mintGatewayWsTicket(baseUrl) {
 }
 
 async function mintGatewayWsTicketWithAuthToken(baseUrl, authToken) {
-  const token = (typeof authToken === 'string' ? authToken.trim() : '') || desktopJwtAuthToken || ''
+  const token = typeof authToken === 'string' ? authToken.trim() : ''
   if (!token) {
     const err = new Error('Herbound login token is required before opening the gateway WebSocket.')
     err.needsLogin = true
-    rememberLog('[auth] cannot mint JWT WebSocket ticket: missing renderer/main auth token')
     throw err
   }
-  let body
-  try {
-    body = await fetchJson(`${baseUrl}/api/auth/ws-ticket`, null, {
-      method: 'POST',
-      body: { token },
-      authToken: token,
-      timeoutMs: 8_000
-    })
-  } catch (error) {
-    if (error?.statusCode === 401 || error?.statusCode === 403 || /\b(?:401|403)\b/.test(error?.message || '')) {
-      desktopJwtAuthToken = null
-    }
-    rememberLog(
-      `[auth] failed to mint JWT WebSocket ticket from ${baseUrl}: ` +
-        `${error?.statusCode ? `HTTP ${error.statusCode} ` : ''}${error?.message || String(error)}`
-    )
-    throw error
-  }
+  const body = await fetchJson(`${baseUrl}/api/auth/ws-ticket`, null, {
+    method: 'POST',
+    body: { token },
+    authToken: token,
+    timeoutMs: 8_000
+  })
   const ticket = body?.ticket
   if (!ticket || typeof ticket !== 'string') {
     throw new Error('Gateway did not return a WS ticket.')
@@ -4029,18 +4009,6 @@ function sanitizeConnectionProfiles(raw) {
   return out
 }
 
-function applyProductionConnectionDefaults(config) {
-  if (!PRODUCTION_CONNECTION_CONFIG) {
-    return config
-  }
-
-  return {
-    mode: 'remote',
-    remote: { ...PRODUCTION_CONNECTION_CONFIG.remote },
-    profiles: config && typeof config === 'object' ? config.profiles || {} : {}
-  }
-}
-
 function readDesktopConnectionConfig() {
   // Check if file changed on disk since last read (e.g. modified by another
   // process or an external tool).  Our own writes update the cache inline
@@ -4056,7 +4024,13 @@ function readDesktopConnectionConfig() {
     return connectionConfigCache
   }
 
-  let config = applyProductionConnectionDefaults({ mode: 'local', remote: {}, profiles: {} })
+  let config = PRODUCTION_CONNECTION_CONFIG
+    ? {
+        mode: 'remote',
+        remote: { ...PRODUCTION_CONNECTION_CONFIG.remote },
+        profiles: {}
+      }
+    : { mode: 'local', remote: {}, profiles: {} }
 
   try {
     const raw = fs.readFileSync(DESKTOP_CONNECTION_CONFIG_PATH, 'utf8')
@@ -4083,16 +4057,14 @@ function readDesktopConnectionConfig() {
       } else {
         // A production desktop build must not be dragged back to a local
         // backend by a stale connection.json from a prior dev/local install.
-        // Keep any explicit per-profile entries, but ignore saved global
-        // "local" mode so the packaged app talks to production.
-        config = applyProductionConnectionDefaults({ ...config, profiles })
+        // Keep any explicit per-profile remote entries, but ignore saved
+        // global "local" mode so the packaged app talks to production.
+        config = { ...config, profiles }
       }
     }
   } catch {
     // Missing or malformed connection settings should fall back to local.
   }
-
-  config = applyProductionConnectionDefaults(config)
 
   connectionConfigCache = config
   connectionConfigCacheMtime = mtime
@@ -4101,12 +4073,10 @@ function readDesktopConnectionConfig() {
 }
 
 function writeDesktopConnectionConfig(config) {
-  config = applyProductionConnectionDefaults(config)
   fs.mkdirSync(path.dirname(DESKTOP_CONNECTION_CONFIG_PATH), { recursive: true })
   writeFileAtomic(DESKTOP_CONNECTION_CONFIG_PATH, JSON.stringify(config, null, 2))
   connectionConfigCache = config
   connectionConfigCacheMtime = fs.statSync(DESKTOP_CONNECTION_CONFIG_PATH).mtimeMs
-  return config
 }
 
 // Returns the desktop's chosen profile name, or null when unset. "default" is
@@ -5383,13 +5353,13 @@ ipcMain.handle('hermes:connection-config:oauth-logout', async (_event, rawUrl) =
 })
 ipcMain.handle('hermes:connection-config:save', async (_event, payload) => {
   const config = coerceDesktopConnectionConfig(payload)
-  const saved = writeDesktopConnectionConfig(config)
+  writeDesktopConnectionConfig(config)
 
-  return sanitizeDesktopConnectionConfig(saved, payload?.profile)
+  return sanitizeDesktopConnectionConfig(config, payload?.profile)
 })
 ipcMain.handle('hermes:connection-config:apply', async (_event, payload) => {
   const config = coerceDesktopConnectionConfig(payload)
-  const saved = writeDesktopConnectionConfig(config)
+  writeDesktopConnectionConfig(config)
 
   const key = connectionScopeKey(payload?.profile)
 
@@ -5405,7 +5375,7 @@ ipcMain.handle('hermes:connection-config:apply', async (_event, payload) => {
     mainWindow?.reload()
   }
 
-  return sanitizeDesktopConnectionConfig(saved, payload?.profile)
+  return sanitizeDesktopConnectionConfig(config, payload?.profile)
 })
 
 ipcMain.handle('hermes:profile:get', async () => ({ profile: readActiveDesktopProfile() }))
@@ -5590,23 +5560,12 @@ ipcMain.handle('hermes:api', async (_event, request) => {
       timeoutMs
     })
   }
-  const result = await fetchJson(url, connection.token, {
+  return fetchJson(url, connection.token, {
     method: request?.method,
     body: request?.body,
     timeoutMs,
     authToken: request?.authToken
   })
-
-  if (request?.path === '/api/auth/login' || request?.path === '/api/auth/register') {
-    const token = typeof result?.token === 'string' ? result.token.trim() : ''
-    desktopJwtAuthToken = token || null
-    rememberLog(`[auth] ${request.path} returned token=${token ? `yes len=${token.length}` : 'no'}`)
-  } else if (request?.path === '/api/auth/me' && typeof request?.authToken === 'string' && request.authToken.trim()) {
-    desktopJwtAuthToken = request.authToken.trim()
-    rememberLog(`[auth] /api/auth/me verified token len=${desktopJwtAuthToken.length}`)
-  }
-
-  return result
 })
 
 ipcMain.handle('hermes:notify', (_event, payload) => {

@@ -2,6 +2,7 @@ param(
   [string]$PostgresPassword = "HerboundPg_2026_prod",
   [string]$PostgresBind = "127.0.0.1",
   [string]$PostgresPort = "5432",
+  [string]$DatabaseUrl = "",
   [string]$WebBind = "0.0.0.0",
   [string]$WebPort = "9119"
 )
@@ -37,9 +38,17 @@ function EnvValue([string]$key, [string]$fallback = "") {
   return $fallback
 }
 
+$resolvedDatabaseUrl = if ($DatabaseUrl) {
+  $DatabaseUrl
+} else {
+  EnvValue 'HERMES_DATABASE_URL' "postgresql://hermes:$PostgresPassword@postgres:5432/hermes"
+}
+
 $lines = @(
   "HERMES_WEB_BIND=$WebBind",
   "HERMES_WEB_PORT=$WebPort",
+  "",
+  "HERBOUND_AUTH_PROVIDER=deepseen",
   "",
   "POSTGRES_DB=hermes",
   "POSTGRES_USER=hermes",
@@ -47,8 +56,8 @@ $lines = @(
   "POSTGRES_BIND=$PostgresBind",
   "POSTGRES_PORT=$PostgresPort",
   "",
-  "HERMES_DATABASE_URL=postgresql://hermes:$PostgresPassword@postgres:5432/hermes",
-  "DATABASE_URL=postgresql://hermes:$PostgresPassword@postgres:5432/hermes",
+  "HERMES_DATABASE_URL=$resolvedDatabaseUrl",
+  "DATABASE_URL=$resolvedDatabaseUrl",
   "",
   "DEEPSEEN_BASE_URL=$(EnvValue 'DEEPSEEN_BASE_URL' 'https://deepseen.ai/v1')",
   "",
@@ -68,4 +77,4 @@ $lines = @(
 [System.IO.File]::WriteAllText($prodEnvPath, ($lines -join [Environment]::NewLine) + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Wrote $prodEnvPath"
-Write-Host "PostgreSQL: hermes / hermes / $PostgresPassword / 127.0.0.1:$PostgresPort via SSH tunnel or server-local access"
+Write-Host "PostgreSQL URL: $resolvedDatabaseUrl"

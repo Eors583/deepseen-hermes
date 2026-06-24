@@ -230,10 +230,10 @@ export function DesktopOnboardingOverlay({ enabled, onCompleted, requestGateway 
   }
 
   useEffect(() => {
-    if (enabled || onboarding.requested) {
+    if (onboarding.manual || onboarding.requested) {
       void refreshOnboarding(ctx)
     }
-  }, [ctx, enabled, onboarding.requested])
+  }, [ctx, onboarding.manual, onboarding.requested])
 
   // When the Providers settings page asked to connect a specific provider, the
   // store stashed its id. Once the provider list has loaded and we're back at
@@ -265,11 +265,16 @@ export function DesktopOnboardingOverlay({ enabled, onCompleted, requestGateway 
     }
   }, [ctx, onboarding.flow.status, onboarding.manual, onboarding.providers])
 
-  // Mount from frame 1 so we replace the boot overlay seamlessly. The
-  // configured field stays null until the runtime check resolves; only then
-  // do we know whether to dismiss (true) or surface the picker (false).
-  // EXCEPTION: manual mode (user opened the selector from a working app to
-  // add/switch a provider) shows the overlay regardless of configured state.
+  // Herbound uses the server-side DeepSeen account/model configuration, so the
+  // desktop app must not block first launch on the generic Hermes provider
+  // picker. Keep the shared flow available only when settings or an explicit
+  // recovery path asks for it.
+  if (!onboarding.manual && !onboarding.requested) {
+    return null
+  }
+
+  // Manual mode (user opened the selector from a working app to add/switch a
+  // provider) shows the overlay regardless of configured state.
   if (onboarding.configured === true && !onboarding.manual) {
     return null
   }

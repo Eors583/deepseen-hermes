@@ -2,7 +2,7 @@ import { useStore } from '@nanostores/react'
 import { useCallback, useEffect, useRef } from 'react'
 
 import type { HermesGateway } from '@/hermes'
-import { isGatewayReauthRequired, resolveGatewayWsUrl } from '@/lib/gateway-ws-url'
+import { isGatewayLoginRequired, isGatewayReauthRequired, resolveGatewayWsUrl } from '@/lib/gateway-ws-url'
 import { $gateway, ensureActiveGatewayOpen, isActivePrimary } from '@/store/gateway'
 import { $activeGatewayProfile } from '@/store/profile'
 import { $gatewayState, setConnection } from '@/store/session'
@@ -77,7 +77,7 @@ export function useGatewayRequest() {
 
         return existing
       } catch (error) {
-        if (isGatewayReauthRequired(error)) {
+        if (isGatewayReauthRequired(error) || isGatewayLoginRequired(error)) {
           reauthErrorRef.current = error
         }
 

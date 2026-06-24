@@ -250,7 +250,7 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
   return undefined
 }
 
-export type StoredUserRole = 'super_admin' | 'admin'
+export type StoredUserRole = 'super_admin' | 'admin' | 'vip' | 'user'
 
 export function getStoredUserRole(): StoredUserRole | null {
   const token = getApiKey()
@@ -260,7 +260,7 @@ export function getStoredUserRole(): StoredUserRole | null {
     const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
     const data = JSON.parse(atob(padded)) as { role?: unknown }
-    return data.role === 'super_admin' || data.role === 'admin' ? data.role : null
+    return ['super_admin', 'admin', 'vip', 'user'].includes(data.role) ? data.role : null
   } catch {
     return null
   }

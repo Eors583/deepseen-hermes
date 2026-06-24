@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { NInput, NButton, NSpin, NEmpty, NTag, useMessage } from 'naive-ui'
 import { useModelsStore } from '@/stores/hermes/models'
-import { fetchDeepSeenKeyStatus, saveDeepSeenApiKey, updateProvider } from '@/api/hermes/system'
+import { fetchDeepSeenKeyStatus, updateProvider } from '@/api/hermes/system'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -10,11 +10,9 @@ const modelsStore = useModelsStore()
 const message = useMessage()
 
 const savingKey = ref<string | null>(null)
-const savingDeepSeen = ref(false)
 const loadingDeepSeen = ref(false)
 const deepSeenConfigured = ref(false)
 const deepSeenRedacted = ref('')
-const deepSeenKey = ref('')
 const editKeys = ref<Record<string, string>>({})
 
 onMounted(() => {
@@ -82,25 +80,6 @@ async function loadDeepSeenKeyStatus() {
   }
 }
 
-async function handleSaveDeepSeenKey() {
-  const key = deepSeenKey.value.trim()
-  if (!key) {
-    message.warning(t('settings.models.deepseenPlaceholder'))
-    return
-  }
-  savingDeepSeen.value = true
-  try {
-    const status = await saveDeepSeenApiKey(key)
-    deepSeenConfigured.value = status.configured
-    deepSeenRedacted.value = status.redacted_value || ''
-    deepSeenKey.value = ''
-    message.success(t('settings.models.deepseenSaved'))
-  } catch (e: any) {
-    message.error(e.message || t('settings.models.deepseenSaveFailed'))
-  } finally {
-    savingDeepSeen.value = false
-  }
-}
 </script>
 
 <template>
@@ -125,22 +104,8 @@ async function handleSaveDeepSeenKey() {
           <div v-if="deepSeenConfigured && deepSeenRedacted" class="configured-key">
             {{ t('settings.models.deepseenCurrent') }} {{ deepSeenRedacted }}
           </div>
-          <div class="field-row">
-            <NInput
-              v-model:value="deepSeenKey"
-              type="password"
-              show-password-on="click"
-              :placeholder="t('settings.models.deepseenPlaceholder')"
-              autocomplete="off"
-            />
-            <NButton
-              type="primary"
-              size="small"
-              :loading="savingDeepSeen"
-              @click="handleSaveDeepSeenKey"
-            >
-              {{ t('settings.models.save') }}
-            </NButton>
+          <div class="configured-key">
+            {{ t('settings.models.deepseenAutoManaged') }}
           </div>
         </div>
       </NSpin>

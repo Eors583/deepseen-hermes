@@ -2432,6 +2432,29 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
                             mid_tool_call=False,
                             diag=request_client_holder.get("diag"),
                         )
+                        if _is_stream_parse_err:
+                            try:
+                                agent._disable_streaming = True
+                                logger.info(
+                                    "Streaming parse failed after %s attempts; "
+                                    "falling back to non-streaming request.",
+                                    _max_stream_retries + 1,
+                                )
+                                fallback_kwargs = dict(api_kwargs)
+                                fallback_kwargs.pop("stream", None)
+                                fallback_kwargs.pop("stream_options", None)
+                                result["response"] = agent._interruptible_api_call(
+                                    fallback_kwargs
+                                )
+                                return
+                            except Exception as fallback_error:
+                                logger.warning(
+                                    "Non-streaming fallback after stream parse "
+                                    "failure also failed: %s",
+                                    fallback_error,
+                                )
+                                result["error"] = fallback_error
+                                return
                         agent._buffer_status(
                             "❌ Provider returned malformed streaming data after "
                             f"{_max_stream_retries + 1} attempts. "
