@@ -566,10 +566,237 @@ function userVisibleMarkdown(fields) {
   return lines.join('\n').trim()
 }
 
+function firstValue(source, keys) {
+  for (const key of keys) {
+    const value = source?.[key]
+    if (value !== undefined && value !== null && value !== '') return value
+  }
+  return undefined
+}
+
+function displayText(value) {
+  if (value === undefined || value === null || value === '') return ''
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : ''
+  const localValueLabels = {
+    light: '轻量',
+    standard: '标准',
+    deep: '深度',
+    us: '美国',
+    usa: '美国',
+    united_states: '美国',
+    male: '男性',
+    female: '女性',
+  }
+  if (localValueLabels[normalized]) return localValueLabels[normalized]
+  return sanitizeDisplayString(translateScalarValue(value))
+}
+
+function displayNumber(value, suffix = '') {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return ''
+  const formatted = Math.abs(num) >= 1000 ? Math.round(num).toLocaleString('en-US') : String(Math.round(num * 100) / 100)
+  return `${formatted}${suffix}`
+}
+
+function displayPercent(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return ''
+  const pct = Math.abs(num) <= 1 ? num * 100 : num
+  return `${Math.round(pct * 10) / 10}%`
+}
+
+function pushLine(lines, label, value) {
+  const text = displayText(value)
+  if (text) lines.push(`- ${label}: ${text}`)
+}
+
+function pushTextList(lines, title, values, limit = 6) {
+  const items = (Array.isArray(values) ? values : [])
+    .map(displayText)
+    .filter(Boolean)
+    .slice(0, limit)
+  if (!items.length) return
+  lines.push(`\n### ${title}`)
+  items.forEach(item => lines.push(`- ${item}`))
+}
+
+function creatorProductLabel(product) {
+  const name = displayText(firstValue(product, ['product_name', 'productName', 'name']))
+  if (!name) return ''
+  const bits = []
+  const category = displayText(firstValue(product, ['category_name', 'categoryName', 'category']))
+  const sold = displayNumber(firstValue(product, ['day28_units_sold', 'day28UnitsSold', 'sold_count', 'soldCount']))
+  const creators = displayNumber(firstValue(product, ['creator_count', 'creatorCount']))
+  const videos = displayNumber(firstValue(product, ['video_count', 'videoCount']))
+  if (category) bits.push(`类目 ${category}`)
+  if (sold) bits.push(`28天销量 ${sold}`)
+  if (creators) bits.push(`关联达人 ${creators}`)
+  if (videos) bits.push(`视频 ${videos}`)
+  return bits.length ? `${name}（${bits.join('，')}）` : name
+}
+
+function creatorSampleLabel(creator) {
+  const name = displayText(firstValue(creator, ['creatorName', 'creator_name', 'username', 'handle', 'name']))
+  if (!name) return ''
+  const bits = []
+  const tier = displayText(firstValue(creator, ['tier', 'scoreTier', 'score_tier']))
+  const score = displayNumber(firstValue(creator, ['score', 'totalScore', 'total_score']))
+  const followers = displayNumber(firstValue(creator, ['followerCount', 'followers']))
+  const gmv = displayNumber(firstValue(creator, ['totalGmv', 'monthlyGmv']))
+  const videos = displayNumber(firstValue(creator, ['videoCount', 'video_count']))
+  const engagement = displayPercent(firstValue(creator, ['engagementRate', 'engagement_rate', 'likeViewRate']))
+  if (tier) bits.push(`档位 ${tier}`)
+  if (score) bits.push(`分数 ${score}`)
+  if (gmv) bits.push(`GMV ${gmv}`)
+  if (followers) bits.push(`粉丝 ${followers}`)
+  if (videos) bits.push(`视频 ${videos}`)
+  if (engagement) bits.push(`互动率 ${engagement}`)
+  return bits.length ? `${name}（${bits.join('，')}）` : name
+}
+
+function activeScoringIndicators(standard) {
+  const dimensions = Array.isArray(standard?.dimensions) ? standard.dimensions : []
+  const rows = []
+  for (const dimension of dimensions) {
+    const dimensionName = displayText(firstValue(dimension, ['label', 'name', 'key'])) || '评分维度'
+    const indicators = Array.isArray(dimension?.indicators) ? dimension.indicators : []
+    for (const indicator of indicators) {
+      if (indicator?.active === false) continue
+      const label = displayText(firstValue(indicator, ['label', 'name', 'key']))
+      if (!label) continue
+      const weight = displayNumber(indicator.weight, '%')
+      const insight = displayText(indicator.insight)
+      rows.push({ dimensionName, label, weight, insight })
+    }
+  }
+  return rows
+}
+
+function looksLikeCreatorAnalysis(result) {
+  return isPlainObject(result) && (
+    result.analysis_mode === 'CREATOR_ANALYSIS' ||
+    Array.isArray(result.sample_creators) ||
+    Array.isArray(result.sampleCreators) ||
+    isPlainObject(result.scoring_standard) ||
+    isPlainObject(result.scoringStandard) ||
+    isPlainObject(result.five_force_commonality)
+  )
+}
+
+function formatCreatorAnalysisMarkdown(result) {
+  if (!looksLikeCreatorAnalysis(result)) return ''
+  const lines = ['## DeepSeen 达人分析结果']
+
+  lines.push('\n### 基础信息')
+  pushLine(lines, '产品名称', firstValue(result, ['product_name', 'productName']))
+  pushLine(lines, '目标市场', firstValue(result, ['target_market', 'targetMarket']))
+  pushLine(lines, '一级类目', firstValue(result, ['category_level1', 'categoryLevel1']))
+  pushLine(lines, '二级类目', firstValue(result, ['category_level2', 'categoryLevel2']))
+  pushLine(lines, '目标价格', firstValue(result, ['target_product_price', 'targetProductPrice']))
+  pushLine(lines, '分析深度', firstValue(result, ['sample_tier', 'sampleTier']))
+  const sampleSize = firstValue(result, ['sample_target', 'sampleTarget']) ||
+    firstValue(result?.scoring_standard, ['sampleSize', 'sample_size']) ||
+    firstValue(result?.scoringStandard, ['sampleSize', 'sample_size'])
+  if (sampleSize) pushLine(lines, '样本数量', sampleSize)
+
+  const idealProfile = displayText(firstValue(result, ['ideal_creator_profile', 'idealCreatorProfile']))
+  if (idealProfile) {
+    lines.push('\n### 核心结论')
+    lines.push(`- ${idealProfile}`)
+  }
+
+  const commonality = firstValue(result, ['five_force_commonality', 'fiveForceCommonality'])
+  if (isPlainObject(commonality)) {
+    const labels = {
+      salesPower: '成交能力',
+      contentPower: '内容触发',
+      growthMomentum: '带货活跃',
+      audienceFit: '产品适配',
+      commerceEfficiency: '合作风险',
+      transactionProof: '成交验证',
+      influence: '影响力',
+      potential: '潜力',
+      diligence: '勤奋度',
+    }
+    const rows = Object.entries(commonality)
+      .map(([key, value]) => [labels[key] || labelForKey(key), displayText(value)])
+      .filter(([, value]) => value)
+    if (rows.length) {
+      if (!idealProfile) lines.push('\n### 核心结论')
+      rows.slice(0, 8).forEach(([label, value]) => lines.push(`- ${label}: ${value}`))
+    }
+  }
+
+  const products = firstValue(result, ['top_products', 'topProducts'])
+  const productRows = (Array.isArray(products) ? products : []).map(creatorProductLabel).filter(Boolean).slice(0, 5)
+  if (productRows.length) {
+    lines.push('\n### 参考竞品商品')
+    productRows.forEach((item, index) => lines.push(`${index + 1}. ${item}`))
+  }
+
+  const creators = firstValue(result, ['sample_creators', 'sampleCreators'])
+  const creatorRows = (Array.isArray(creators) ? creators : []).map(creatorSampleLabel).filter(Boolean).slice(0, 5)
+  if (creatorRows.length) {
+    lines.push('\n### 推荐关注的达人样本')
+    creatorRows.forEach((item, index) => lines.push(`${index + 1}. ${item}`))
+  }
+
+  const standard = firstValue(result, ['scoring_standard', 'scoringStandard'])
+  const indicators = activeScoringIndicators(standard).slice(0, 8)
+  if (indicators.length) {
+    lines.push('\n### 可沉淀的评分标准')
+    indicators.forEach(item => {
+      const weight = item.weight ? `，权重 ${item.weight}` : ''
+      const insight = item.insight ? `：${item.insight}` : ''
+      lines.push(`- ${item.dimensionName} / ${item.label}${weight}${insight}`)
+    })
+  }
+
+  const supplement = firstValue(result, ['persona_risk_supplement', 'personaRiskSupplement'])
+  if (isPlainObject(supplement)) {
+    const rows = [
+      ['达人定位', supplement.creatorPositioning],
+      ['人设匹配', supplement.personaFit],
+      ['商品适配', supplement.productFit],
+      ['内容风格', supplement.contentStyle],
+      ['市场语言', supplement.marketLanguage],
+      ['品牌安全', supplement.brandSafety],
+      ['活跃信号', supplement.activitySignal],
+    ]
+      .map(([label, value]) => [label, displayText(value)])
+      .filter(([, value]) => value)
+    if (rows.length) {
+      lines.push('\n### 达人画像与风险补充')
+      rows.forEach(([label, value]) => lines.push(`- ${label}: ${value}`))
+    }
+  }
+
+  pushTextList(lines, '数据说明', firstValue(result, ['data_availability_notes', 'dataAvailabilityNotes']), 4)
+
+  return lines.join('\n').trim()
+}
+
 function summarize(job) {
   const hiddenFields = new Set()
   const urls = outputUrls(job)
   const resultValue = job?.result !== undefined ? job.result : job
+  const creatorMarkdown = formatCreatorAnalysisMarkdown(resultValue)
+  if (creatorMarkdown) {
+    return clean({
+      ok: !job?.error && job?.status !== 'failed' && job?.status !== 'cancelled',
+      job_id: job?.id,
+      status: job?.status,
+      output_urls: urls,
+      result_id: job?.result_id,
+      display_markdown: creatorMarkdown,
+      user_visible_summary: creatorMarkdown,
+      user_visible_fields: {
+        result: 'creator_analysis_friendly_markdown'
+      },
+      hidden_fields: ['creator_analysis_raw_internal_fields'],
+      error: job?.error,
+    })
+  }
   const visibleResult = toUserVisibleValue(resultValue, hiddenFields)
   const visibleFields = clean({
     output_urls: urls,
