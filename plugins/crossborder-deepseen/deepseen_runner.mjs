@@ -152,6 +152,42 @@ function normalizeMarket(value) {
   return cleaned
 }
 
+function normalizeProductName(value, market) {
+  const cleaned = optionalText(value)
+  if (typeof cleaned !== 'string') return cleaned
+  let text = cleaned.trim()
+  if (!text) return undefined
+
+  const code = normalizeMarket(market)
+  const aliasesByMarket = {
+    US: ['\\u7f8e\\u56fd', '\\u7f8e\\u533a', '\\u5317\\u7f8e', 'us', 'usa', 'united states', 'america'],
+    GB: ['\\u82f1\\u56fd', '\\u82f1\\u533a', 'gb', 'uk', 'united kingdom', 'britain', 'england'],
+    DE: ['\\u5fb7\\u56fd', '\\u5fb7\\u533a', 'de', 'germany'],
+    FR: ['\\u6cd5\\u56fd', '\\u6cd5\\u533a', 'fr', 'france'],
+    IT: ['\\u610f\\u5927\\u5229', '\\u610f\\u533a', 'it', 'italy'],
+    ES: ['\\u897f\\u73ed\\u7259', '\\u897f\\u533a', 'es', 'spain'],
+    CA: ['\\u52a0\\u62ff\\u5927', '\\u52a0\\u533a', 'ca', 'canada'],
+    MX: ['\\u58a8\\u897f\\u54e5', 'mx', 'mexico'],
+    BR: ['\\u5df4\\u897f', 'br', 'brazil'],
+    JP: ['\\u65e5\\u672c', '\\u65e5\\u533a', 'jp', 'japan'],
+    KR: ['\\u97e9\\u56fd', '\\u97e9\\u533a', 'kr', 'korea', 'south korea'],
+    AU: ['\\u6fb3\\u5927\\u5229\\u4e9a', '\\u6fb3\\u6d32', '\\u6fb3\\u533a', 'au', 'australia'],
+    SG: ['\\u65b0\\u52a0\\u5761', '\\u65b0\\u533a', 'sg', 'singapore'],
+    TH: ['\\u6cf0\\u56fd', '\\u6cf0\\u533a', 'th', 'thailand'],
+    VN: ['\\u8d8a\\u5357', 'vn', 'vietnam'],
+    MY: ['\\u9a6c\\u6765\\u897f\\u4e9a', '\\u9a6c\\u6765', '\\u9a6c\\u533a', 'my', 'malaysia'],
+    PH: ['\\u83f2\\u5f8b\\u5bbe', '\\u83f2\\u533a', 'ph', 'philippines'],
+    ID: ['\\u5370\\u5c3c', '\\u5370\\u5ea6\\u5c3c\\u897f\\u4e9a', 'id', 'indonesia']
+  }
+  const aliases = aliasesByMarket[code] || []
+  for (const alias of aliases) {
+    const prefix = new RegExp(`^${alias}(?:\\u5e02\\u573a|\\u7ad9\\u70b9|\\u5730\\u533a|\\u533a\\u57df|\\u7ad9)?[\\s,，、:：\\-]*`, 'i')
+    const suffix = new RegExp(`[\\s,，、:：\\-]*(?:${alias})(?:\\u5e02\\u573a|\\u7ad9\\u70b9|\\u5730\\u533a|\\u533a\\u57df|\\u7ad9)?$`, 'i')
+    text = text.replace(prefix, '').replace(suffix, '').trim()
+  }
+  return text || cleaned
+}
+
 function outputUrls(job) {
   return Array.isArray(job?.outputs) ? job.outputs.map(item => item?.url).filter(Boolean) : []
 }
@@ -1108,7 +1144,7 @@ async function main() {
 
   if (action === 'creator_analysis') {
     const job = await client.creators.analyze(clean({
-      productName: optionalText(args.product_name),
+      productName: normalizeProductName(args.product_name, args.target_market),
       targetMarket: normalizeMarket(args.target_market),
       targetProductPrice: optionalText(args.target_product_price),
       categoryLevel1: optionalText(args.category_level1),
