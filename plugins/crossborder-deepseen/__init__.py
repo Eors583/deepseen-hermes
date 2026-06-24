@@ -258,10 +258,10 @@ def _format_runner_payload(payload: dict[str, Any]) -> str:
         return json.dumps(
             {
                 "ok": False,
-                "error": payload.get("error") or {
+                "error": _sanitize_deepseen_error(payload.get("error") or {
                     "code": "deepseen_failed",
                     "message": "DeepSeen SDK call failed",
-                },
+                }),
             },
             ensure_ascii=False,
         )
@@ -282,6 +282,19 @@ def _format_runner_payload(payload: dict[str, Any]) -> str:
         return markdown
 
     return "DeepSeen 已完成，但没有返回可展示的业务内容。"
+
+
+def _sanitize_deepseen_error(error: Any) -> dict[str, Any]:
+    if not isinstance(error, dict):
+        return {
+            "code": "deepseen_failed",
+            "message": "DeepSeen 任务未完成，请稍后重试或联系管理员检查数据源配置。",
+        }
+    out = dict(error)
+    message = str(out.get("message") or "")
+    if re.search(r"FastMoss|OpenBoost|API\s*error|参数错误", message, re.IGNORECASE):
+        out["message"] = "DeepSeen 数据接口异常，请稍后重试或联系管理员检查数据源配置。"
+    return out
 
 
 def _handler(action: str) -> Callable:
