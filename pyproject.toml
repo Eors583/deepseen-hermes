@@ -103,6 +103,9 @@ dependencies = [
   "fastapi>=0.104.0,<1",
   "uvicorn[standard]>=0.24.0,<1",
   "psycopg[binary]==3.3.4",
+  # DeepSeen shared-auth mode verifies DeepSeen's bcrypt password hashes from
+  # the shared PostgreSQL "User" table.
+  "bcrypt>=4.3.0,<5",
   "ptyprocess>=0.7.0,<1; sys_platform != 'win32'",
   "pywinpty>=2.0.0,<3; sys_platform == 'win32'",
   # Image resize recovery for the vision tools. Pillow shrinks oversized images

@@ -5,7 +5,7 @@ import { BrandMark } from '@/components/brand-mark'
 import { PageLoader } from '@/components/page-loader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { type AuthUser, getCurrentAuthUser, loginUser, registerUser } from '@/hermes'
+import { type AuthUser, getCurrentAuthUser, loginUser } from '@/hermes'
 import {
   AUTH_TOKEN_CHANGED_EVENT,
   authTokenExpiresAt,
@@ -20,8 +20,8 @@ interface AuthGateProps {
   children: ReactNode
 }
 
-type Mode = 'login' | 'register'
 type Status = 'checking' | 'ready' | 'unauthenticated'
+const DEEPSEEN_REGISTER_URL = 'https://deepseen.ai/register'
 
 function errorMessage(error: unknown): string {
   const raw = error instanceof Error ? error.message : String(error || '')
@@ -60,10 +60,8 @@ function formatExpiry(token: string | null): string {
 
 export function AuthGate({ children }: AuthGateProps) {
   const [status, setStatus] = useState<Status>('checking')
-  const [mode, setMode] = useState<Mode>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [token, setToken] = useState<string | null>(() => getStoredAuthToken())
@@ -144,27 +142,20 @@ export function AuthGate({ children }: AuthGateProps) {
       return
     }
 
-    if (mode === 'register' && password !== confirmPassword) {
-      setError('两次输入的密码不一致')
-
-      return
-    }
-
     setBusy(true)
 
     try {
-      console.info(`[auth] submitting ${mode} username=${name}`)
-      const result = mode === 'login' ? await loginUser(name, password) : await registerUser(name, password)
+      console.info(`[auth] submitting login username=${name}`)
+      const result = await loginUser(name, password)
 
-      console.info(`[auth] ${mode} returned token=${result.token ? `yes len=${result.token.length}` : 'no'}`)
+      console.info(`[auth] login returned token=${result.token ? `yes len=${result.token.length}` : 'no'}`)
       setGatewayAuthToken(result.token)
       persistAuthToken(result.token)
       setToken(result.token)
       setPassword('')
-      setConfirmPassword('')
       await verify(result.token)
     } catch (err) {
-      console.info(`[auth] ${mode} failed: ${err instanceof Error ? err.message : String(err)}`)
+      console.info(`[auth] login failed: ${err instanceof Error ? err.message : String(err)}`)
       setError(errorMessage(err))
     } finally {
       setBusy(false)
@@ -199,9 +190,7 @@ export function AuthGate({ children }: AuthGateProps) {
           <BrandMark className="size-12" />
           <div>
             <h1 className="text-xl font-semibold">登录 Herbound</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {mode === 'login' ? '登录后继续使用智能体工作台' : '创建账号后即可进入工作台'}
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">登录后继续使用智能体工作台</p>
           </div>
         </div>
 
@@ -220,7 +209,7 @@ export function AuthGate({ children }: AuthGateProps) {
           <label className="grid gap-1.5 text-sm">
             <span className="text-muted-foreground">密码</span>
             <Input
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              autoComplete="current-password"
               onChange={event => setPassword(event.target.value)}
               placeholder="请输入密码"
               type="password"
@@ -228,23 +217,10 @@ export function AuthGate({ children }: AuthGateProps) {
             />
           </label>
 
-          {mode === 'register' && (
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">确认密码</span>
-              <Input
-                autoComplete="new-password"
-                onChange={event => setConfirmPassword(event.target.value)}
-                placeholder="请再次输入密码"
-                type="password"
-                value={confirmPassword}
-              />
-            </label>
-          )}
-
           {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
 
           <Button className="mt-1 w-full" disabled={busy} type="submit">
-            {busy ? '处理中...' : mode === 'login' ? '登录' : '注册并登录'}
+            {busy ? '处理中...' : '登录'}
           </Button>
         </form>
 
@@ -252,12 +228,12 @@ export function AuthGate({ children }: AuthGateProps) {
           <button
             className="text-primary hover:underline"
             onClick={() => {
-              setMode(mode === 'login' ? 'register' : 'login')
               setError('')
+              void window.hermesDesktop?.openExternal?.(DEEPSEEN_REGISTER_URL)
             }}
             type="button"
           >
-            {mode === 'login' ? '没有账号？去注册' : '已有账号？去登录'}
+            没有账号？去 DeepSeen 注册
           </button>
           <p>登录状态保留 7 天，过期后需要重新登录。</p>
           {expiryLabel && <p>当前登录有效期至 {expiryLabel}</p>}

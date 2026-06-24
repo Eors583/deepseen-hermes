@@ -9,6 +9,7 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 import time
@@ -39,6 +40,7 @@ GLOBAL_MAX_TOTAL_FAILURES = 50
 GLOBAL_LOCK_DURATION_MS = 30 * 60_000
 
 router = APIRouter()
+_log = logging.getLogger(__name__)
 
 
 def _auth_dir() -> Path:
@@ -301,7 +303,8 @@ def _deepseen_verify_password(password: str, password_hash: str | None) -> bool:
         import bcrypt
 
         return bool(bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8")))
-    except Exception:
+    except Exception as exc:
+        _log.warning("DeepSeen password verification failed: %s: %s", type(exc).__name__, exc)
         return False
 
 
@@ -782,15 +785,16 @@ async def login(request: Request, body: LoginBody):
     with _connect() as conn:
         if _deepseen_auth_enabled():
             user = _deepseen_find_login_user(conn, username)
-            if (
-                not user
-                or _deepseen_status(user.get("status")) != "active"
-                or not _deepseen_verify_password(password, user.get("password"))
-            ):
-                if not user or not user.get("password"):
-                    _deepseen_verify_dummy_password(password)
+            if not user or not user.get("password"):
+                _deepseen_verify_dummy_password(password)
                 _record_password_failure(ip)
                 raise HTTPException(status_code=401, detail="Invalid username or password")
+            if not _deepseen_verify_password(password, user.get("password")):
+                _record_password_failure(ip)
+                raise HTTPException(status_code=401, detail="Invalid username or password")
+            if str(user.get("status") or "").upper() in {"BANNED", "SUSPENDED"}:
+                _record_password_failure(ip)
+                raise HTTPException(status_code=403, detail="Account is not active")
             mapped = _deepseen_auth_user(user)
             token = _issue_jwt(mapped)
             refresh_token = _issue_deepseen_refresh_token(mapped)
