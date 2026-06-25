@@ -5,6 +5,7 @@ import { type MutableRefObject, useCallback, useEffect, useRef } from 'react'
 import { getProfiles, transcribeAudio } from '@/hermes'
 import { translateNow, type Translations, useI18n } from '@/i18n'
 import { stripAnsi } from '@/lib/ansi'
+import { getStoredAuthUserId } from '@/lib/auth-token'
 import { branchGroupForUser, type ChatMessage, chatMessageText, textPart } from '@/lib/chat-messages'
 import {
   optimisticAttachmentRef,
@@ -665,18 +666,27 @@ export function usePromptActions({
         let submitErr: unknown = null
 
         try {
-          await requestGateway('prompt.submit', { session_id: sessionId, text })
+          await requestGateway('prompt.submit', {
+            session_id: sessionId,
+            text,
+            ...(getStoredAuthUserId() ? { user_id: getStoredAuthUserId() } : {})
+          })
         } catch (firstErr) {
           if (isSessionNotFoundError(firstErr) && selectedStoredSessionIdRef.current) {
             // Re-register the session in the gateway and get a fresh live ID.
             const resumed = await requestGateway<{ session_id: string }>('session.resume', {
-              session_id: selectedStoredSessionIdRef.current
+              session_id: selectedStoredSessionIdRef.current,
+              ...(getStoredAuthUserId() ? { user_id: getStoredAuthUserId() } : {})
             })
             const recoveredId = resumed?.session_id
 
             if (recoveredId) {
               activeSessionIdRef.current = recoveredId
-              await requestGateway('prompt.submit', { session_id: recoveredId, text })
+              await requestGateway('prompt.submit', {
+                session_id: recoveredId,
+                text,
+                ...(getStoredAuthUserId() ? { user_id: getStoredAuthUserId() } : {})
+              })
             } else {
               submitErr = firstErr
             }
@@ -1282,7 +1292,8 @@ export function usePromptActions({
       if (isSessionNotFoundError(err) && selectedStoredSessionIdRef.current) {
         try {
           const resumed = await requestGateway<{ session_id: string }>('session.resume', {
-            session_id: selectedStoredSessionIdRef.current
+            session_id: selectedStoredSessionIdRef.current,
+            ...(getStoredAuthUserId() ? { user_id: getStoredAuthUserId() } : {})
           })
           const recoveredId = resumed?.session_id
 
@@ -1407,6 +1418,7 @@ export function usePromptActions({
         await requestGateway('prompt.submit', {
           session_id: activeSessionId,
           text: userText,
+          ...(getStoredAuthUserId() ? { user_id: getStoredAuthUserId() } : {}),
           truncate_before_user_ordinal: truncateBeforeUserOrdinal
         })
       } catch (err) {
@@ -1463,6 +1475,7 @@ export function usePromptActions({
         requestGateway('prompt.submit', {
           session_id: sessionId,
           text,
+          ...(getStoredAuthUserId() ? { user_id: getStoredAuthUserId() } : {}),
           ...(truncateOrdinal !== undefined && { truncate_before_user_ordinal: truncateOrdinal })
         })
 

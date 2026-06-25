@@ -1,4 +1,5 @@
 import { $connection } from '@/store/session'
+import { getStoredAuthToken } from '@/lib/auth-token'
 
 export type MediaKind = 'audio' | 'image' | 'video' | 'file'
 
@@ -105,6 +106,7 @@ export async function gatewayMediaDataUrl(path: string): Promise<string> {
   const file = filePathFromMediaPath(path)
 
   const result = await window.hermesDesktop!.api<{ data_url: string }>({
+    authToken: getStoredAuthToken() || undefined,
     path: `/api/media?path=${encodeURIComponent(file)}`
   })
 

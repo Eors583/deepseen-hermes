@@ -78,15 +78,73 @@ function OpenMediaButton({ kind, path }: { kind: 'audio' | 'video'; path: string
   )
 }
 
+type DownloadStatus = 'canceled' | 'done' | 'failed' | 'idle' | 'preparing' | 'saving'
+
+interface DownloadResult {
+  canceled: boolean
+  path: string
+}
+
+async function downloadMediaFile(path: string, onStatus: (status: DownloadStatus) => void): Promise<DownloadResult> {
+  const name = mediaName(path)
+
+  if (/^https?:/i.test(path)) {
+    onStatus('preparing')
+    const response = await fetch(path)
+    const blob = await response.blob()
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onerror = () => reject(reader.error)
+      reader.onload = () => resolve(String(reader.result || ''))
+      reader.readAsDataURL(blob)
+    })
+    onStatus('saving')
+    return window.hermesDesktop!.saveDataUrlAs(dataUrl, name)
+  }
+
+  if (window.hermesDesktop?.saveFileAs) {
+    try {
+      onStatus('saving')
+      return await window.hermesDesktop.saveFileAs(filePathFromMediaPath(path))
+    } catch (localError) {
+      if (!isRemoteGateway()) {
+        throw localError
+      }
+    }
+  }
+
+  if (window.hermesDesktop && isRemoteGateway()) {
+    onStatus('preparing')
+    const dataUrl = await gatewayMediaDataUrl(path)
+    onStatus('saving')
+    return window.hermesDesktop.saveDataUrlAs(dataUrl, name)
+  }
+
+  openExternalLink(mediaExternalUrl(path))
+  return { canceled: false, path: '' }
+}
+
 function MediaAttachment({ path }: { path: string }) {
   const [src, setSrc] = useState('')
   const [failed, setFailed] = useState(false)
+  const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
+  const [downloadProgress, setDownloadProgress] = useState(0)
+  const [downloadError, setDownloadError] = useState('')
+  const [savedPath, setSavedPath] = useState('')
   const kind = mediaKind(path)
   const name = mediaName(path)
 
   useEffect(() => {
     let cancelled = false
     let objectUrl = ''
+
+    if (kind === 'file') {
+      setFailed(false)
+      setSrc('')
+      return () => {
+        cancelled = true
+      }
+    }
 
     setFailed(false)
     setSrc('')
@@ -115,7 +173,109 @@ function MediaAttachment({ path }: { path: string }) {
         URL.revokeObjectURL(objectUrl)
       }
     }
-  }, [path])
+  }, [kind, path])
+
+  useEffect(() => {
+    if (downloadStatus !== 'preparing' && downloadStatus !== 'saving') {
+      return undefined
+    }
+
+    const timer = window.setInterval(() => {
+      setDownloadProgress(value => Math.min(92, value + Math.max(1, Math.round((92 - value) * 0.18))))
+    }, 300)
+
+    return () => window.clearInterval(timer)
+  }, [downloadStatus])
+
+  if (kind === 'file') {
+    const busy = downloadStatus === 'preparing' || downloadStatus === 'saving'
+    const downloadLabel =
+      downloadStatus === 'preparing'
+        ? `正在准备 ${downloadProgress}%`
+        : downloadStatus === 'saving'
+          ? `正在保存 ${downloadProgress}%`
+          : downloadStatus === 'canceled'
+            ? `继续下载 ${name}`
+            : failed || downloadStatus === 'failed'
+              ? `重新下载 ${name}`
+              : `下载 ${name}`
+
+    if (downloadStatus === 'done' && savedPath) {
+      return (
+        <span className="inline-flex flex-wrap items-center gap-2">
+          <button
+            className="inline-flex cursor-pointer items-center rounded-md border border-border bg-background px-2.5 py-1 text-sm font-medium text-foreground shadow-xs hover:bg-muted"
+            onClick={() => void window.hermesDesktop?.openSavedFile(savedPath)}
+            type="button"
+          >
+            查看附件
+          </button>
+          <button
+            className="inline-flex cursor-pointer items-center rounded-md border border-border bg-transparent px-2.5 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => void window.hermesDesktop?.showSavedFile(savedPath)}
+            type="button"
+          >
+            定位文件
+          </button>
+          <span className="max-w-80 truncate text-xs text-muted-foreground" title={savedPath}>
+            已保存：{savedPath}
+          </span>
+        </span>
+      )
+    }
+
+    return (
+      <span className="inline-flex flex-wrap items-center gap-2">
+        <button
+          className="relative inline-flex cursor-pointer items-center overflow-hidden rounded-md border border-border bg-background px-2.5 py-1 text-sm font-medium text-foreground shadow-xs hover:bg-muted disabled:cursor-wait disabled:opacity-70"
+          disabled={busy}
+          onClick={() => {
+            setFailed(false)
+            setSavedPath('')
+            setDownloadError('')
+            setDownloadProgress(8)
+            setDownloadStatus('preparing')
+            void downloadMediaFile(path, status => {
+              setDownloadStatus(status)
+              if (status === 'preparing') {
+                setDownloadProgress(value => Math.max(value, 20))
+              } else if (status === 'saving') {
+                setDownloadProgress(value => Math.max(value, 55))
+              }
+            })
+              .then(result => {
+                if (result.canceled) {
+                  setDownloadProgress(0)
+                  setDownloadStatus('canceled')
+                  return
+                }
+
+                setDownloadProgress(100)
+                setSavedPath(result.path)
+                setDownloadStatus('done')
+              })
+              .catch(error => {
+                setFailed(true)
+                setDownloadError(error instanceof Error ? error.message : '附件下载失败')
+                setDownloadProgress(0)
+                setDownloadStatus('failed')
+              })
+          }}
+          type="button"
+        >
+          {busy && (
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-0 left-0 bg-primary/10 transition-[width] duration-300"
+              style={{ width: `${downloadProgress}%` }}
+            />
+          )}
+          <span className="relative z-10">{downloadLabel}</span>
+        </button>
+        {downloadError && <span className="max-w-96 truncate text-xs text-destructive">{downloadError}</span>}
+      </span>
+    )
+  }
 
   if (kind === 'image' && src) {
     return (

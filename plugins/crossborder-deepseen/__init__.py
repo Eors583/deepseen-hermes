@@ -3,16 +3,19 @@ from __future__ import annotations
 import json
 import os
 import queue
+import re
 import shutil
 import subprocess
 import sys
 import threading
 import time
 from pathlib import Path
+from urllib.parse import quote
 from typing import Any, Callable
 
 from hermes_cli.config import get_env_value
 from hermes_cli.deepseen_credentials import ensure_deepseen_api_key
+from hermes_constants import get_hermes_home
 
 _PLUGIN_DIR = Path(__file__).resolve().parent
 _RUNNER = _PLUGIN_DIR / "deepseen_runner.mjs"
@@ -91,28 +94,10 @@ def _emit_progress(
 
 def _call_runner(action: str, args: dict[str, Any], progress_callback: Callable | None = None) -> str:
     if not _has_deepseen_key():
-        return json.dumps(
-            {
-                "ok": False,
-                "error": {
-                    "code": "missing_api_key",
-                    "message": "DeepSeen API Key is not configured in Web Settings.",
-                },
-            },
-            ensure_ascii=False,
-        )
+        return "DeepSeen 任务未完成\n\nDeepSeen 使用凭证未配置，请联系管理员确认账号授权或数据服务配置。"
     node = shutil.which("node")
     if not node:
-        return json.dumps(
-            {
-                "ok": False,
-                "error": {
-                    "code": "node_not_found",
-                    "message": "Node.js >=18 is required to call deepseen-sdk.",
-                },
-            },
-            ensure_ascii=False,
-        )
+        return "DeepSeen 任务未完成\n\n当前运行环境缺少必要组件，请联系管理员检查服务部署。"
     default_timeout_ms = _VIDEO_TIMEOUT_MS if action in _VIDEO_ACTIONS else _DEFAULT_TIMEOUT_MS
     timeout_ms = args.get("timeout_ms")
     try:
@@ -231,7 +216,7 @@ def _call_runner(action: str, args: dict[str, Any], progress_callback: Callable 
     if final_payload is not None:
         if status != 0:
             final_payload.setdefault("ok", False)
-        return _format_runner_payload(final_payload)
+        return _format_runner_payload(final_payload, action)
     stdout = "\n".join(raw_lines).strip()
     return json.dumps(
         {
@@ -246,7 +231,7 @@ def _call_runner(action: str, args: dict[str, Any], progress_callback: Callable 
     )
 
 
-def _format_runner_payload(payload: dict[str, Any]) -> str:
+def _format_runner_payload(payload: dict[str, Any], action: str = "result") -> str:
     """Return the model-facing DeepSeen result.
 
     The SDK may return large nested business objects. The runner already
@@ -255,16 +240,12 @@ def _format_runner_payload(payload: dict[str, Any]) -> str:
     the user.
     """
     if payload.get("ok") is False:
-        return json.dumps(
-            {
-                "ok": False,
-                "error": _sanitize_deepseen_error(payload.get("error") or {
-                    "code": "deepseen_failed",
-                    "message": "DeepSeen SDK call failed",
-                }),
-            },
-            ensure_ascii=False,
-        )
+        error = _sanitize_deepseen_error(payload.get("error") or {
+            "code": "deepseen_failed",
+            "message": "DeepSeen SDK call failed",
+        })
+        message = str(error.get("message") or "DeepSeen 任务未完成，请稍后重试。").strip()
+        return f"DeepSeen 任务未完成\n\n{message}".strip()
 
     markdown = str(
         payload.get("display_markdown")
@@ -279,21 +260,23 @@ def _format_runner_payload(payload: dict[str, Any]) -> str:
             markdown = f"{markdown}\n\n输出链接:\n{urls_md}".strip() if markdown else f"输出链接:\n{urls_md}"
 
     if markdown:
-        return markdown
+        return _with_report_download(action, markdown, payload)
 
-    return "DeepSeen 已完成，但没有返回可展示的业务内容。"
+    return _with_report_download(action, "DeepSeen 已完成，但没有返回可展示的业务摘要。", payload)
 
 
 def _sanitize_deepseen_error(error: Any) -> dict[str, Any]:
     if not isinstance(error, dict):
         return {
             "code": "deepseen_failed",
-            "message": "DeepSeen 任务未完成，请稍后重试或联系管理员检查数据源配置。",
+            "message": "DeepSeen 任务未完成，请稍后重试或联系管理员检查数据配置。",
         }
     out = dict(error)
     message = str(out.get("message") or "")
-    if re.search(r"FastMoss|OpenBoost|API\s*error|参数错误", message, re.IGNORECASE):
-        out["message"] = "DeepSeen 数据接口异常，请稍后重试或联系管理员检查数据源配置。"
+    if re.search(r"FastMoss|OpenBoost|API\s*error|接口|endpoint|provider", message, re.IGNORECASE):
+        out["message"] = "DeepSeen 数据服务暂时无法完成本次分析，请稍后重试或联系管理员检查数据配置。"
+    elif re.search(r"参数错误|invalid|missing|required", message, re.IGNORECASE):
+        out["message"] = "提交的信息不完整或格式不符合要求，请检查产品名称、目标市场、商品链接、图片或视频等必要信息后重试。"
     return out
 
 
@@ -345,6 +328,89 @@ def _media_common() -> dict[str, Any]:
         "webhook_url": {"type": "string"},
         "idempotency_key": {"type": "string"},
     }
+
+
+def _deepseen_report_dir() -> Path:
+    root = get_hermes_home() / "deepseen-reports"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def _safe_report_part(value: str) -> str:
+    text = re.sub(r"[^0-9A-Za-z\u4e00-\u9fff._-]+", "-", value.strip())
+    text = text.strip("-._")
+    return text[:64] or "result"
+
+
+def _write_deepseen_report(action: str, markdown: str, payload: dict[str, Any]) -> Path | None:
+    try:
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        report_path = _deepseen_report_dir() / f"deepseen-{_safe_report_part(action)}-{timestamp}.md"
+        visible_fields = payload.get("user_visible_fields")
+        output_urls = payload.get("output_urls")
+        parts = [
+            "# DeepSeen 完整报告",
+            "",
+            f"- 生成时间: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"- 任务类型: DeepSeen {action}",
+            "",
+        ]
+        if markdown.strip():
+            parts.extend(["## 摘要", "", markdown.strip(), ""])
+        if isinstance(output_urls, list) and output_urls:
+            urls = [str(url).strip() for url in output_urls if str(url).strip()]
+            if urls:
+                parts.extend(["## 结果链接", ""])
+                parts.extend(f"- {url}" for url in urls)
+                parts.append("")
+        if visible_fields:
+            parts.extend([
+                "## 可展示业务数据",
+                "",
+                "```json",
+                json.dumps(visible_fields, ensure_ascii=False, indent=2),
+                "```",
+                "",
+            ])
+        report_path.write_text("\n".join(parts).strip() + "\n", encoding="utf-8")
+        return report_path
+    except Exception:
+        return None
+
+
+def _compact_deepseen_summary(markdown: str) -> str:
+    text = markdown.strip()
+    if not text:
+        return ""
+    max_chars = 2200
+    max_lines = 45
+    lines = text.splitlines()
+    too_long = len(text) > max_chars or len(lines) > max_lines
+    if not too_long:
+        return text
+    clipped_lines: list[str] = []
+    total = 0
+    for line in lines:
+        next_total = total + len(line) + 1
+        if len(clipped_lines) >= max_lines or next_total > max_chars:
+            break
+        clipped_lines.append(line)
+        total = next_total
+    summary = "\n".join(clipped_lines).rstrip()
+    return f"{summary}\n\n> 完整结果已整理到附件中，可在下方下载。"
+
+
+def _with_report_download(action: str, markdown: str, payload: dict[str, Any]) -> str:
+    report_path = _write_deepseen_report(action, markdown, payload)
+    summary = _compact_deepseen_summary(markdown) or markdown.strip()
+    if not report_path:
+        return summary
+    report_href = f"#media:{quote(str(report_path), safe='')}"
+    return (
+        f"{summary}\n\n"
+        "### 附件下载\n"
+        f"- [下载 DeepSeen 完整报告]({report_href})"
+    ).strip()
 
 
 _TOOLS: tuple[tuple[str, str, dict[str, Any], list[str], str], ...] = (

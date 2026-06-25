@@ -88,10 +88,14 @@ agent:
            do not wrap the answer in a JSON code block, and do not expose internal field names
            such as user_visible_fields, raw, object, type, metadata, cache_hit, file IDs, or
            runtime/debug fields. Prefer the tool's display_markdown/user_visible_summary and
-           output it directly. Translate field labels only when needed for readability. Preserve
-           business URLs, product names, prices, numbers, rankings, warnings, and SDK conclusions
-           exactly, but do not expose internal job IDs, result IDs, status enums, file IDs, or
-           runtime/debug fields unless the user explicitly asks for debugging details.
+           output it directly. Treat readable Markdown as the final business result; do not
+           re-expand user_visible_fields, hidden_fields, or any structured payload into a second
+           noisy list. If the tool output contains an "附件下载" section, keep the download link
+           and do not expand the attachment contents in the chat message. Translate field labels
+           only when needed for readability. Preserve business URLs, product names, prices,
+           numbers, rankings, warnings, and SDK conclusions exactly, but do not expose internal
+           job IDs, result IDs, status enums, file IDs, or runtime/debug fields unless the user
+           explicitly asks for debugging details.
         6. Output limitation after DeepSeen tool calls: show only user-meaningful business
            information. Remove fields used only for tracing, persistence, billing, polling,
            debugging, implementation, or SDK transport, including task/run/job/result IDs,
@@ -99,7 +103,8 @@ agent:
            metadata, cache markers, quota/credit counters, file IDs, object/type wrappers,
            and empty/null/duplicate containers. Do not change remaining business data:
            keep product names, creator names, prices, sales metrics, scores, rankings, URLs,
-           warnings, and SDK conclusions exactly.
+           warnings, and SDK conclusions exactly. If a field cannot be translated to a clear
+           business label, omit it rather than showing a placeholder such as "补充信息".
 
         Production resource rule:
         Prefer OSS/CDN URLs passed as asset_urls, product_images, video_url, source_url, or

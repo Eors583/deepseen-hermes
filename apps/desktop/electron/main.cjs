@@ -5655,6 +5655,115 @@ ipcMain.handle('hermes:readFileText', async (_event, filePath) => {
   }
 })
 
+async function resolveDeepSeenReportFallback(filePath) {
+  const raw = String(filePath || '')
+  const normalized = raw.replace(/\\/g, '/')
+  if (!normalized.includes('/deepseen-reports/')) {
+    return ''
+  }
+
+  const requestedName = path.basename(raw)
+  const actionPrefix = requestedName.replace(/-\d{8}-\d{6}\.md$/i, '')
+  const candidates = [
+    path.join(HERMES_HOME, 'deepseen-reports'),
+    path.join(app.getPath('appData'), 'hermes', 'deepseen-reports'),
+    path.join(app.getPath('userData'), 'deepseen-reports')
+  ]
+
+  const matches = []
+  for (const dir of candidates) {
+    try {
+      const entries = await fs.promises.readdir(dir, { withFileTypes: true })
+      for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.endsWith('.md')) {
+          continue
+        }
+
+        if (entry.name !== requestedName && !entry.name.startsWith(`${actionPrefix}-`)) {
+          continue
+        }
+
+        const fullPath = path.join(dir, entry.name)
+        const stat = await fs.promises.stat(fullPath)
+        matches.push({ exact: entry.name === requestedName, fullPath, mtimeMs: stat.mtimeMs })
+      }
+    } catch {
+      // Best effort: this is a fallback for old persisted attachment paths.
+    }
+  }
+
+  matches.sort((a, b) => Number(b.exact) - Number(a.exact) || b.mtimeMs - a.mtimeMs)
+  return matches[0]?.fullPath || ''
+}
+
+ipcMain.handle('hermes:saveFileAs', async (_event, filePath) => {
+  let resolvedPath
+  try {
+    ;({ resolvedPath } = await resolveReadableFileForIpc(filePath, {
+      purpose: 'File download'
+    }))
+  } catch (error) {
+    const fallbackPath = await resolveDeepSeenReportFallback(filePath)
+    if (!fallbackPath) {
+      throw error
+    }
+    ;({ resolvedPath } = await resolveReadableFileForIpc(fallbackPath, {
+      purpose: 'File download'
+    }))
+  }
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: path.basename(resolvedPath),
+    title: '保存附件'
+  })
+
+  if (result.canceled || !result.filePath) {
+    return { canceled: true, path: '' }
+  }
+
+  await fs.promises.copyFile(resolvedPath, result.filePath)
+  return { canceled: false, path: result.filePath }
+})
+
+ipcMain.handle('hermes:saveDataUrlAs', async (_event, payload = {}) => {
+  const dataUrl = String(payload?.dataUrl || '')
+  const name = String(payload?.name || 'attachment').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+  const match = /^data:([^;,]+)?(?:;charset=[^;,]+)?;base64,(.+)$/i.exec(dataUrl)
+
+  if (!match) {
+    throw new Error('Invalid attachment data')
+  }
+
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: name || 'attachment',
+    title: '保存附件'
+  })
+
+  if (result.canceled || !result.filePath) {
+    return { canceled: true, path: '' }
+  }
+
+  await fs.promises.writeFile(result.filePath, Buffer.from(match[2], 'base64'))
+  return { canceled: false, path: result.filePath }
+})
+
+ipcMain.handle('hermes:openSavedFile', async (_event, filePath) => {
+  const resolvedPath = path.resolve(String(filePath || ''))
+  const error = await shell.openPath(resolvedPath)
+
+  if (error) {
+    shell.showItemInFolder(resolvedPath)
+    return { ok: false, error }
+  }
+
+  return { ok: true }
+})
+
+ipcMain.handle('hermes:showSavedFile', async (_event, filePath) => {
+  const resolvedPath = path.resolve(String(filePath || ''))
+  shell.showItemInFolder(resolvedPath)
+  return { ok: true }
+})
+
 ipcMain.handle('hermes:selectPaths', async (_event, options = {}) => {
   const properties = options?.directories ? ['openDirectory'] : ['openFile']
   if (options?.multiple !== false) properties.push('multiSelections')

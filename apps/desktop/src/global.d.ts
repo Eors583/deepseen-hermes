@@ -42,6 +42,10 @@ declare global {
       requestMicrophoneAccess: () => Promise<boolean>
       readFileDataUrl: (filePath: string) => Promise<string>
       readFileText: (filePath: string) => Promise<HermesReadFileTextResult>
+      openSavedFile: (filePath: string) => Promise<{ error?: string; ok: boolean }>
+      saveFileAs: (filePath: string) => Promise<{ canceled: boolean; path: string }>
+      saveDataUrlAs: (dataUrl: string, name: string) => Promise<{ canceled: boolean; path: string }>
+      showSavedFile: (filePath: string) => Promise<{ ok: boolean }>
       selectPaths: (options?: HermesSelectPathsOptions) => Promise<string[]>
       writeClipboard: (text: string) => Promise<boolean>
       saveImageFromUrl: (url: string) => Promise<boolean>

@@ -1956,7 +1956,17 @@ def sanitize_api_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]
                 role,
             )
             continue
-        filtered.append(msg)
+        clean_msg = dict(msg)
+        original_content = clean_msg.get("content")
+        clean_content = _sanitize_message_content_for_chat_api(original_content)
+        if clean_content is not original_content:
+            clean_msg["content"] = clean_content
+            _ra().logger.debug(
+                "Pre-call sanitizer: normalized %s message content from %s",
+                role,
+                type(original_content).__name__,
+            )
+        filtered.append(clean_msg)
     messages = filtered
 
     surviving_call_ids: set = set()
@@ -2299,6 +2309,85 @@ def cleanup_dead_connections(agent) -> bool:
     except Exception as exc:
         _ra().logger.debug("Dead connection check error: %s", exc)
     return False
+
+
+def _plain_content_text(content: Any) -> str:
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, (int, float, bool)):
+        return str(content)
+    if isinstance(content, dict):
+        kind = content.get("type")
+        if kind in {"text", "input_text", "output_text"}:
+            return str(content.get("text") or content.get("content") or "")
+        if kind in {"image_url", "input_image", "image"}:
+            image_url = content.get("image_url")
+            if isinstance(image_url, dict) and isinstance(image_url.get("url"), str):
+                return image_url["url"]
+            if isinstance(image_url, str):
+                return image_url
+            return "[image]"
+        if kind in {"input_audio", "audio"}:
+            return "[audio]"
+        if "text" in content:
+            return str(content.get("text") or "")
+        try:
+            return json.dumps(content, ensure_ascii=False)
+        except Exception:
+            return str(content)
+    if isinstance(content, list):
+        parts: list[str] = []
+        for part in content:
+            text = _plain_content_text(part).strip()
+            if text:
+                parts.append(text)
+        return "\n".join(parts)
+    return str(content)
+
+
+def _is_openai_content_part(part: Any) -> bool:
+    if not isinstance(part, dict):
+        return False
+    kind = part.get("type")
+    if not isinstance(kind, str) or not kind:
+        return False
+    if kind in {"text", "input_text", "output_text"}:
+        return isinstance(part.get("text"), str) or isinstance(part.get("content"), str)
+    if kind in {"image_url", "input_image", "image", "input_audio", "audio"}:
+        return True
+    return True
+
+
+def _sanitize_message_content_for_chat_api(content: Any) -> Any:
+    """Ensure message content matches Chat Completions accepted shapes.
+
+    Some persisted desktop messages can contain decoded structured objects
+    (for example display metadata or a single content part). OpenAI-compatible
+    chat endpoints reject a bare object as ``messages[N].content``; they accept
+    only a string or an array of content-part objects. Normalize defensively
+    immediately before provider calls so old sessions remain replayable.
+    """
+    if content is None or isinstance(content, str):
+        return content
+    if isinstance(content, dict):
+        return _plain_content_text(content)
+    if isinstance(content, list):
+        if all(_is_openai_content_part(part) for part in content):
+            sanitized_parts: list[dict[str, Any]] = []
+            for part in content:
+                item = dict(part)
+                kind = item.get("type")
+                if kind in {"text", "input_text", "output_text"} and not isinstance(item.get("text"), str):
+                    item["text"] = str(item.get("content") or "")
+                    item.pop("content", None)
+                sanitized_parts.append(item)
+            return sanitized_parts
+        return _plain_content_text(content)
+    if isinstance(content, (int, float, bool)):
+        return str(content)
+    return str(content)
 
 
 

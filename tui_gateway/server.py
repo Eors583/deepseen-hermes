@@ -1419,7 +1419,7 @@ def _maybe_create_enterprise_skill_proposal(session: dict, user_text: str, assis
                 suggested_name=safe_skill_name_hint(title),
                 suggested_category="agent-generated",
                 source_summary=(user_text[:500] if explicit_request else "系统根据稳定流程轨迹自动建议沉淀，等待人工审核。"),
-                suggested_scope={"scope_type": "organization", "scope_id": organization_id, "access_level": "use"},
+                suggested_scope={"scope_type": "user", "scope_id": actor_user_id, "access_level": "use"},
             )
     except Exception as exc:
         logger.warning("Enterprise skill auto proposal failed: %s", exc)
@@ -4037,6 +4037,16 @@ def _(rid, params: dict) -> dict:
     target = params.get("session_id", "")
     if not target:
         return _err(rid, 4006, "session_id required")
+    enterprise_user_id = str(
+        params.get("user_id")
+        or os.environ.get("HERMES_WEB_USER_ID")
+        or "default"
+    )
+    enterprise_organization_id = str(
+        params.get("organization_id")
+        or os.environ.get("HERMES_ENTERPRISE_ORGANIZATION_ID")
+        or "default"
+    )
     try:
         cols = int(params.get("cols", 80))
     except (TypeError, ValueError):
@@ -4101,7 +4111,11 @@ def _(rid, params: dict) -> dict:
             : max(0, len(display_history) - len(history))
         ]
         messages = _history_to_messages(display_history)
-        tokens = _set_session_context(target)
+        tokens = _set_session_context(
+            target,
+            enterprise_user_id=enterprise_user_id,
+            enterprise_organization_id=enterprise_organization_id,
+        )
         try:
             # Pass the profile's db so the agent persists turns to the right
             # state.db; home override is active here so config/skills/model
@@ -4152,6 +4166,8 @@ def _(rid, params: dict) -> dict:
         try:
             _init_session(sid, target, agent, history, cols=cols)
             if sid in _sessions:
+                _sessions[sid]["enterprise_user_id"] = enterprise_user_id
+                _sessions[sid]["enterprise_organization_id"] = enterprise_organization_id
                 if stored_runtime_overrides.get("model_override") is not None:
                     _sessions[sid]["model_override"] = stored_runtime_overrides[
                         "model_override"
@@ -5294,6 +5310,12 @@ def _(rid, params: dict) -> dict:
     session, err = _sess_nowait(params, rid)
     if err:
         return err
+    enterprise_user_id = str(params.get("user_id") or "").strip()
+    if enterprise_user_id and enterprise_user_id != str(session.get("enterprise_user_id") or ""):
+        session["enterprise_user_id"] = enterprise_user_id
+    enterprise_organization_id = str(params.get("organization_id") or "").strip()
+    if enterprise_organization_id and enterprise_organization_id != str(session.get("enterprise_organization_id") or ""):
+        session["enterprise_organization_id"] = enterprise_organization_id
     # Re-bind to the current client transport for this request. This keeps
     # streaming events on the active websocket even if an earlier disconnect
     # or fallback moved the session transport to stdio.

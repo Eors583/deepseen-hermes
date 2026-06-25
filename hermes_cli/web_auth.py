@@ -66,9 +66,20 @@ def _connect() -> Any:
 
 def _deepseen_auth_enabled() -> bool:
     provider = os.environ.get("HERBOUND_AUTH_PROVIDER", "").strip().lower()
+    if not provider:
+        try:
+            provider = postgres_store._project_env_value("HERBOUND_AUTH_PROVIDER").strip().lower()
+        except Exception:
+            provider = ""
     if provider:
         return provider in {"deepseen", "deepseen-users", "shared-deepseen"}
-    return os.environ.get("DEEPSEEN_SHARED_AUTH", "").strip().lower() in {"1", "true", "yes", "on"}
+    shared_auth = os.environ.get("DEEPSEEN_SHARED_AUTH", "").strip().lower()
+    if not shared_auth:
+        try:
+            shared_auth = postgres_store._project_env_value("DEEPSEEN_SHARED_AUTH").strip().lower()
+        except Exception:
+            shared_auth = ""
+    return shared_auth in {"1", "true", "yes", "on"}
 
 
 def _init_db_postgres(conn: Any) -> None:
@@ -731,7 +742,8 @@ def validate_avatar(value: Any) -> str:
 
 
 class LoginBody(BaseModel):
-    username: str
+    username: Optional[str] = None
+    email: Optional[str] = None
     password: str
 
 
@@ -773,7 +785,7 @@ async def auth_status():
 
 @router.post("/api/auth/login")
 async def login(request: Request, body: LoginBody):
-    username = body.username.strip()
+    username = (body.email or body.username or "").strip()
     password = body.password
     if not username or not password:
         raise HTTPException(status_code=400, detail="Username and password are required")

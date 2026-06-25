@@ -225,6 +225,12 @@ const HIDDEN_FIELD_NAMES = new Set([
   'requestBody',
   'headers',
   'authorization',
+  'input',
+  'params',
+  'parameters',
+  'payload',
+  'request',
+  'response',
   'analysis_mode',
   'source_notes',
   'sourceNotes',
@@ -511,7 +517,7 @@ const FIELD_LABELS = {
   dimensionScores: '维度得分',
   diagnosis: '诊断',
   disqualifyReasons: '不合作原因',
-  missingFields: '缺失字段',
+  missingFields: '需要补充的信息',
   homepageUrl: '达人主页',
   monthlyGmv: '月 GMV',
   gpm: 'GPM',
@@ -610,7 +616,7 @@ function replaceEmbeddedScalarValues(text) {
 
 function labelForKey(key) {
   if (!key) return ''
-  return FIELD_LABELS[key] !== undefined ? FIELD_LABELS[key] : '补充信息'
+  return FIELD_LABELS[key] !== undefined ? FIELD_LABELS[key] : ''
 }
 
 function toUserVisibleValue(value, hiddenFields, path = '') {
@@ -651,6 +657,7 @@ function appendMarkdown(lines, key, value, indent = 0) {
   const label = labelForKey(key)
   if (value === undefined || value === null || value === '') return
   if (Array.isArray(value)) {
+    if (!label) return
     if (label) lines.push(`${pad}- ${label}:`)
     value.forEach((item, index) => {
       if (isPlainObject(item) || Array.isArray(item)) {
@@ -670,7 +677,6 @@ function appendMarkdown(lines, key, value, indent = 0) {
     return
   }
   if (label) lines.push(`${pad}- ${label}: ${stringifyScalar(value)}`)
-  else lines.push(`${pad}${stringifyScalar(value)}`)
 }
 
 function userVisibleMarkdown(fields) {

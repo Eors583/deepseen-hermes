@@ -44,6 +44,8 @@ inputs, call the tool, and return the tool result faithfully.
     analysis, or other analysis tools as a fallback for a failed media job.
 13. Never paste the full SDK JSON to the user. If the tool returns
     `display_markdown` or `user_visible_summary`, output that content directly.
+    Treat that readable text as the final business result; do not re-expand
+    `user_visible_fields`, `hidden_fields`, or any other structured payload.
     Do not show `user_visible_fields`, `raw`, `object`, `type`, `metadata`,
     cache/debug fields, job IDs, result IDs, status enums, file IDs, or runtime
     fields unless the user explicitly asks for debugging details.
@@ -63,6 +65,10 @@ debugging, implementation, or SDK transport.
 Required behavior:
 
 - If `display_markdown` or `user_visible_summary` exists, output it directly.
+- Do not add a second bullet list from `user_visible_fields` after outputting
+  readable Markdown. That creates duplicate/noisy fields for users.
+- If the tool output contains an "附件下载" section, keep that link and do not
+  expand the attachment contents in the chat message.
 - If only structured data exists, convert it to readable Markdown with translated
   business labels. Do not expose raw key names.
 - Omit meaningless/internal fields for normal users: task/run/job/result IDs,
@@ -73,6 +79,8 @@ Required behavior:
   prices, sales metrics, scores, rankings, URLs, warnings, and conclusions.
 - Do not add interpretation, marketing copy, or advice beyond the tool result
   unless the user asks for a separate explanation.
+- If a field cannot be translated to a clear business label, omit it rather
+  than showing a placeholder such as "补充信息".
 
 ## Intent Routing
 
