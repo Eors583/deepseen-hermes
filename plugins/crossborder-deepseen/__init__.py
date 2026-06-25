@@ -330,6 +330,362 @@ def _media_common() -> dict[str, Any]:
     }
 
 
+_ACTION_LABELS = {
+    "smart_image": "智能图片生成",
+    "smart_video": "智能视频生成",
+    "image_recreation": "图片复刻",
+    "video_recreation": "视频复刻",
+    "product_report": "选品分析",
+    "competitor_analysis": "竞品分析",
+    "competitor_multi": "多竞品分析",
+    "creator_analysis": "达人分析",
+    "creator_rank": "达人排序",
+    "video_analysis": "视频分析",
+}
+
+
+_REPORT_SECTION_LABELS = {
+    "name": "产品名称",
+    "productName": "产品名称",
+    "product_name": "产品名称",
+    "targetMarket": "目标市场",
+    "target_market": "目标市场",
+    "targetAudience": "目标人群",
+    "target_audience": "目标人群",
+    "sellingPoints": "核心卖点",
+    "selling_points": "核心卖点",
+    "verdictScore": "综合评分",
+    "verdict_score": "综合评分",
+    "verdictLevel": "判断等级",
+    "verdict_level": "判断等级",
+    "analysisResult": "分析结果",
+    "analysis_result": "分析结果",
+    "marketVerdict": "市场判断",
+    "market_verdict": "市场判断",
+    "selectionScore": "选品评分",
+    "selection_score": "选品评分",
+    "profitAnalysis": "利润分析",
+    "profit_analysis": "利润分析",
+    "consumerInsight": "消费者洞察",
+    "consumer_insight": "消费者洞察",
+    "strategicAction": "行动建议",
+    "strategic_action": "行动建议",
+    "concentrationAnalysis": "竞争集中度",
+    "concentration_analysis": "竞争集中度",
+    "aiVideoFeasibility": "AI 视频可行性",
+    "ai_video_feasibility": "AI 视频可行性",
+    "patentRisk": "专利风险",
+    "patent_risk": "专利风险",
+    "redditVocObservation": "用户声音补充",
+    "reddit_voc_observation": "用户声音补充",
+    "output_urls": "结果链接",
+    "outputUrls": "结果链接",
+    "summary": "摘要",
+    "conclusion": "结论",
+    "recommendation": "建议",
+    "recommendations": "建议",
+    "outlook": "市场展望",
+    "keyDriver": "增长驱动",
+    "key_driver": "增长驱动",
+    "marketPhase": "市场阶段",
+    "market_phase": "市场阶段",
+    "opportunityScore": "机会评分",
+    "opportunity_score": "机会评分",
+    "score": "评分",
+    "scoreTotal": "总分",
+    "score_total": "总分",
+    "scoreTier": "评级",
+    "score_tier": "评级",
+    "tierLabel": "评级说明",
+    "tier_label": "评级说明",
+    "confidence": "可信度",
+    "evidence": "依据",
+    "evidenceLevel": "依据完整度",
+    "evidence_level": "依据完整度",
+    "evidenceConfidence": "依据可信度",
+    "evidence_confidence": "依据可信度",
+    "riskLevel": "风险等级",
+    "risk_level": "风险等级",
+    "flaws": "主要风险",
+    "strengths": "可用优势",
+    "execution": "执行建议",
+    "contentHook": "内容钩子",
+    "content_hook": "内容钩子",
+    "designFocus": "设计重点",
+    "design_focus": "设计重点",
+    "productAngle": "产品切入点",
+    "product_angle": "产品切入点",
+    "trafficTactics": "流量打法",
+    "traffic_tactics": "流量打法",
+    "coreDesire": "核心需求",
+    "core_desire": "核心需求",
+    "painPointGap": "痛点机会",
+    "pain_point_gap": "痛点机会",
+    "targetPersona": "目标画像",
+    "target_persona": "目标画像",
+    "voiceOfCustomer": "用户原声",
+    "voice_of_customer": "用户原声",
+    "topCompetitors": "头部竞品",
+    "top_competitors": "头部竞品",
+    "marketStructure": "市场结构",
+    "market_structure": "市场结构",
+    "visualHomogeneity": "视觉同质化",
+    "visual_homogeneity": "视觉同质化",
+    "clicheTrap": "避坑提醒",
+    "cliche_trap": "避坑提醒",
+}
+
+
+_REPORT_VALUE_LABELS = {
+    "high": "较高",
+    "medium": "中等",
+    "low": "较低",
+    "unknown": "未明确",
+    "sufficient": "数据较充分",
+    "insufficient": "数据有待考究",
+    "partial": "部分数据可参考",
+    "critical": "需重点关注",
+    "fragmented": "分散",
+    "high-growth": "高增长",
+    "true": "是",
+    "false": "否",
+}
+
+
+_REPORT_SKIP_KEYS = {
+    "id",
+    "job_id",
+    "jobId",
+    "result_id",
+    "resultId",
+    "status",
+    "progress",
+    "stage",
+    "logs",
+    "enabled",
+    "hidden_fields",
+    "hiddenFields",
+    "metadata",
+    "raw",
+    "debug",
+    "trace",
+    "request",
+    "response",
+    "input",
+    "params",
+    "parameters",
+    "userId",
+    "user_id",
+    "productId",
+    "product_id",
+    "creatorId",
+    "creator_id",
+    "creatorKey",
+    "fileId",
+    "file_id",
+    "variantId",
+    "variant_id",
+    "creditTransactionId",
+    "credit_transaction_id",
+    "formattedDimensions",
+    "formatted_dimensions",
+}
+
+
+_REPORT_PRIORITY_KEYS = {
+    "product_report": [
+        "name",
+        "productName",
+        "targetMarket",
+        "targetAudience",
+        "sellingPoints",
+        "verdictScore",
+        "verdictLevel",
+        "analysisResult",
+    ],
+    "creator_analysis": ["productName", "targetMarket", "result"],
+    "creator_rank": ["productName", "targetMarket", "result"],
+    "competitor_analysis": ["productName", "region", "result"],
+    "competitor_multi": ["productName", "region", "result"],
+    "video_analysis": ["productName", "result"],
+}
+
+
+def _report_label(key: str) -> str:
+    if key in _REPORT_SECTION_LABELS:
+        return _REPORT_SECTION_LABELS[key]
+    text = re.sub(r"[_-]+", " ", key)
+    text = re.sub(r"(?<!^)([A-Z])", r" \1", text).strip()
+    return text[:1].upper() + text[1:] if text else key
+
+
+def _looks_like_noise_key(key: str) -> bool:
+    if key in _REPORT_SKIP_KEYS:
+        return True
+    return bool(re.search(r"(?:^|_)(?:id|debug|raw|trace|request|response|metadata)(?:$|_)", key, re.I))
+
+
+def _repair_mojibake_text(text: str) -> str:
+    """Best-effort cleanup for text that was decoded with the wrong CJK codec."""
+    if not text:
+        return ""
+    candidates = [text]
+    for encoding in ("gb18030", "gbk", "cp936"):
+        try:
+            repaired = text.encode(encoding, errors="ignore").decode("utf-8", errors="ignore")
+        except Exception:
+            continue
+        if repaired:
+            candidates.append(repaired)
+
+    def score(value: str) -> int:
+        penalty_chars = sum(value.count(ch) for ch in ("�", "鑷", "姘", "妫", "诲", "暟", "€", "檛"))
+        cjk = sum(1 for ch in value if "\u4e00" <= ch <= "\u9fff")
+        ascii_letters = sum(1 for ch in value if ch.isascii() and ch.isalpha())
+        return cjk * 3 + ascii_letters - penalty_chars * 8
+
+    best = max(candidates, key=score)
+    return best.replace("\ufffd", "").strip()
+
+
+def _clean_report_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "是" if value else "否"
+    text = str(value).strip()
+    if not text:
+        return ""
+    text = _repair_mojibake_text(text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _clean_report_markdown(markdown: str) -> str:
+    text = _clean_report_text(markdown)
+    if not text:
+        return ""
+    text = re.sub(r"```json[\s\S]*?```", "", text, flags=re.I)
+    text = re.sub(r"(?im)^\s*[-*]\s*(?:job_id|result_id|status|userId|user_id|product_id|creator_id|output_urls)\s*:.*$", "", text)
+    text = re.sub(r"(?im)^\s*#{1,6}\s*(?:摘要|DeepSeen\s+.*?结果|DeepSeen\s+.*?报告)\s*$\n?", "", text).strip()
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
+    return text
+
+
+def _report_scalar(value: Any) -> str:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return f"{value:,}" if isinstance(value, int) else f"{value:,.2f}".rstrip("0").rstrip(".")
+    text = _clean_report_text(value)
+    return _REPORT_VALUE_LABELS.get(text.lower(), text)
+
+
+def _render_report_value(value: Any, *, depth: int = 0, max_items: int = 8) -> list[str]:
+    if depth > 4:
+        scalar = _report_scalar(value)
+        return [scalar] if scalar else []
+    if isinstance(value, dict):
+        lines: list[str] = []
+        for key, item in value.items():
+            if _looks_like_noise_key(str(key)):
+                continue
+            rendered = _render_report_value(item, depth=depth + 1, max_items=max_items)
+            if not rendered:
+                continue
+            label = _report_label(str(key))
+            if len(rendered) == 1 and not rendered[0].startswith(("-", "1.")):
+                lines.append(f"- {label}: {rendered[0]}")
+            else:
+                lines.append(f"- {label}:")
+                lines.extend(f"  {line}" for line in rendered[:max_items])
+        return lines
+    if isinstance(value, list):
+        lines = []
+        for index, item in enumerate(value[:max_items], 1):
+            rendered = _render_report_value(item, depth=depth + 1, max_items=max_items)
+            if not rendered:
+                continue
+            if len(rendered) == 1 and not rendered[0].startswith("-"):
+                lines.append(f"{index}. {rendered[0]}")
+            else:
+                lines.append(f"{index}.")
+                lines.extend(f"   {line}" for line in rendered[:max_items])
+        return lines
+    scalar = _report_scalar(value)
+    return [scalar] if scalar else []
+
+
+def _extract_report_payload(payload: dict[str, Any]) -> Any:
+    visible = payload.get("user_visible_fields")
+    if isinstance(visible, dict):
+        result = visible.get("result")
+        if isinstance(result, dict):
+            return result
+        return visible
+    return {}
+
+
+def _build_business_report(action: str, markdown: str, payload: dict[str, Any]) -> str:
+    action_label = _ACTION_LABELS.get(action, action)
+    data = _extract_report_payload(payload)
+    lines = [
+        f"# DeepSeen {action_label}报告",
+        "",
+        f"- 生成时间: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"- 报告类型: {action_label}",
+        "",
+    ]
+
+    summary = _clean_report_markdown(markdown)
+    if summary:
+        lines.extend(["## 一、结论摘要", "", summary, ""])
+
+    if isinstance(data, dict) and data:
+        priority = _REPORT_PRIORITY_KEYS.get(action, [])
+        used: set[str] = set()
+        overview: list[str] = []
+        for key in priority:
+            if key not in data or key in used or _looks_like_noise_key(key):
+                continue
+            rendered = _render_report_value(data.get(key), max_items=10)
+            if not rendered:
+                continue
+            used.add(key)
+            label = _report_label(key)
+            if len(rendered) == 1 and not rendered[0].startswith(("-", "1.")):
+                overview.append(f"- {label}: {rendered[0]}")
+            else:
+                overview.append(f"- {label}:")
+                overview.extend(f"  {line}" for line in rendered)
+        if overview:
+            lines.extend(["## 二、核心信息", "", *overview, ""])
+
+        detail_lines: list[str] = []
+        for key, value in data.items():
+            if key in used or _looks_like_noise_key(str(key)):
+                continue
+            rendered = _render_report_value(value, max_items=8)
+            if not rendered:
+                continue
+            detail_lines.extend([f"### {_report_label(str(key))}", "", *rendered, ""])
+        if detail_lines:
+            lines.extend(["## 三、详细分析", "", *detail_lines])
+
+    output_urls = payload.get("output_urls")
+    if isinstance(output_urls, list):
+        urls = [_clean_report_text(url) for url in output_urls if _clean_report_text(url)]
+        if urls:
+            lines.extend(["## 四、结果链接", "", *[f"- {url}" for url in urls], ""])
+
+    lines.extend([
+        "## 五、说明",
+        "",
+        "- 本报告仅保留面向业务决策的展示信息。",
+        "- 已过滤任务 ID、状态、内部字段、接口字段名和其他对用户无意义的技术信息。",
+        "- 具体数据以 DeepSeen 工具返回结果为准。",
+    ])
+    return "\n".join(lines).strip() + "\n"
+
+
 def _deepseen_report_dir() -> Path:
     root = get_hermes_home() / "deepseen-reports"
     root.mkdir(parents=True, exist_ok=True)
@@ -346,33 +702,7 @@ def _write_deepseen_report(action: str, markdown: str, payload: dict[str, Any]) 
     try:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         report_path = _deepseen_report_dir() / f"deepseen-{_safe_report_part(action)}-{timestamp}.md"
-        visible_fields = payload.get("user_visible_fields")
-        output_urls = payload.get("output_urls")
-        parts = [
-            "# DeepSeen 完整报告",
-            "",
-            f"- 生成时间: {time.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"- 任务类型: DeepSeen {action}",
-            "",
-        ]
-        if markdown.strip():
-            parts.extend(["## 摘要", "", markdown.strip(), ""])
-        if isinstance(output_urls, list) and output_urls:
-            urls = [str(url).strip() for url in output_urls if str(url).strip()]
-            if urls:
-                parts.extend(["## 结果链接", ""])
-                parts.extend(f"- {url}" for url in urls)
-                parts.append("")
-        if visible_fields:
-            parts.extend([
-                "## 可展示业务数据",
-                "",
-                "```json",
-                json.dumps(visible_fields, ensure_ascii=False, indent=2),
-                "```",
-                "",
-            ])
-        report_path.write_text("\n".join(parts).strip() + "\n", encoding="utf-8")
+        report_path.write_text(_build_business_report(action, markdown, payload), encoding="utf-8")
         return report_path
     except Exception:
         return None
@@ -397,7 +727,7 @@ def _compact_deepseen_summary(markdown: str) -> str:
         clipped_lines.append(line)
         total = next_total
     summary = "\n".join(clipped_lines).rstrip()
-    return f"{summary}\n\n> 完整结果已整理到附件中，可在下方下载。"
+    return f"{summary}\n\n> 完整报告已整理成附件，可在下方下载。"
 
 
 def _with_report_download(action: str, markdown: str, payload: dict[str, Any]) -> str:
