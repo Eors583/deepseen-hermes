@@ -511,6 +511,65 @@ _REPORT_PRIORITY_KEYS = {
 }
 
 
+_REPORT_HIGHLIGHT_LABELS = {
+    "finalverdict": "最终判断",
+    "commonpatterns": "共性打法",
+    "productkeyword": "产品关键词",
+    "pitfallguide": "避坑提醒",
+    "opportunitywindows": "机会窗口",
+    "opportunitywindow": "机会窗口",
+    "intelligencefindings": "情报发现",
+    "crossproductsummary": "多竞品总结",
+    "riskboundary": "风险边界",
+    "priorityangle": "优先切入角度",
+    "executionorder": "执行顺序",
+    "battlefieldsummary": "竞争格局",
+    "singlecompetitor6p": "单竞品概览",
+    "listingrecommendation": "上架建议",
+    "marketverdict": "市场判断",
+    "selectionscore": "选品判断",
+    "strategicaction": "行动建议",
+    "consumerinsight": "消费者洞察",
+    "profitanalysis": "利润分析",
+}
+
+
+_REPORT_IDENTITY_KEYS = (
+    "name",
+    "productName",
+    "product_name",
+    "productUrl",
+    "product_url",
+    "region",
+    "targetMarket",
+    "target_market",
+    "targetAudience",
+    "target_audience",
+    "verdictScore",
+    "verdict_score",
+    "verdictLevel",
+    "verdict_level",
+)
+
+
+_TOP_PRODUCT_LABELS = {
+    "productName": "商品",
+    "product_name": "商品",
+    "shopName": "店铺",
+    "shop_name": "店铺",
+    "price": "价格",
+    "rating": "评分",
+    "soldCount": "销量",
+    "sold_count": "销量",
+    "videoCount": "视频",
+    "video_count": "视频",
+    "creatorCount": "达人",
+    "creator_count": "达人",
+    "commissionRate": "佣金",
+    "commission_rate": "佣金",
+}
+
+
 def _report_label(key: str) -> str:
     if key in _REPORT_SECTION_LABELS:
         return _REPORT_SECTION_LABELS[key]
@@ -523,6 +582,20 @@ def _looks_like_noise_key(key: str) -> bool:
     if key in _REPORT_SKIP_KEYS:
         return True
     return bool(re.search(r"(?:^|_)(?:id|debug|raw|trace|request|response|metadata)(?:$|_)", key, re.I))
+
+
+def _report_key_id(key: str) -> str:
+    return re.sub(r"[^0-9a-z]+", "", key.lower())
+
+
+def _short_report_text(value: Any, *, max_chars: int = 260) -> str:
+    text = _report_scalar(value)
+    if not text:
+        return ""
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > max_chars:
+        return text[: max_chars - 1].rstrip("，,；;。 ") + "..."
+    return text
 
 
 def _repair_mojibake_text(text: str) -> str:
@@ -614,6 +687,185 @@ def _render_report_value(value: Any, *, depth: int = 0, max_items: int = 8) -> l
     return [scalar] if scalar else []
 
 
+def _find_first_report_key(value: Any, wanted: set[str], *, depth: int = 0) -> Any:
+    if depth > 6:
+        return None
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if _report_key_id(str(key)) in wanted:
+                return item
+        for key, item in value.items():
+            if _looks_like_noise_key(str(key)):
+                continue
+            found = _find_first_report_key(item, wanted, depth=depth + 1)
+            if found is not None:
+                return found
+    if isinstance(value, list):
+        for item in value[:8]:
+            found = _find_first_report_key(item, wanted, depth=depth + 1)
+            if found is not None:
+                return found
+    return None
+
+
+def _iter_report_highlights(value: Any, *, depth: int = 0) -> list[tuple[str, Any]]:
+    if depth > 5:
+        return []
+    items: list[tuple[str, Any]] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            key_text = str(key)
+            if _looks_like_noise_key(key_text):
+                continue
+            normalized = _report_key_id(key_text)
+            if normalized in _REPORT_HIGHLIGHT_LABELS:
+                items.append((_REPORT_HIGHLIGHT_LABELS[normalized], item))
+                continue
+            items.extend(_iter_report_highlights(item, depth=depth + 1))
+    elif isinstance(value, list):
+        for item in value[:8]:
+            items.extend(_iter_report_highlights(item, depth=depth + 1))
+    return items
+
+
+def _render_highlight_item(label: str, value: Any, *, max_lines: int = 4) -> list[str]:
+    if isinstance(value, dict):
+        lines: list[str] = []
+        for key, item in value.items():
+            normalized = _report_key_id(str(key))
+            if _looks_like_noise_key(str(key)) or normalized in {"evidence", "evidencelevel", "source", "usage"}:
+                continue
+            text = _short_report_text(item, max_chars=220)
+            if text:
+                lines.append(f"- {_report_label(str(key))}: {text}")
+            if len(lines) >= max_lines:
+                break
+        return [f"- {label}:"] + [f"  {line}" for line in lines] if lines else []
+    if isinstance(value, list):
+        rendered = []
+        for item in value[:max_lines]:
+            text = _short_report_text(item, max_chars=220)
+            if text:
+                rendered.append(f"- {label}: {text}")
+        return rendered
+    text = _short_report_text(value, max_chars=320)
+    return [f"- {label}: {text}"] if text else []
+
+
+def _report_identity_lines(data: Any) -> list[str]:
+    if not isinstance(data, dict):
+        return []
+    lines: list[str] = []
+    used_values: set[str] = set()
+    for key in _REPORT_IDENTITY_KEYS:
+        if key not in data or _looks_like_noise_key(key):
+            continue
+        text = _short_report_text(data.get(key), max_chars=160)
+        if not text or text in used_values:
+            continue
+        used_values.add(text)
+        lines.append(f"- {_report_label(key)}: {text}")
+    return lines[:8]
+
+
+def _report_top_products(data: Any, *, limit: int = 5) -> list[str]:
+    products = _find_first_report_key(data, {"topproducts", "products", "competitors"})
+    if not isinstance(products, list):
+        return []
+    lines = ["| 排名 | 商品 | 店铺 | 关键数据 |", "| --- | --- | --- | --- |"]
+    count = 0
+    for item in products:
+        if not isinstance(item, dict):
+            continue
+        count += 1
+        name = _short_report_text(
+            item.get("productName") or item.get("product_name") or item.get("name") or "未命名商品",
+            max_chars=52,
+        )
+        shop = _short_report_text(item.get("shopName") or item.get("shop_name") or item.get("brand") or "-", max_chars=28)
+        metrics: list[str] = []
+        for key in ("price", "rating", "soldCount", "sold_count", "videoCount", "video_count", "creatorCount", "creator_count"):
+            if key in item:
+                text = _short_report_text(item.get(key), max_chars=42)
+                if text:
+                    metrics.append(f"{_TOP_PRODUCT_LABELS.get(key, _report_label(key))} {text}")
+            if len(metrics) >= 4:
+                break
+        lines.append(f"| {count} | {name} | {shop} | {'；'.join(metrics) or '-'} |")
+        if count >= limit:
+            break
+    return lines if count else []
+
+
+def _report_highlight_lines(data: Any, *, limit: int = 8) -> list[str]:
+    lines: list[str] = []
+    seen: set[str] = set()
+    for label, value in _iter_report_highlights(data):
+        rendered = _render_highlight_item(label, value)
+        for line in rendered:
+            marker = re.sub(r"\s+", " ", line).strip()
+            if not marker or marker in seen:
+                continue
+            seen.add(marker)
+            lines.append(line)
+            if len(lines) >= limit:
+                return lines
+    return lines
+
+
+def _fallback_markdown_findings(markdown: str, *, limit: int = 5) -> list[str]:
+    text = _clean_report_markdown(markdown)
+    if not text:
+        return []
+    findings: list[str] = []
+    seen: set[str] = set()
+    keywords = ("结论", "判断", "建议", "机会", "风险", "切入", "执行", "总结", "不建议", "建议")
+    for raw_line in text.splitlines():
+        line = re.sub(r"^\s*(?:[-*]|\d+[.)])\s*", "", raw_line).strip()
+        line = re.sub(r"^#{1,6}\s*", "", line).strip()
+        if not line or len(line) < 8:
+            continue
+        if any(skip in line for skip in ("http://", "https://", "商品链接", "数据来源链接", "状态码")):
+            continue
+        if not any(word in line for word in keywords):
+            continue
+        line = _short_report_text(line, max_chars=220)
+        if line and line not in seen:
+            seen.add(line)
+            findings.append(f"- {line}")
+        if len(findings) >= limit:
+            break
+    return findings
+
+
+def _report_key_findings(action: str, markdown: str, payload: dict[str, Any], *, limit: int = 5) -> list[str]:
+    data = _extract_report_payload(payload)
+    findings: list[str] = []
+    seen: set[str] = set()
+    for line in _report_highlight_lines(data, limit=limit + 3):
+        if not line.startswith("- "):
+            continue
+        compact = re.sub(r"\s+", " ", line).strip()
+        if compact in seen:
+            continue
+        seen.add(compact)
+        findings.append(compact)
+        if len(findings) >= limit:
+            break
+    if len(findings) < 2:
+        for line in _fallback_markdown_findings(markdown, limit=limit):
+            compact = re.sub(r"\s+", " ", line).strip()
+            if compact not in seen:
+                seen.add(compact)
+                findings.append(compact)
+            if len(findings) >= limit:
+                break
+    if not findings:
+        action_label = _ACTION_LABELS.get(action, action)
+        findings.append(f"- {action_label}已完成，详细结果见附件。")
+    return findings[:limit]
+
+
 def _extract_report_payload(payload: dict[str, Any]) -> Any:
     visible = payload.get("user_visible_fields")
     if isinstance(visible, dict):
@@ -635,51 +887,33 @@ def _build_business_report(action: str, markdown: str, payload: dict[str, Any]) 
         "",
     ]
 
-    summary = _clean_report_markdown(markdown)
-    if summary:
-        lines.extend(["## 一、结论摘要", "", summary, ""])
+    findings = _report_key_findings(action, markdown, payload, limit=6)
+    if findings:
+        lines.extend(["## 一、关键结论", "", *findings, ""])
 
     if isinstance(data, dict) and data:
-        priority = _REPORT_PRIORITY_KEYS.get(action, [])
-        used: set[str] = set()
-        overview: list[str] = []
-        for key in priority:
-            if key not in data or key in used or _looks_like_noise_key(key):
-                continue
-            rendered = _render_report_value(data.get(key), max_items=10)
-            if not rendered:
-                continue
-            used.add(key)
-            label = _report_label(key)
-            if len(rendered) == 1 and not rendered[0].startswith(("-", "1.")):
-                overview.append(f"- {label}: {rendered[0]}")
-            else:
-                overview.append(f"- {label}:")
-                overview.extend(f"  {line}" for line in rendered)
+        overview = _report_identity_lines(data)
         if overview:
             lines.extend(["## 二、核心信息", "", *overview, ""])
 
-        detail_lines: list[str] = []
-        for key, value in data.items():
-            if key in used or _looks_like_noise_key(str(key)):
-                continue
-            rendered = _render_report_value(value, max_items=8)
-            if not rendered:
-                continue
-            detail_lines.extend([f"### {_report_label(str(key))}", "", *rendered, ""])
-        if detail_lines:
-            lines.extend(["## 三、详细分析", "", *detail_lines])
+        top_products = _report_top_products(data, limit=5)
+        if top_products:
+            lines.extend(["## 三、代表性商品", "", *top_products, ""])
+
+        highlights = _report_highlight_lines(data, limit=10)
+        if highlights:
+            lines.extend(["## 四、重点分析", "", *highlights, ""])
 
     output_urls = payload.get("output_urls")
     if isinstance(output_urls, list):
         urls = [_clean_report_text(url) for url in output_urls if _clean_report_text(url)]
         if urls:
-            lines.extend(["## 四、结果链接", "", *[f"- {url}" for url in urls], ""])
+            lines.extend(["## 五、结果链接", "", *[f"- {url}" for url in urls], ""])
 
     lines.extend([
-        "## 五、说明",
+        "## 六、说明",
         "",
-        "- 本报告仅保留面向业务决策的展示信息。",
+        "- 本报告仅保留面向业务决策的关键结论和代表性数据。",
         "- 已过滤任务 ID、状态、内部字段、接口字段名和其他对用户无意义的技术信息。",
         "- 具体数据以 DeepSeen 工具返回结果为准。",
     ])
@@ -708,31 +942,15 @@ def _write_deepseen_report(action: str, markdown: str, payload: dict[str, Any]) 
         return None
 
 
-def _compact_deepseen_summary(markdown: str) -> str:
-    text = markdown.strip()
-    if not text:
-        return ""
-    max_chars = 2200
-    max_lines = 45
-    lines = text.splitlines()
-    too_long = len(text) > max_chars or len(lines) > max_lines
-    if not too_long:
-        return text
-    clipped_lines: list[str] = []
-    total = 0
-    for line in lines:
-        next_total = total + len(line) + 1
-        if len(clipped_lines) >= max_lines or next_total > max_chars:
-            break
-        clipped_lines.append(line)
-        total = next_total
-    summary = "\n".join(clipped_lines).rstrip()
-    return f"{summary}\n\n> 完整报告已整理成附件，可在下方下载。"
+def _compact_deepseen_summary(action: str, markdown: str, payload: dict[str, Any]) -> str:
+    action_label = _ACTION_LABELS.get(action, action)
+    findings = _report_key_findings(action, markdown, payload, limit=4)
+    return "\n".join([f"**DeepSeen {action_label}完成**", "", *findings, "", "> 详细分析已整理成附件，可在下方下载。"]).strip()
 
 
 def _with_report_download(action: str, markdown: str, payload: dict[str, Any]) -> str:
     report_path = _write_deepseen_report(action, markdown, payload)
-    summary = _compact_deepseen_summary(markdown) or markdown.strip()
+    summary = _compact_deepseen_summary(action, markdown, payload)
     if not report_path:
         return summary
     report_href = f"#media:{quote(str(report_path), safe='')}"
