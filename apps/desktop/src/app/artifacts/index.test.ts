@@ -59,4 +59,26 @@ describe('collectArtifactsForSession', () => {
       value: 'https://example.com/changelog/latest'
     })
   })
+
+  it('indexes DeepSeen media attachments from assistant markdown', () => {
+    const reportPath =
+      'D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\.hermes\\deepseen-reports\\deepseen-creator_analysis-20260625-104820.md'
+
+    const artifacts = collectArtifactsForSession(makeSession({ id: 'session-3' }), [
+      {
+        content: `附件下载\n\n- [下载 DeepSeen 完整报告](#media:${encodeURIComponent(reportPath)})`,
+        role: 'assistant',
+        timestamp: 4000
+      }
+    ])
+
+    expect(artifacts).toHaveLength(1)
+    expect(artifacts[0]).toMatchObject({
+      href:
+        'file:///D:/Users/Administrator/Desktop/hermes-agent-main/.hermes/deepseen-reports/deepseen-creator_analysis-20260625-104820.md',
+      kind: 'file',
+      label: 'deepseen-creator_analysis-20260625-104820.md',
+      value: reportPath
+    })
+  })
 })

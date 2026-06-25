@@ -23,6 +23,7 @@ import { type Translations, useI18n } from '@/i18n'
 import { sessionTitle } from '@/lib/chat-runtime'
 import { ExternalLink, ExternalLinkIcon, hostPathLabel, urlSlugTitleLabel, useLinkTitle } from '@/lib/external-link'
 import { FileImage, FileText, FolderOpen, Link2 } from '@/lib/icons'
+import { mediaPathFromMarkdownHref } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { notifyError } from '@/store/notifications'
 import type { SessionInfo, SessionMessage } from '@/types/hermes'
@@ -53,6 +54,7 @@ const MARKDOWN_IMAGE_RE = /!\[([^\]]*)\]\(([^)\s]+)\)/g
 const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g
 const URL_RE = /https?:\/\/[^\s<>"')]+/g
 const PATH_RE = /(^|[\s("'`])((?:\/|~\/|\.\.?\/)[^\s"'`<>]+(?:\.[a-z0-9]{1,8})?)/gi
+const WINDOWS_PATH_RE = /^[a-z]:[\\/]/i
 const IMAGE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp)(?:\?.*)?$/i
 const FILE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp|pdf|txt|json|md|csv|zip|tar|gz|mp3|wav|mp4|mov)(?:\?.*)?$/i
 const KEY_HINT_RE = /(path|file|url|image|artifact|output|download|result|target)/i
@@ -86,6 +88,7 @@ function looksLikePathOrUrl(value: string): boolean {
     value.startsWith('https://') ||
     value.startsWith('file://') ||
     value.startsWith('data:image/') ||
+    WINDOWS_PATH_RE.test(value) ||
     value.startsWith('/') ||
     value.startsWith('./') ||
     value.startsWith('../') ||
@@ -111,6 +114,7 @@ function artifactKind(value: string): ArtifactKind {
   }
 
   if (
+    WINDOWS_PATH_RE.test(value) ||
     value.startsWith('/') ||
     value.startsWith('./') ||
     value.startsWith('../') ||
@@ -137,10 +141,20 @@ function artifactHref(value: string): string {
     return `file://${encodeURI(value)}`
   }
 
+  if (WINDOWS_PATH_RE.test(value)) {
+    return `file:///${encodeURI(value.replace(/\\/g, '/'))}`
+  }
+
   return value
 }
 
 function artifactLabel(value: string): string {
+  if (WINDOWS_PATH_RE.test(value)) {
+    const parts = value.split(/[\\/]/).filter(Boolean)
+
+    return parts.pop() || value
+  }
+
   try {
     const url = new URL(value)
     const item = url.pathname.split('/').filter(Boolean).pop()
@@ -197,7 +211,8 @@ function collectStringValues(
 
 function collectArtifactsFromText(text: string, pushValue: (value: string) => void): void {
   for (const match of text.matchAll(MARKDOWN_IMAGE_RE)) {
-    pushValue(match[2] || '')
+    const value = match[2] || ''
+    pushValue(mediaPathFromMarkdownHref(value) || value)
   }
 
   for (const match of text.matchAll(MARKDOWN_LINK_RE)) {
@@ -208,6 +223,12 @@ function collectArtifactsFromText(text: string, pushValue: (value: string) => vo
     }
 
     const value = match[2] || ''
+    const mediaPath = mediaPathFromMarkdownHref(value)
+
+    if (mediaPath) {
+      pushValue(mediaPath)
+      continue
+    }
 
     if (looksLikeArtifact(value)) {
       pushValue(value)

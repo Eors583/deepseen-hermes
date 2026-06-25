@@ -11,6 +11,7 @@ import {
   authTokenExpiresAt,
   clearAuthToken,
   getStoredAuthToken,
+  getStoredAuthUserId,
   isAuthTokenExpired,
   persistAuthToken
 } from '@/lib/auth-token'
@@ -58,6 +59,28 @@ function formatExpiry(token: string | null): string {
   }).format(new Date(expiresAt))
 }
 
+function isAuthFailure(error: unknown): boolean {
+  const raw = error instanceof Error ? error.message : String(error || '')
+
+  return /\b(?:401|403)\b/.test(raw)
+}
+
+function fallbackUserFromToken(): AuthUser {
+  const id = Number(getStoredAuthUserId() || 0) || 0
+  const now = Date.now()
+
+  return {
+    avatar: '',
+    created_at: now,
+    id,
+    last_login_at: null,
+    role: 'user',
+    status: 'active',
+    updated_at: now,
+    username: '已登录用户'
+  }
+}
+
 export function AuthGate({ children }: AuthGateProps) {
   const [status, setStatus] = useState<Status>('checking')
   const [username, setUsername] = useState('')
@@ -94,9 +117,23 @@ export function AuthGate({ children }: AuthGateProps) {
         setToken(candidate)
         setStatus('ready')
         console.info(`[auth] token verified user=${result.user.username}`)
-      } catch {
-        console.info('[auth] stored token verification failed; logging out')
-        logout()
+      } catch (error) {
+        if (isAuthFailure(error)) {
+          console.info('[auth] stored token rejected by backend; logging out')
+          logout()
+
+          return
+        }
+
+        console.info(
+          `[auth] stored token verification unavailable; keeping local login: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        )
+        setGatewayAuthToken(candidate)
+        setUser(fallbackUserFromToken())
+        setToken(candidate)
+        setStatus('ready')
       }
     },
     [logout]

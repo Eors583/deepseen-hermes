@@ -70,8 +70,15 @@ def _merge_config(home: Path) -> None:
         .get("herbound", {})
     )
 
-    if "model" not in target and "model" in seed:
-        target["model"] = seed["model"]
+    if "model" in seed:
+        target_model = target.setdefault("model", {})
+        if not isinstance(target_model, dict):
+            target_model = {}
+            target["model"] = target_model
+        seed_model = seed.get("model") or {}
+        for key in ("default", "provider", "base_url", "max_tokens"):
+            if key in seed_model:
+                target_model[key] = seed_model[key]
 
     _dump_yaml(target_path, target)
 

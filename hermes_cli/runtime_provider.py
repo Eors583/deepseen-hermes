@@ -38,6 +38,13 @@ def _normalize_custom_provider_name(value: str) -> str:
     return value.strip().lower().replace(" ", "-")
 
 
+def _normalize_herbound_custom_base_url(value: str) -> str:
+    base_url = (value or "").strip().rstrip("/")
+    if base_url_host_matches(base_url, "api.ominilink.ai") and not base_url.lower().endswith("/v1"):
+        return f"{base_url}/v1"
+    return base_url
+
+
 def _loopback_hostname(host: str) -> bool:
     h = (host or "").lower().rstrip(".")
     return h in {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
@@ -822,7 +829,7 @@ def _resolve_openrouter_runtime(
             pass
 
     env_openrouter_base_url = os.getenv("OPENROUTER_BASE_URL", "").strip()
-    env_custom_base_url = os.getenv("CUSTOM_BASE_URL", "").strip()
+    env_custom_base_url = _normalize_herbound_custom_base_url(os.getenv("CUSTOM_BASE_URL", ""))
 
     # Use config base_url when available and the provider context matches.
     # OPENAI_BASE_URL env var is no longer consulted — config.yaml is
@@ -837,13 +844,13 @@ def _resolve_openrouter_runtime(
         ):
             use_config_base_url = True
 
-    base_url = (
+    base_url = _normalize_herbound_custom_base_url(
         (explicit_base_url or "").strip()
         or env_custom_base_url
         or (cfg_base_url.strip() if use_config_base_url else "")
         or env_openrouter_base_url
         or OPENROUTER_BASE_URL
-    ).rstrip("/")
+    )
 
     # Choose API key based on whether the resolved base_url targets OpenRouter.
     # When hitting OpenRouter, prefer OPENROUTER_API_KEY (issue #289).
