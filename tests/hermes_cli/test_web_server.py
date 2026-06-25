@@ -259,6 +259,19 @@ class TestWebServerEndpoints:
         assert resp.status_code == 200
         assert resp.json()["data_url"].startswith("data:image/png;base64,")
 
+    def test_get_media_serves_deepseen_markdown_report(self):
+        """DeepSeen report attachments are downloadable by remote desktop clients."""
+        from hermes_constants import get_hermes_home
+
+        report_dir = get_hermes_home() / "deepseen-reports"
+        report_dir.mkdir(parents=True, exist_ok=True)
+        report = report_dir / "deepseen-product-report.md"
+        report.write_text("# DeepSeen report\n", encoding="utf-8")
+
+        resp = self.client.get("/api/media", params={"path": str(report)})
+        assert resp.status_code == 200
+        assert resp.json()["data_url"].startswith("data:text/markdown;base64,")
+
     def test_get_media_rejects_path_outside_roots(self, tmp_path):
         """An image-extension file outside the media roots is forbidden."""
         outside = tmp_path / "secret.png"

@@ -1029,8 +1029,8 @@ def _probe_gateway_health() -> tuple[bool, dict | None]:
     return False, None
 
 
-# Image MIME types this endpoint will serve. Extension-allowlisted so an
-# authenticated caller can't pull non-image files through it.
+# Attachment MIME types this endpoint will serve. Extension-allowlisted so an
+# authenticated caller can't pull arbitrary files through it.
 _MEDIA_CONTENT_TYPES = {
     ".png": "image/png",
     ".jpg": "image/jpeg",
@@ -1040,6 +1040,8 @@ _MEDIA_CONTENT_TYPES = {
     ".svg": "image/svg+xml",
     ".bmp": "image/bmp",
     ".ico": "image/x-icon",
+    ".md": "text/markdown",
+    ".txt": "text/plain",
 }
 _MEDIA_MAX_BYTES = 25 * 1024 * 1024
 _MANAGED_FILES_ROOT_ENV = "HERMES_DASHBOARD_FILES_ROOT"
@@ -1236,7 +1238,7 @@ def _media_serve_roots() -> list[Path]:
     allowlist.
     """
     home = get_hermes_home()
-    roots = [home / "images", home / "screenshots", home / "cache"]
+    roots = [home / "images", home / "screenshots", home / "cache", home / "deepseen-reports"]
     out: list[Path] = []
     for root in roots:
         try:
@@ -1248,14 +1250,14 @@ def _media_serve_roots() -> list[Path]:
 
 @app.get("/api/media")
 async def get_media(path: str):
-    """Return a gateway-local image file as a base64 data URL.
+    """Return a gateway-local media/report file as a base64 data URL.
 
     Lets remote clients (the desktop app over the network, or the web dashboard
     in a browser) display images the agent wrote to *this* machine's filesystem
     — they can't read the gateway's local disk directly.
 
     Auth-gated by the session token like every other /api route. Restricted to
-    an image-extension allowlist, a size cap, AND the gateway's own media roots
+    an extension allowlist, a size cap, AND the gateway's own media roots
     (resolved, symlink-safe) so it can't be used to read arbitrary files.
     """
     try:
