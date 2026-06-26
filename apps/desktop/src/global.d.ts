@@ -38,6 +38,8 @@ declare global {
         set: (name: string | null) => Promise<DesktopActiveProfile>
       }
       api: <T>(request: HermesApiRequest) => Promise<T>
+      deepseenRequest: <T = unknown>(request: HermesDeepSeenRequest) => Promise<T>
+      deepseenUploadFile: <T = unknown>(request: HermesDeepSeenUploadRequest) => Promise<T>
       notify: (payload: HermesNotification) => Promise<boolean>
       requestMicrophoneAccess: () => Promise<boolean>
       readFileDataUrl: (filePath: string) => Promise<string>
@@ -402,6 +404,24 @@ export interface HermesApiRequest {
   // (window) backend. Read-only cross-profile data is served by the primary, so
   // this is only needed for profile-scoped live/settings calls.
   profile?: string | null
+}
+
+export interface HermesDeepSeenUploadRequest {
+  authToken?: string
+  filePath: string
+  filename?: string
+  profile?: string | null
+  timeoutMs?: number
+  type?: 'analyze' | 'avatar' | 'common' | 'competitor' | 'recreation' | 'video-analysis'
+}
+
+export interface HermesDeepSeenRequest {
+  authToken?: string
+  body?: unknown
+  method?: string
+  path: string
+  profile?: string | null
+  timeoutMs?: number
 }
 
 export interface HermesNotification {

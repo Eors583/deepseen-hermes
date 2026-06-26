@@ -1074,6 +1074,8 @@ export const en: Translations = {
     nav: {
       'new-session': 'New session',
       skills: 'DeepSeen Capabilities',
+      'image-recreation': 'Image recreation',
+      'video-recreation': 'Video recreation',
       messaging: 'Messaging',
       artifacts: 'Artifacts'
     },

@@ -1,6 +1,7 @@
 import { JsonRpcGatewayClient } from '@hermes/shared'
 
-import { getStoredAuthToken } from '@/lib/auth-token'
+import { getStoredAuthToken, isAuthTokenExpired } from '@/lib/auth-token'
+import { filterHerboundProductionModelOptions } from '@/lib/production-model-filter'
 import type {
   ActionResponse,
   ActionStatusResponse,
@@ -49,6 +50,8 @@ import type {
 const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS = 30_000
 const SESSION_LIST_REQUEST_TIMEOUT_MS = 60_000
 const PUBLIC_AUTH_API_PATHS = new Set(['/api/auth/login', '/api/auth/register', '/api/status'])
+const DEEPSEEN_ACCESS_TOKEN_KEY = 'viralforge_access_token'
+const DEEPSEEN_REFRESH_TOKEN_KEY = 'viralforge_refresh_token'
 
 interface DesktopApiRequest {
   path: string
@@ -65,6 +68,28 @@ function desktopApi<T>(request: DesktopApiRequest): Promise<T> {
     ...request,
     ...(token ? { authToken: token } : {})
   })
+}
+
+function getStoredDeepSeenAccessToken(): string | null {
+  try {
+    const token = window.localStorage.getItem(DEEPSEEN_ACCESS_TOKEN_KEY)
+    return token && !isAuthTokenExpired(token) ? token : null
+  } catch {
+    return null
+  }
+}
+
+function persistDeepSeenTokens(accessToken?: string | null, refreshToken?: string | null): void {
+  try {
+    if (accessToken && accessToken.trim()) {
+      window.localStorage.setItem(DEEPSEEN_ACCESS_TOKEN_KEY, accessToken.trim())
+    }
+    if (refreshToken && refreshToken.trim()) {
+      window.localStorage.setItem(DEEPSEEN_REFRESH_TOKEN_KEY, refreshToken.trim())
+    }
+  } catch {
+    // DeepSeen token persistence is best-effort; Herbound login remains the primary gate.
+  }
 }
 
 export type {
@@ -142,12 +167,12 @@ export class HermesGateway extends JsonRpcGatewayClient {
   }
 }
 
-// Profile that profile-scoped REST settings (config/env/skills/tools/model/�?
+// Profile that profile-scoped REST settings (config/env/skills/tools/model/etc.)
 // should target. Mirrors $activeGatewayProfile, pushed in from the store via
 // setApiRequestProfile so this module needs no store import (avoids a cycle).
 // Electron main consumes request.profile to pick which backend *process* serves
 // the call; each pooled backend already has its own HERMES_HOME, so no backend
-// change is needed. Null �?primary, so single-profile users are unaffected.
+// change is needed. Null means primary, so single-profile users are unaffected.
 let _apiProfile: null | string = null
 
 export function setApiRequestProfile(profile: null | string): void {
@@ -177,7 +202,7 @@ export async function listSessions(
 }
 
 // Unified, read-only session list aggregated across ALL profiles. Served by the
-// primary backend straight off each profile's state.db �?no per-profile backend
+// primary backend straight off each profile's state.db; no per-profile backend
 // is spawned. Single-profile users get the same rows as listSessions(), tagged
 // profile="default".
 // Source scoping lets callers split the unified list into independent slices:
@@ -218,7 +243,7 @@ export async function listAllProfileSessions(
 }
 
 // Mutations take the owning `profile` so Electron routes them to that profile's
-// backend (remote pool or local primary) via request.profile �?matching the
+// backend (remote pool or local primary) via request.profile, matching the
 // read path. A remote session's row lives only on its remote host, so a mutation
 // that hit the local primary would no-op or 404. Omit for the current/default.
 export function setSessionArchived(id: string, archived: boolean, profile?: string | null): Promise<{ ok: boolean }> {
@@ -283,12 +308,32 @@ export function getStatus(): Promise<StatusResponse> {
   })
 }
 
-export function loginUser(username: string, password: string): Promise<AuthTokenResponse> {
-  return desktopApi<AuthTokenResponse>({
+export async function loginUser(username: string, password: string): Promise<AuthTokenResponse> {
+  const result = await desktopApi<AuthTokenResponse>({
     path: '/api/auth/login',
     method: 'POST',
     body: { username, password }
   })
+
+  try {
+    const email = username.trim().toLowerCase()
+    const deepseenLogin = await window.hermesDesktop.deepseenRequest<DeepSeenApiEnvelope<{
+      accessToken?: string
+      refreshToken?: string
+    }>>({
+      path: 'auth/login',
+      method: 'POST',
+      body: { email, password },
+      timeoutMs: 60_000
+    })
+    const tokens = unwrapDeepSeenResponse(deepseenLogin)
+    persistDeepSeenTokens(tokens.accessToken, tokens.refreshToken)
+    console.info(`[deepseen-auth] synced DeepSeen access token=${tokens.accessToken ? `yes len=${tokens.accessToken.length}` : 'no'}`)
+  } catch (error) {
+    console.warn(`[deepseen-auth] failed to sync DeepSeen token: ${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  return result
 }
 
 export function registerUser(username: string, password: string): Promise<AuthTokenResponse> {
@@ -697,7 +742,7 @@ export function getGlobalModelOptions(): Promise<ModelOptionsResponse> {
   return desktopApi<ModelOptionsResponse>({
     ...profileScoped(),
     path: '/api/model/options'
-  })
+  }).then(options => filterHerboundProductionModelOptions(options) ?? options)
 }
 
 export interface RecommendedDefaultModel {
@@ -708,7 +753,7 @@ export interface RecommendedDefaultModel {
 }
 
 // Recommended default model for a freshly-authenticated provider. Mirrors the
-// curation `hermes model` does �?for Nous it honors the free/paid tier so a
+// curation `hermes model` does; for Nous it honors the free/paid tier so a
 // free user gets a free model instead of a paid default.
 export function getRecommendedDefaultModel(provider: string): Promise<RecommendedDefaultModel> {
   return desktopApi<RecommendedDefaultModel>({
@@ -802,3 +847,155 @@ export function getElevenLabsVoices(): Promise<ElevenLabsVoicesResponse> {
     path: '/api/audio/elevenlabs/voices'
   })
 }
+
+export interface DeepSeenApiEnvelope<T = unknown> {
+  data?: T
+  error?: {
+    code?: string
+    details?: unknown
+    message?: string
+  }
+  success?: boolean
+}
+
+export interface DeepSeenTaskProgress {
+  actionId?: string
+  actionRequired?: {
+    message?: string
+    type?: string
+  }
+  error?: string
+  fallback?: {
+    message?: string
+    title?: string
+  }
+  logs?: Array<{ message?: string; stage?: string; timestamp?: string } | string>
+  message?: string
+  progress?: number
+  result?: Record<string, unknown>
+  status: 'CANCELLED' | 'COMPLETED' | 'FAILED' | 'PENDING' | 'PROCESSING' | 'RUNNING' | string
+  step?: string
+  taskId?: string
+}
+
+export interface DeepSeenUploadResponse {
+  url: string
+}
+
+type DeepSeenUploadType = 'analyze' | 'avatar' | 'common' | 'competitor' | 'recreation' | 'video-analysis'
+
+export class DeepSeenApiError extends Error {
+  code?: string
+  details?: unknown
+  statusCode?: number
+
+  constructor(message: string, options: { code?: string; details?: unknown; statusCode?: number } = {}) {
+    super(message)
+    this.name = 'DeepSeenApiError'
+    this.code = options.code
+    this.details = options.details
+    this.statusCode = options.statusCode
+  }
+}
+
+function parseDeepSeenError(error: unknown): DeepSeenApiError {
+  if (error instanceof DeepSeenApiError) return error
+  const message = error instanceof Error ? error.message : String(error || 'DeepSeen 请求失败')
+  const jsonStart = message.indexOf('{')
+  if (jsonStart >= 0) {
+    try {
+      const parsed = JSON.parse(message.slice(jsonStart)) as DeepSeenApiEnvelope
+      if (parsed?.error) {
+        return new DeepSeenApiError(parsed.error.message || parsed.error.code || message, {
+          code: parsed.error.code,
+          details: parsed.error.details,
+          statusCode: Number((error as { statusCode?: number })?.statusCode || 0) || undefined
+        })
+      }
+    } catch {
+      // Keep the original transport error below.
+    }
+  }
+  return new DeepSeenApiError(message, {
+    statusCode: Number((error as { statusCode?: number })?.statusCode || 0) || undefined
+  })
+}
+
+export function unwrapDeepSeenResponse<T>(response: DeepSeenApiEnvelope<T>): T {
+  if (response?.success === false) {
+    throw new DeepSeenApiError(response.error?.message || response.error?.code || 'DeepSeen 请求失败', {
+      code: response.error?.code,
+      details: response.error?.details
+    })
+  }
+  return (response?.data ?? response) as T
+}
+export async function deepseenRequest<T>(
+  path: string,
+  options: { body?: unknown; method?: string; timeoutMs?: number } = {}
+): Promise<T> {
+  try {
+    const normalized = path.replace(/^\/+/, '')
+    const token = getStoredDeepSeenAccessToken() || getStoredAuthToken() || undefined
+    const request = {
+      path: normalized,
+      method: options.method || (options.body === undefined ? 'GET' : 'POST'),
+      body: options.body,
+      ...(token ? { authToken: token } : {}),
+      timeoutMs: options.timeoutMs || 120_000
+    }
+    const response = window.hermesDesktop.deepseenRequest
+      ? await window.hermesDesktop.deepseenRequest<DeepSeenApiEnvelope<T>>(request)
+      : await desktopApi<DeepSeenApiEnvelope<T>>({
+          ...request,
+          path: `/api/deepseen/${normalized}`
+        })
+    return unwrapDeepSeenResponse<T>(response)
+  } catch (error) {
+    throw parseDeepSeenError(error)
+  }
+}
+
+export function uploadDeepSeenDataUrl(payload: {
+  dataUrl: string
+  filename: string
+  type?: DeepSeenUploadType
+}): Promise<DeepSeenUploadResponse> {
+  return desktopApi<DeepSeenApiEnvelope<DeepSeenUploadResponse>>({
+    path: '/api/deepseen/upload-data-url',
+    method: 'POST',
+    body: payload,
+    timeoutMs: 180_000
+  }).then(unwrapDeepSeenResponse)
+}
+
+export function uploadDeepSeenFile(payload: {
+  filePath: string
+  filename?: string
+  type?: DeepSeenUploadType
+}): Promise<DeepSeenUploadResponse> {
+  const token = getStoredDeepSeenAccessToken() || getStoredAuthToken() || undefined
+  return window.hermesDesktop
+    .deepseenUploadFile<DeepSeenApiEnvelope<DeepSeenUploadResponse>>({
+      ...payload,
+      ...(token ? { authToken: token } : {}),
+      timeoutMs: 300_000
+    })
+    .then(unwrapDeepSeenResponse)
+}
+
+export function getDeepSeenTaskStatus(taskId: string): Promise<DeepSeenTaskProgress> {
+  return deepseenRequest<DeepSeenTaskProgress>(`tasks/${encodeURIComponent(taskId)}/status`, { timeoutMs: 60_000 })
+}
+
+export function cancelDeepSeenTask(taskId: string): Promise<void> {
+  return deepseenRequest<void>(`tasks/${encodeURIComponent(taskId)}/cancel`, { method: 'POST', body: {} })
+}
+
+export function confirmDeepSeenTaskFallback(taskId: string): Promise<void> {
+  return deepseenRequest<void>(`tasks/${encodeURIComponent(taskId)}/fallback/confirm`, {
+    method: 'POST',
+    body: { decision: 'continue' }
+  })
+}
+

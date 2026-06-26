@@ -19,6 +19,7 @@ import type { HermesGateway } from '@/hermes'
 import { getGlobalModelOptions } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { displayModelName, modelDisplayParts, reasoningEffortLabel } from '@/lib/model-status-label'
+import { filterHerboundProductionModelOptions } from '@/lib/production-model-filter'
 import { cn } from '@/lib/utils'
 import {
   $visibleModels,
@@ -76,8 +77,12 @@ export function ModelMenuPanel({ gateway, onSelectModel, requestGateway }: Model
     }
   })
 
-  const optionsModel = String(modelOptions.data?.model ?? currentModel ?? '')
-  const optionsProvider = String(modelOptions.data?.provider ?? currentProvider ?? '')
+  const filteredModelOptions = useMemo(
+    () => filterHerboundProductionModelOptions(modelOptions.data) ?? modelOptions.data,
+    [modelOptions.data]
+  )
+  const optionsModel = String(filteredModelOptions?.model ?? currentModel ?? '')
+  const optionsProvider = String(filteredModelOptions?.provider ?? currentProvider ?? '')
   const loading = modelOptions.isPending && !modelOptions.data
 
   const error = modelOptions.error
@@ -86,7 +91,7 @@ export function ModelMenuPanel({ gateway, onSelectModel, requestGateway }: Model
       : String(modelOptions.error)
     : null
 
-  const providers = modelOptions.data?.providers
+  const providers = filteredModelOptions?.providers
   const effectiveVisibleModels = useMemo(
     () => effectiveVisibleKeys(visibleModels, providers ?? []),
     [visibleModels, providers]

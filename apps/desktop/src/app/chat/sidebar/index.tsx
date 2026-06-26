@@ -90,7 +90,14 @@ import {
   sessionPinId
 } from '@/store/session'
 
-import { type AppView, ARTIFACTS_ROUTE, MESSAGING_ROUTE, SKILLS_ROUTE } from '../../routes'
+import {
+  type AppView,
+  ARTIFACTS_ROUTE,
+  IMAGE_RECREATION_ROUTE,
+  MESSAGING_ROUTE,
+  SKILLS_ROUTE,
+  VIDEO_RECREATION_ROUTE
+} from '../../routes'
 import { SidebarPanelLabel } from '../../shell/sidebar-label'
 import type { SidebarNavItem } from '../../types'
 
@@ -126,6 +133,18 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
     label: '',
     icon: props => <Codicon name="symbol-misc" {...props} />,
     route: SKILLS_ROUTE
+  },
+  {
+    id: 'image-recreation',
+    label: '图片复刻',
+    icon: props => <Codicon name="file-media" {...props} />,
+    route: IMAGE_RECREATION_ROUTE
+  },
+  {
+    id: 'video-recreation',
+    label: '视频复刻',
+    icon: props => <Codicon name="device-camera-video" {...props} />,
+    route: VIDEO_RECREATION_ROUTE
   },
   { id: 'messaging', label: '', icon: props => <Codicon name="comment" {...props} />, route: MESSAGING_ROUTE },
   { id: 'artifacts', label: '', icon: props => <Codicon name="files" {...props} />, route: ARTIFACTS_ROUTE }

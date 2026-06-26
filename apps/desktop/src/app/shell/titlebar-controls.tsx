@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react'
 import type { ComponentProps, ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { useI18n } from '@/i18n'
@@ -186,6 +187,12 @@ export function TitlebarControls({ leftTools = [], tools = [], onOpenSettings }:
         aria-label={t.shell.appControls}
         className="fixed right-(--titlebar-tools-right) top-(--titlebar-controls-top) z-70 flex flex-row items-center justify-end gap-x-1 pointer-events-auto select-none [-webkit-app-region:no-drag]"
       >
+        <BrandMark
+          aria-label="Herbound"
+          className="size-(--titlebar-control-size) rounded-sm"
+          role="img"
+          title="Herbound"
+        />
         {visibleSystemToolsBeforeSettings.map(tool => (
           <TitlebarToolButton key={tool.id} navigate={navigate} tool={tool} />
         ))}

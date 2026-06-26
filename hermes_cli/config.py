@@ -2222,6 +2222,11 @@ DEFAULT_CONFIG = {
     },
 
     # Network settings — workarounds for connectivity issues.
+    "model_picker": {
+        "hidden_providers": [],
+        "hidden_models": {},
+    },
+
     "network": {
         # Force IPv4 connections.  On servers with broken or unreachable IPv6,
         # Python tries AAAA records first and hangs for the full TCP timeout
@@ -4118,7 +4123,7 @@ _KNOWN_ROOT_KEYS = {
     "fallback_providers", "credential_pool_strategies", "toolsets",
     "agent", "terminal", "display", "compression", "delegation",
     "auxiliary", "custom_providers", "context", "memory", "gateway",
-    "sessions", "streaming", "updates",
+    "model_picker", "sessions", "streaming", "updates",
 }
 
 # Valid fields inside a custom_providers list entry

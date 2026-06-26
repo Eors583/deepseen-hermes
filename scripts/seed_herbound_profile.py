@@ -80,6 +80,9 @@ def _merge_config(home: Path) -> None:
             if key in seed_model:
                 target_model[key] = seed_model[key]
 
+    if "model_picker" in seed:
+        target["model_picker"] = seed["model_picker"]
+
     _dump_yaml(target_path, target)
 
 

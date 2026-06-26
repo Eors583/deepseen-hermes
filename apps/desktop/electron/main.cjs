@@ -2524,6 +2524,7 @@ function fetchJson(url, token, options = {}) {
     const parsed = new URL(url)
     const client = parsed.protocol === 'https:' ? https : http
     const timeoutMs = resolveTimeoutMs(options.timeoutMs, DEFAULT_FETCH_TIMEOUT_MS)
+    const method = options.method || 'GET'
     const authToken = typeof options.authToken === 'string' ? options.authToken.trim() : ''
     const authHeaders = authToken
       ? { Authorization: `Bearer ${authToken}` }
@@ -2539,7 +2540,7 @@ function fetchJson(url, token, options = {}) {
     const req = client.request(
       parsed,
       {
-        method: options.method || 'GET',
+        method,
         headers: {
           'Content-Type': 'application/json',
           ...authHeaders,
@@ -2553,8 +2554,10 @@ function fetchJson(url, token, options = {}) {
         res.on('end', () => {
           const text = Buffer.concat(chunks).toString('utf8')
           if ((res.statusCode || 500) >= 400) {
-            const err = new Error(`${res.statusCode}: ${text || res.statusMessage}`)
+            const err = new Error(`${method} ${parsed.pathname}: HTTP ${res.statusCode}: ${text || res.statusMessage}`)
             err.statusCode = res.statusCode || 500
+            err.path = parsed.pathname
+            err.method = method
             reject(err)
             return
           }
@@ -2669,10 +2672,160 @@ function fetchPublicJson(url, options = {}) {
   })
 }
 
+async function fetchMultipartFile(url, token, options = {}) {
+  const filePath = String(options.filePath || '')
+  const { resolvedPath, stat } = await resolveReadableFileForIpc(filePath, {
+    blockSensitive: false,
+    maxBytes: 300 * 1024 * 1024,
+    purpose: 'DeepSeen upload'
+  })
+  if (!stat.isFile()) {
+    throw new Error('DeepSeen upload path must be a file')
+  }
+
+  const filename = path.basename(String(options.filename || resolvedPath)).replace(/[\r\n"]/g, '_')
+  const uploadType = String(options.type || 'recreation').replace(/[\r\n"]/g, '_')
+  const boundary = `----HerboundDeepSeen${crypto.randomBytes(12).toString('hex')}`
+  const fileBuffer = await fs.promises.readFile(resolvedPath)
+  const chunks = [
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="type"\r\n\r\n${uploadType}\r\n`),
+    Buffer.from(
+      `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
+        `Content-Type: ${mimeTypeForPath(resolvedPath)}\r\n\r\n`
+    ),
+    fileBuffer,
+    Buffer.from(`\r\n--${boundary}--\r\n`)
+  ]
+  const body = Buffer.concat(chunks)
+  const parsed = new URL(url)
+  const client = parsed.protocol === 'https:' ? https : http
+  const timeoutMs = resolveTimeoutMs(options.timeoutMs, 300_000)
+  const method = 'POST'
+  const authToken = typeof options.authToken === 'string' ? options.authToken.trim() : ''
+  const authHeaders = authToken
+    ? { Authorization: `Bearer ${authToken}` }
+    : token
+      ? { 'X-Hermes-Session-Token': token }
+      : {}
+
+  return new Promise((resolve, reject) => {
+    const req = client.request(
+      parsed,
+      {
+        method,
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': String(body.length),
+          ...authHeaders
+        }
+      },
+      res => {
+        const responseChunks = []
+        res.on('error', reject)
+        res.on('data', chunk => responseChunks.push(chunk))
+        res.on('end', () => {
+          const text = Buffer.concat(responseChunks).toString('utf8')
+          if ((res.statusCode || 500) >= 400) {
+            const err = new Error(`${method} ${parsed.pathname}: HTTP ${res.statusCode}: ${text || res.statusMessage}`)
+            err.statusCode = res.statusCode || 500
+            err.path = parsed.pathname
+            err.method = method
+            reject(err)
+            return
+          }
+          if (!text) {
+            resolve(null)
+            return
+          }
+          try {
+            resolve(JSON.parse(text))
+          } catch {
+            reject(new Error(`Invalid JSON from ${url} (status ${res.statusCode}): ${text.slice(0, 200)}`))
+          }
+        })
+      }
+    )
+    req.on('error', reject)
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error(`Timed out uploading to DeepSeen after ${timeoutMs}ms`))
+    })
+    req.write(body)
+    req.end()
+  })
+}
+
 function mimeTypeForPath(filePath) {
   const ext = path.extname(filePath || '').toLowerCase()
 
   return MEDIA_MIME_TYPES[ext] || 'application/octet-stream'
+}
+
+function deepSeenAppApiBases(connection) {
+  const explicit = String(
+    process.env.HERBOUND_DEEPSEEN_APP_API_URL || process.env.DEEPSEEN_APP_API_URL || ''
+  ).trim()
+  const bases = []
+  if (explicit) {
+    bases.push(explicit)
+  }
+
+  // Production desktop builds usually talk to the Herbound FastAPI gateway on
+  // the same public host as the DeepSeen web API.  If the gateway has not been
+  // redeployed with the upload proxy yet, fall back to the DeepSeen app API on
+  // that host before trying the canonical SaaS domain.
+  try {
+    const remote = new URL(connection?.baseUrl || '')
+    bases.push(`${remote.protocol}//${remote.host}/api`)
+  } catch {}
+
+  bases.push('https://deepseen.ai/api')
+
+  return [...new Set(bases.map(base => base.replace(/\/+$/, '')).filter(Boolean))]
+}
+
+const DEEPSEEN_DIRECT_FALLBACK_STATUS = new Set([404, 405])
+
+function shouldTryNextDeepSeenBase(error) {
+  const statusCode = Number(error?.statusCode || 0)
+  const message = error instanceof Error ? error.message : String(error || '')
+  return DEEPSEEN_DIRECT_FALLBACK_STATUS.has(statusCode) || message.includes('Method Not Allowed')
+}
+
+async function requestDeepSeenAppApi(connection, request = {}) {
+  const normalizedPath = String(request?.path || '')
+    .replace(/^\/+/, '')
+    .replace(/^api\/+/, '')
+  if (!normalizedPath) {
+    throw new Error('DeepSeen API path is required')
+  }
+
+  const method = request?.method || (request?.body === undefined ? 'GET' : 'POST')
+  const timeoutMs = resolveTimeoutMs(request?.timeoutMs, 120_000)
+  let lastError = null
+
+  for (const base of deepSeenAppApiBases(connection)) {
+    try {
+      rememberLog(
+        `[deepseen] ${method} /${normalizedPath} via ${base} auth=${
+          request?.authToken ? `bearer len=${String(request.authToken).length}` : connection?.token ? 'session-token' : 'none'
+        }`
+      )
+      return await fetchJson(`${base}/${normalizedPath}`, connection?.token, {
+        authToken: request?.authToken,
+        body: request?.body,
+        method,
+        timeoutMs
+      })
+    } catch (error) {
+      lastError = error
+      if (!shouldTryNextDeepSeenBase(error)) {
+        throw error
+      }
+    }
+  }
+
+  throw lastError || new Error('DeepSeen API endpoint unavailable')
 }
 
 function extensionForMimeType(mimeType) {
@@ -5607,6 +5760,60 @@ ipcMain.handle('hermes:api', async (_event, request) => {
   }
 
   return result
+})
+
+ipcMain.handle('hermes:deepseen:request', async (_event, request) => {
+  const connection = await ensureBackend(request?.profile)
+  return requestDeepSeenAppApi(connection, request)
+})
+
+ipcMain.handle('hermes:deepseen:upload-file', async (_event, request) => {
+  const connection = await ensureBackend(request?.profile)
+  const timeoutMs = resolveTimeoutMs(request?.timeoutMs, 300_000)
+  const upload = endpoint =>
+    fetchMultipartFile(`${connection.baseUrl}${endpoint}`, connection.token, {
+      authToken: request?.authToken,
+      filePath: request?.filePath,
+      filename: request?.filename,
+      timeoutMs,
+      type: request?.type || 'recreation'
+    })
+  const uploadDirectToDeepSeen = async () => {
+    let lastError = null
+    for (const base of deepSeenAppApiBases(connection)) {
+      try {
+        return await fetchMultipartFile(`${base}/upload`, connection.token, {
+          authToken: request?.authToken,
+          filePath: request?.filePath,
+          filename: request?.filename,
+          timeoutMs,
+          type: request?.type || 'recreation'
+        })
+      } catch (error) {
+        lastError = error
+        if (!shouldTryNextDeepSeenBase(error)) {
+          throw error
+        }
+      }
+    }
+    throw lastError || new Error('DeepSeen upload endpoint unavailable')
+  }
+
+  try {
+    return await upload('/api/deepseen/upload')
+  } catch (error) {
+    if (!shouldTryNextDeepSeenBase(error)) {
+      throw error
+    }
+    try {
+      return await upload('/api/deepseen/upload-raw')
+    } catch (fallbackError) {
+      if (!shouldTryNextDeepSeenBase(fallbackError)) {
+        throw fallbackError
+      }
+      return uploadDirectToDeepSeen()
+    }
+  }
 })
 
 ipcMain.handle('hermes:notify', (_event, payload) => {

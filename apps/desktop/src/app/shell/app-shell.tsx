@@ -105,16 +105,16 @@ export function AppShell({
     ? 0
     : titlebarControls.left + TITLEBAR_HEIGHT + Math.round(TITLEBAR_HEIGHT / 2)
 
-  // The static system cluster (haptics, profiles, settings, right-sidebar) is
-  // hardcoded in TitlebarControls. Pane-supplied tools (preview's group) render
-  // in a separate cluster anchored further left.
+  // The static system cluster (brand mark, haptics, keybinds, settings,
+  // right-sidebar) is hardcoded in TitlebarControls. Pane-supplied tools
+  // (preview's group) render in a separate cluster anchored further left.
   //
   // Width math has to include the `gap-x-1` (0.25rem) between buttons:
   // N buttons + (N - 1) inner gaps, plus one extra 0.25rem of breathing room
   // between the pane-tool cluster and the system cluster so they don't sit
   // flush against each other. Modeled as N gaps (N - 1 inner + 1 trailing)
   // to keep the formula generic for any pane-tool count.
-  const SYSTEM_TOOL_COUNT = 4
+  const SYSTEM_TOOL_COUNT = 5
   const paneToolCount = titlebarTools?.filter(tool => !tool.hidden).length ?? 0
   const systemToolsWidth = `calc(${SYSTEM_TOOL_COUNT} * (var(--titlebar-control-size) + 0.25rem))`
 

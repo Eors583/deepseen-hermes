@@ -39,6 +39,7 @@ services:
       HERMES_DATABASE_URL: ${HERMES_DATABASE_URL:-postgresql://hermes:change-me-before-prod@postgres:5432/hermes}
       DATABASE_URL: ${DATABASE_URL:-postgresql://hermes:change-me-before-prod@postgres:5432/hermes}
       DEEPSEEN_BASE_URL: ${DEEPSEEN_BASE_URL:-https://deepseen.ai/v1}
+      DEEPSEEN_APP_API_URL: ${DEEPSEEN_APP_API_URL:-https://deepseen.ai/api}
     expose:
       - "9119"
     volumes:

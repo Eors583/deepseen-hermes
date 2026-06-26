@@ -1207,6 +1207,8 @@ export const ja = defineLocale({
     nav: {
       'new-session': '新しいセッション',
       skills: 'スキルとツール',
+      'image-recreation': '画像リクリエーション',
+      'video-recreation': '動画リクリエーション',
       messaging: 'メッセージング',
       artifacts: 'アーティファクト'
     },

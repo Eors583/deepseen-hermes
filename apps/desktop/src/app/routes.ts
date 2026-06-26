@@ -3,6 +3,8 @@ export const NEW_CHAT_ROUTE = '/'
 export const SETTINGS_ROUTE = '/settings'
 export const COMMAND_CENTER_ROUTE = '/command-center'
 export const SKILLS_ROUTE = '/skills'
+export const IMAGE_RECREATION_ROUTE = '/image-recreation'
+export const VIDEO_RECREATION_ROUTE = '/video-recreation'
 export const MESSAGING_ROUTE = '/messaging'
 export const ARTIFACTS_ROUTE = '/artifacts'
 export const CRON_ROUTE = '/cron'
@@ -15,21 +17,25 @@ export type AppView =
   | 'chat'
   | 'command-center'
   | 'cron'
+  | 'image-recreation'
   | 'messaging'
   | 'profiles'
   | 'settings'
   | 'skills'
+  | 'video-recreation'
 
 export type AppRouteId =
   | 'agents'
   | 'artifacts'
   | 'command-center'
   | 'cron'
+  | 'image-recreation'
   | 'messaging'
   | 'new'
   | 'profiles'
   | 'settings'
   | 'skills'
+  | 'video-recreation'
 
 export interface AppRoute {
   id: AppRouteId
@@ -42,6 +48,8 @@ export const APP_ROUTES = [
   { id: 'settings', path: SETTINGS_ROUTE, view: 'settings' },
   { id: 'command-center', path: COMMAND_CENTER_ROUTE, view: 'command-center' },
   { id: 'skills', path: SKILLS_ROUTE, view: 'skills' },
+  { id: 'image-recreation', path: IMAGE_RECREATION_ROUTE, view: 'image-recreation' },
+  { id: 'video-recreation', path: VIDEO_RECREATION_ROUTE, view: 'video-recreation' },
   { id: 'messaging', path: MESSAGING_ROUTE, view: 'messaging' },
   { id: 'artifacts', path: ARTIFACTS_ROUTE, view: 'artifacts' },
   { id: 'cron', path: CRON_ROUTE, view: 'cron' },

@@ -10,6 +10,7 @@ import type { HermesGateway } from '@/hermes'
 import { getGlobalModelOptions } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { displayModelName, modelDisplayParts } from '@/lib/model-status-label'
+import { filterHerboundProductionModelOptions } from '@/lib/production-model-filter'
 import {
   $visibleModels,
   collapseModelFamilies,
@@ -53,9 +54,14 @@ export function ModelVisibilityDialog({
     enabled: open
   })
 
-  const providers = useMemo(
-    () => (modelOptions.data?.providers ?? []).filter(provider => (provider.models ?? []).length > 0),
+  const filteredModelOptions = useMemo(
+    () => filterHerboundProductionModelOptions(modelOptions.data) ?? modelOptions.data,
     [modelOptions.data]
+  )
+
+  const providers = useMemo(
+    () => (filteredModelOptions?.providers ?? []).filter(provider => (provider.models ?? []).length > 0),
+    [filteredModelOptions]
   )
 
   const visible = effectiveVisibleKeys(stored, providers)

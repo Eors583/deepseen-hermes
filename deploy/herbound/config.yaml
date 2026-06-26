@@ -60,6 +60,59 @@ model:
   provider: custom
   base_url: https://api.ominilink.ai/v1
   max_tokens: 4096
+model_picker:
+  hidden_providers:
+    - gemini
+  hidden_models:
+    openai-api:
+      - claude-3-5
+      - claude-sonnet-4-20250514
+      - claude-4.1-opus
+      - claude-3.7-sonnet
+      - gemini-2.0-flash
+      - claude-4.0-sonnet
+      - claude-opus-4-1-20250805
+      - claude-3-7-sonnet-20250219
+      - gemini-2.5-flash-image-preview
+      - gpt-5.1-codex
+      - gpt-5.1-codex-max
+      - gpt-5.1-codex-mini
+      - gpt-5-codex
+      - gpt-image-1
+      - gpt-5.2-codex
+      - claude-opus-4-6
+      - gpt-image-1.5
+      - claude-sonnet-4-6
+      - claude-opus-4-6-thinking
+      - gpt-5.4-pro
+      - gpt-5.3-codex
+      - sora-2
+      - veo-3.1-generate-001
+      - veo-3.1-fast-generate-001
+      - veo-3.1-lite-generate-001
+      - grok-4-20-reasoning
+      - claude-opus-4-7
+      - claude-opus-4-7-thinking
+      - viduq3-pro
+      - viduq3-pro-fast
+      - viduq3-turbo
+      - viduq3-mix
+      - viduq3
+      - gpt-5-pro
+      - gpt-5.5-pro
+      - gpt-image-2
+      - kling-v3
+      - dreamina-seedance-2-0-fast
+      - dreamina-seedance-2-0
+      - claude-opus-4-8
+      - claude-fable-5
+      - kling-v2-6
+      - kling-v3-omni
+      - kling-video-o1
+      - kling-v2-5-turbo
+      - kling-v2-1-master
+      - kling-v2-master
+      - 2bn5k-viduq3-pro-fast
 plugins:
   enabled:
     - crossborder-deepseen

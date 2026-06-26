@@ -3915,6 +3915,145 @@ async def delete_deepseen_key(request: Request, profile: Optional[str] = None):
         raise HTTPException(status_code=500, detail="Failed to delete DEEPSEEN_API_KEY")
 
 
+def _deepseen_app_api_base() -> str:
+    explicit = (
+        os.getenv("DEEPSEEN_APP_API_URL")
+        or os.getenv("DEEPSEEN_WEB_API_URL")
+        or os.getenv("DEEPSEEN_API_URL")
+        or ""
+    ).strip()
+    if explicit:
+        return explicit.rstrip("/")
+
+    sdk_base = (os.getenv("DEEPSEEN_BASE_URL") or "").strip()
+    if sdk_base:
+        parsed = urllib.parse.urlparse(sdk_base)
+        if parsed.scheme and parsed.netloc:
+            return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, "/api", "", "", "")).rstrip("/")
+
+    return "http://127.0.0.1:4000/api"
+
+
+def _deepseen_forward_headers(request: Request) -> dict[str, str]:
+    headers: dict[str, str] = {"Accept": "application/json"}
+    auth = request.headers.get("authorization")
+    if auth:
+        headers["Authorization"] = auth
+    request_id = request.headers.get("x-request-id")
+    if request_id:
+        headers["x-request-id"] = request_id
+    return headers
+
+
+def _parse_data_url(data_url: str) -> tuple[bytes, str]:
+    if not data_url.startswith("data:") or "," not in data_url:
+        raise ValueError("Invalid data URL")
+    header, payload = data_url.split(",", 1)
+    mime_type = header[5:].split(";", 1)[0] or "application/octet-stream"
+    try:
+        if ";base64" in header:
+            return base64.b64decode(payload), mime_type
+        return urllib.parse.unquote_to_bytes(payload), mime_type
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("Invalid data URL payload") from exc
+
+
+@app.post("/api/deepseen/upload-data-url")
+async def deepseen_upload_data_url(request: Request):
+    try:
+        import httpx
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="httpx is required for DeepSeen proxy") from exc
+
+    body = await request.json()
+    data_url = str(body.get("dataUrl") or body.get("data_url") or "")
+    filename = str(body.get("filename") or body.get("name") or "upload.bin")
+    upload_type = str(body.get("type") or "recreation")
+    if not data_url:
+        raise HTTPException(status_code=400, detail="dataUrl is required")
+
+    try:
+        content, mime_type = _parse_data_url(data_url)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    url = f"{_deepseen_app_api_base()}/upload"
+    headers = _deepseen_forward_headers(request)
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(
+                url,
+                headers=headers,
+                data={"type": upload_type},
+                files={"file": (filename, content, mime_type)},
+            )
+    except Exception as exc:
+        _log.exception("DeepSeen upload proxy failed")
+        raise HTTPException(status_code=502, detail=f"DeepSeen upload unavailable: {exc}") from exc
+
+    content_type = resp.headers.get("content-type", "application/json")
+    return Response(content=resp.content, status_code=resp.status_code, media_type=content_type)
+
+
+@app.post("/api/deepseen/upload")
+@app.post("/api/deepseen/upload-raw")
+async def deepseen_upload_raw(request: Request):
+    try:
+        import httpx
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="httpx is required for DeepSeen proxy") from exc
+
+    content_type = request.headers.get("content-type", "")
+    if "multipart/form-data" not in content_type.lower():
+        raise HTTPException(status_code=400, detail="multipart/form-data is required")
+
+    raw_body = await request.body()
+    url = f"{_deepseen_app_api_base()}/upload"
+    headers = _deepseen_forward_headers(request)
+    headers["Content-Type"] = content_type
+    try:
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            resp = await client.post(url, headers=headers, content=raw_body)
+    except Exception as exc:
+        _log.exception("DeepSeen raw upload proxy failed")
+        raise HTTPException(status_code=502, detail=f"DeepSeen upload unavailable: {exc}") from exc
+
+    response_type = resp.headers.get("content-type", "application/json")
+    return Response(content=resp.content, status_code=resp.status_code, media_type=response_type)
+
+
+@app.api_route("/api/deepseen/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def deepseen_api_proxy(path: str, request: Request):
+    try:
+        import httpx
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="httpx is required for DeepSeen proxy") from exc
+
+    if not path or path.startswith("/"):
+        raise HTTPException(status_code=400, detail="Invalid DeepSeen path")
+    query = request.url.query
+    url = f"{_deepseen_app_api_base()}/{path}"
+    if query:
+        url = f"{url}?{query}"
+
+    headers = _deepseen_forward_headers(request)
+    raw_body = await request.body()
+    if raw_body:
+        content_type = request.headers.get("content-type")
+        if content_type:
+            headers["Content-Type"] = content_type
+
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.request(request.method, url, headers=headers, content=raw_body or None)
+    except Exception as exc:
+        _log.exception("DeepSeen API proxy failed path=%s", path)
+        raise HTTPException(status_code=502, detail=f"DeepSeen API unavailable: {exc}") from exc
+
+    content_type = resp.headers.get("content-type", "application/json")
+    return Response(content=resp.content, status_code=resp.status_code, media_type=content_type)
+
+
 # Live credential probes keyed by env var. Each entry is (method, url, auth)
 # where auth is "bearer" (Authorization header) or "query" (?key=). A cheap
 # read-only models/key call that 401s on a bad token — enough to catch a

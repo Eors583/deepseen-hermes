@@ -167,12 +167,77 @@ def build_models_payload(
         _apply_pricing(rows, force_fresh_nous_tier=force_fresh_nous_tier)
     if capabilities:
         _apply_capabilities(rows)
+    _apply_model_picker_filters(rows)
 
     return {
         "providers": rows,
         "model": ctx.current_model,
         "provider": ctx.current_provider,
     }
+
+
+def _apply_model_picker_filters(rows: list[dict]) -> None:
+    """Apply optional display-only provider/model filters from config.yaml.
+
+    Some OpenAI-compatible gateways advertise models from a live catalog that
+    are not runnable for the current account or protocol.  Filtering here keeps
+    every picker surface consistent while leaving direct/custom model entry and
+    runtime validation unchanged.
+    """
+    try:
+        from hermes_cli.config import load_config
+
+        cfg = load_config()
+    except Exception:
+        cfg = {}
+
+    picker_cfg = cfg.get("model_picker") if isinstance(cfg, dict) else {}
+    if not isinstance(picker_cfg, dict):
+        return
+
+    hidden_providers = {
+        str(provider).strip().lower()
+        for provider in picker_cfg.get("hidden_providers", []) or []
+        if str(provider).strip()
+    }
+    raw_hidden_models = picker_cfg.get("hidden_models", {}) or {}
+    hidden_models: dict[str, set[str]] = {}
+    if isinstance(raw_hidden_models, dict):
+        for provider, models in raw_hidden_models.items():
+            if not isinstance(models, list):
+                continue
+            hidden_models[str(provider).strip().lower()] = {
+                str(model).strip()
+                for model in models
+                if str(model).strip()
+            }
+
+    if not hidden_providers and not hidden_models:
+        return
+
+    kept_rows: list[dict] = []
+    for row in rows:
+        slug = str(row.get("slug", "")).strip()
+        slug_key = slug.lower()
+        if slug_key in hidden_providers:
+            continue
+
+        hidden = hidden_models.get(slug_key, set())
+        if hidden:
+            models = [model for model in (row.get("models") or []) if str(model) not in hidden]
+            row["models"] = models
+            row["total_models"] = len(models)
+            for key in ("pricing", "capabilities"):
+                value = row.get(key)
+                if isinstance(value, dict):
+                    row[key] = {model: meta for model, meta in value.items() if model not in hidden}
+            unavailable = row.get("unavailable_models")
+            if isinstance(unavailable, list):
+                row["unavailable_models"] = [model for model in unavailable if str(model) not in hidden]
+
+        kept_rows.append(row)
+
+    rows[:] = kept_rows
 
 
 def _apply_capabilities(rows: list[dict]) -> None:

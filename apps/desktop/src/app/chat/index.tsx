@@ -19,6 +19,7 @@ import { getGlobalModelOptions, type HermesGateway } from '@/hermes'
 import type { ChatMessage } from '@/lib/chat-messages'
 import { quickModelOptions, sessionTitle, toRuntimeMessage } from '@/lib/chat-runtime'
 import { useIncrementalExternalStoreRuntime } from '@/lib/incremental-external-store-runtime'
+import { filterHerboundProductionModelOptions } from '@/lib/production-model-filter'
 import { cn } from '@/lib/utils'
 import type { ComposerAttachment } from '@/store/composer'
 import { $pinnedSessionIds } from '@/store/layout'
@@ -226,9 +227,14 @@ export function ChatView({
     enabled: gatewayOpen
   })
 
+  const filteredModelOptions = useMemo(
+    () => filterHerboundProductionModelOptions(modelOptionsQuery.data) ?? modelOptionsQuery.data,
+    [modelOptionsQuery.data]
+  )
+
   const quickModels = useMemo(
-    () => quickModelOptions(modelOptionsQuery.data, currentProvider, currentModel),
-    [currentModel, currentProvider, modelOptionsQuery.data]
+    () => quickModelOptions(filteredModelOptions, currentProvider, currentModel),
+    [currentModel, currentProvider, filteredModelOptions]
   )
 
   const chatBarState = useMemo<ChatBarState>(
