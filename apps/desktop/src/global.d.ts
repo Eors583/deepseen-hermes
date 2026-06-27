@@ -39,6 +39,7 @@ declare global {
       }
       api: <T>(request: HermesApiRequest) => Promise<T>
       deepseenRequest: <T = unknown>(request: HermesDeepSeenRequest) => Promise<T>
+      deepseenTaskStreamUrl?: (request: HermesDeepSeenTaskStreamRequest) => Promise<{ url: string }>
       deepseenUploadFile: <T = unknown>(request: HermesDeepSeenUploadRequest) => Promise<T>
       notify: (payload: HermesNotification) => Promise<boolean>
       requestMicrophoneAccess: () => Promise<boolean>
@@ -422,6 +423,12 @@ export interface HermesDeepSeenRequest {
   path: string
   profile?: string | null
   timeoutMs?: number
+}
+
+export interface HermesDeepSeenTaskStreamRequest {
+  authToken?: string
+  profile?: string | null
+  taskId: string
 }
 
 export interface HermesNotification {

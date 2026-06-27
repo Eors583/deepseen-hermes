@@ -984,6 +984,94 @@ export function uploadDeepSeenFile(payload: {
     .then(unwrapDeepSeenResponse)
 }
 
+export function streamDeepSeenTask(
+  taskId: string,
+  callbacks: {
+    onComplete: (progress: DeepSeenTaskProgress) => void
+    onError: (error: Error) => void
+    onProgress: (progress: DeepSeenTaskProgress) => void
+  }
+): () => void {
+  let disposed = false
+  let eventSource: EventSource | null = null
+  let pollTimer: number | null = null
+  let completed = false
+
+  const isDone = (progress: DeepSeenTaskProgress) => {
+    const status = String(progress.status || '').toUpperCase()
+    return status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED'
+  }
+
+  const emitProgress = (progress: DeepSeenTaskProgress) => {
+    if (disposed || completed) return
+    callbacks.onProgress(progress)
+    if (isDone(progress)) {
+      completed = true
+      callbacks.onComplete(progress)
+      eventSource?.close()
+      if (pollTimer !== null) window.clearTimeout(pollTimer)
+    }
+  }
+
+  const startPolling = () => {
+    const tick = async () => {
+      if (disposed || completed) return
+      try {
+        emitProgress(await getDeepSeenTaskStatus(taskId))
+      } catch (error) {
+        if (!disposed && !completed) callbacks.onError(error instanceof Error ? error : new Error(String(error)))
+        return
+      }
+      if (!disposed && !completed) pollTimer = window.setTimeout(tick, 5000)
+    }
+    void tick()
+  }
+
+  const parseEvent = (event: Event) => {
+    const data = (event as MessageEvent).data
+    if (!data) return
+    try {
+      emitProgress(JSON.parse(data) as DeepSeenTaskProgress)
+    } catch (error) {
+      if (!disposed && !completed) callbacks.onError(error instanceof Error ? error : new Error('DeepSeen 任务进度解析失败'))
+    }
+  }
+
+  const token = getStoredDeepSeenAccessToken() || getStoredAuthToken() || undefined
+  if (!window.hermesDesktop.deepseenTaskStreamUrl || typeof EventSource === 'undefined') {
+    startPolling()
+  } else {
+    window.hermesDesktop
+      .deepseenTaskStreamUrl({ taskId, ...(token ? { authToken: token } : {}) })
+      .then(({ url }) => {
+        if (disposed || completed) return
+        let opened = false
+        eventSource = new EventSource(url)
+        eventSource.onopen = () => {
+          opened = true
+        }
+        eventSource.addEventListener('progress', parseEvent)
+        eventSource.addEventListener('complete', parseEvent)
+        eventSource.onerror = () => {
+          eventSource?.close()
+          if (disposed || completed) return
+          if (!opened) {
+            startPolling()
+            return
+          }
+          callbacks.onError(new Error('DeepSeen 任务进度连接中断'))
+        }
+      })
+      .catch(() => startPolling())
+  }
+
+  return () => {
+    disposed = true
+    eventSource?.close()
+    if (pollTimer !== null) window.clearTimeout(pollTimer)
+  }
+}
+
 export function getDeepSeenTaskStatus(taskId: string): Promise<DeepSeenTaskProgress> {
   return deepseenRequest<DeepSeenTaskProgress>(`tasks/${encodeURIComponent(taskId)}/status`, { timeoutMs: 60_000 })
 }

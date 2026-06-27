@@ -180,10 +180,92 @@ _MCP_MESSAGE_HANDLER_SUPPORTED = False
 # Streamable HTTP was introduced by 2025-03-26, so this remains valid for the
 # HTTP transport path even on older-but-supported SDK versions.
 LATEST_PROTOCOL_VERSION = "2025-03-26"
+
+
+def _install_mcp_windows_hidden_stdio_patch() -> None:
+    """Keep Windows stdio MCP helper processes from opening console windows.
+
+    Some MCP SDK versions retry Windows process creation without
+    CREATE_NO_WINDOW after a broad exception. That makes background stdio
+    servers such as hermes-web-ui-mcp.mjs appear as stray node.exe consoles.
+    Hermes always launches stdio MCP servers as background helpers, so keep
+    every Windows launch path hidden while preserving SDK job-object cleanup.
+    """
+    if sys.platform != "win32":
+        return
+    try:
+        import anyio
+        import subprocess
+        import mcp.client.stdio as _mcp_stdio
+        import mcp.os.win32.utilities as _mcp_win32
+    except Exception:
+        return
+
+    if getattr(_mcp_stdio, "_hermes_hidden_stdio_patch_installed", False):
+        return
+
+    create_no_window = getattr(subprocess, "CREATE_NO_WINDOW", 0) or 0x08000000
+
+    def _hidden_startupinfo():
+        try:
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= getattr(subprocess, "STARTF_USESHOWWINDOW", 1)
+            startupinfo.wShowWindow = getattr(subprocess, "SW_HIDE", 0)
+            return startupinfo
+        except Exception:
+            return None
+
+    def _hidden_popen(command, args, env=None, errlog=sys.stderr, cwd=None):
+        kwargs = {
+            "stdin": subprocess.PIPE,
+            "stdout": subprocess.PIPE,
+            "stderr": errlog,
+            "env": env,
+            "cwd": cwd,
+            "bufsize": 0,
+            "creationflags": create_no_window,
+        }
+        startupinfo = _hidden_startupinfo()
+        if startupinfo is not None:
+            kwargs["startupinfo"] = startupinfo
+        return subprocess.Popen([command, *args], **kwargs)
+
+    async def _hermes_create_windows_process(
+        command: str,
+        args: list[str],
+        env: dict[str, str] | None = None,
+        errlog: Any | None = sys.stderr,
+        cwd: Any | None = None,
+    ):
+        job = _mcp_win32._create_job_object()
+        startupinfo = _hidden_startupinfo()
+        open_kwargs = {
+            "env": env,
+            "stderr": errlog,
+            "cwd": cwd,
+            "creationflags": create_no_window,
+        }
+        if startupinfo is not None:
+            open_kwargs["startupinfo"] = startupinfo
+        try:
+            process = await anyio.open_process([command, *args], **open_kwargs)
+        except Exception:
+            process = _mcp_win32.FallbackProcess(
+                _hidden_popen(command, args, env=env, errlog=errlog, cwd=cwd)
+            )
+        _mcp_win32._maybe_assign_process_to_job(process, job)
+        return process
+
+    _mcp_stdio.create_windows_process = _hermes_create_windows_process
+    _mcp_win32.create_windows_process = _hermes_create_windows_process
+    _mcp_stdio._hermes_hidden_stdio_patch_installed = True
+
+
 try:
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
     _MCP_AVAILABLE = True
+    _install_mcp_windows_hidden_stdio_patch()
     try:
         from mcp.client.streamable_http import streamablehttp_client
         _MCP_HTTP_AVAILABLE = True

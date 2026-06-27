@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
   },
   api: request => ipcRenderer.invoke('hermes:api', request),
   deepseenRequest: request => ipcRenderer.invoke('hermes:deepseen:request', request),
+  deepseenTaskStreamUrl: request => ipcRenderer.invoke('hermes:deepseen:task-stream-url', request),
   deepseenUploadFile: request => ipcRenderer.invoke('hermes:deepseen:upload-file', request),
   notify: payload => ipcRenderer.invoke('hermes:notify', payload),
   requestMicrophoneAccess: () => ipcRenderer.invoke('hermes:requestMicrophoneAccess'),

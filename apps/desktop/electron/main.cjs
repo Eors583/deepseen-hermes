@@ -2828,6 +2828,23 @@ async function requestDeepSeenAppApi(connection, request = {}) {
   throw lastError || new Error('DeepSeen API endpoint unavailable')
 }
 
+function deepSeenTaskStreamUrl(connection, request = {}) {
+  const taskId = String(request?.taskId || '').trim()
+  if (!taskId) {
+    throw new Error('DeepSeen taskId is required')
+  }
+  const authToken = typeof request?.authToken === 'string' ? request.authToken.trim() : ''
+  const base = deepSeenAppApiBases(connection)[0]
+  if (!base) {
+    throw new Error('DeepSeen API endpoint unavailable')
+  }
+  const url = new URL(`${base}/tasks/${encodeURIComponent(taskId)}/stream`)
+  if (authToken) {
+    url.searchParams.set('token', authToken)
+  }
+  return { url: url.toString() }
+}
+
 function extensionForMimeType(mimeType) {
   const type = String(mimeType || '')
     .split(';')[0]
@@ -5765,6 +5782,11 @@ ipcMain.handle('hermes:api', async (_event, request) => {
 ipcMain.handle('hermes:deepseen:request', async (_event, request) => {
   const connection = await ensureBackend(request?.profile)
   return requestDeepSeenAppApi(connection, request)
+})
+
+ipcMain.handle('hermes:deepseen:task-stream-url', async (_event, request) => {
+  const connection = await ensureBackend(request?.profile)
+  return deepSeenTaskStreamUrl(connection, request)
 })
 
 ipcMain.handle('hermes:deepseen:upload-file', async (_event, request) => {

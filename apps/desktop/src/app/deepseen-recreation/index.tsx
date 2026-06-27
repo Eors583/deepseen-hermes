@@ -8,7 +8,7 @@ import {
   confirmDeepSeenTaskFallback,
   DeepSeenApiError,
   deepseenRequest,
-  getDeepSeenTaskStatus,
+  streamDeepSeenTask,
   type DeepSeenTaskProgress,
   uploadDeepSeenDataUrl,
   uploadDeepSeenFile
@@ -19,10 +19,13 @@ type RecreationKind = 'image' | 'video'
 type ImageMode = 'recreate' | 'smart'
 type VideoMode = 'recreate' | 'smart' | 'mixcut'
 type WorkPhase = 'input' | 'analyzing' | 'confirming' | 'generating' | 'done'
+type ProductMaterialSource = 'upload' | 'link'
+type VideoInputMode = 'link' | 'upload'
 
 interface RecreationDetail {
   baseImageUrl?: string
   baseImageUrls?: string[]
+  createdAt?: string
   id: string
   productUrl?: string
   promptData?: Record<string, unknown>
@@ -52,7 +55,61 @@ interface StartTaskResponse {
 
 interface MediaItem {
   label: string
+  prompt?: string
+  referenceImage?: string
   url: string
+  variantId?: string
+}
+
+interface KnowledgeItem {
+  id: string
+  market?: string | null
+  productName?: string | null
+  summary?: string | null
+  title: string
+  type: string
+}
+
+interface KnowledgeResponse {
+  items?: KnowledgeItem[]
+}
+
+interface ViralDnaOption {
+  id: string
+  market?: string
+  productName?: string
+  summary?: string
+  targetDurationSec?: number
+  title?: string
+}
+
+interface MixcutSource {
+  id: string
+  label: string
+  previewUrls?: string[]
+  selectedVideoIds?: string[]
+}
+
+interface PromptVariant {
+  displayPromptZh?: string
+  id: string
+  prompt?: string
+  promptEn?: string
+  promptZh?: string
+  referenceImage?: string
+  strategy?: string
+  text: string
+  videoPrompt?: string
+  videoPromptZh?: string
+}
+
+interface ModelRisk {
+  level?: 'PASS' | 'CAUTION' | 'WARN'
+  message?: string
+  reasons?: string[]
+  requiresUserDecision?: boolean
+  suggestions?: string[]
+  title?: string
 }
 
 const IMAGE_MODEL_OPTIONS = [
@@ -61,21 +118,31 @@ const IMAGE_MODEL_OPTIONS = [
 ]
 
 const VIDEO_MODEL_OPTIONS = [
-  { id: 'seedance-2.0-zkj-15s', label: 'SeeDance 15s' },
-  { id: 'veo-3.1-stable', label: 'VEO 3.1 Stable' },
-  { id: 'veo-3.1-lite', label: 'VEO 3.1 Lite' },
-  { id: 'grok-video-10s', label: 'Grok Video 10s' }
+  { id: 'seedance-2.0-zkj-15s', label: 'Seedance2.0_ZKJ - 15s', seconds: 15 },
+  { id: 'veo-3.1-stable', label: 'VEO 3.1 稳定版 - 8s', seconds: 8 },
+  { id: 'veo-3.1-lite', label: 'VEO 3.1 Lite', seconds: 8 },
+  { id: 'grok-video-10s', label: 'Grok Video - 10s', seconds: 10 }
 ]
 
 const SMART_VIDEO_OPTIONS = [
-  { id: 'SeeDance15s_ZKJ', label: 'SeeDance 15s' },
-  { id: 'Veo8s', label: 'VEO 8s' },
-  { id: 'GeminiOmni10s', label: 'Gemini Omni 10s' },
-  { id: 'Grok1_5', label: 'Grok 1.5' }
+  { id: 'SeeDance15s_ZKJ', internalId: 'seedance-2.0-zkj-15s', label: 'Seedance2.0_ZKJ - 15s', seconds: 15 },
+  { id: 'Veo8s', internalId: 'veo-3.1-stable', label: 'VEO 3.1 稳定版 - 8s', seconds: 8 },
+  { id: 'GeminiOmni10s', internalId: 'Gemini Omni Video', label: 'Gemini Omni - 10s', seconds: 10 },
+  { id: 'Grok1_5', internalId: 'grok-imagine-video-1-5-preview', label: 'Grok 1.5 - 15s', seconds: 15 }
 ]
 
+const IMAGE_ASPECT_RATIOS = ['9:16', '16:9', '1:1'] as const
+const RECREATE_ASPECT_RATIOS = ['1:1', '4:5', '9:16', '16:9'] as const
+const IMAGE_REFERENCE_IMAGE_LIMIT = 5
 const MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024
 const MAX_VIDEO_UPLOAD_BYTES = 300 * 1024 * 1024
+const RECREATE_VIDEO_UPLOAD_BYTES = 15 * 1024 * 1024
+const SMART_IMAGE_OUTPUT_COUNT = 6
+const IMAGE_RECREATE_OUTPUT_COUNT = 6
+const MAX_REAL_VIDEOS = 5
+const VIDEO_KNOWLEDGE_TYPES = new Set(['VIRAL_VIDEO_DNA', 'AD_MATERIAL_DNA'])
+const SELLING_POINT_HINT_TAGS = ['卖点1', '卖点2', '卖点3'] as const
+const US_REGION_VALUES = new Set(['US', 'USA', 'UNITED STATES', '美国', '美区'])
 
 function normalizedStatus(status?: string): string {
   return String(status || '').trim().toUpperCase()
@@ -98,9 +165,36 @@ function dataUrlForFile(file: File): Promise<string> {
   })
 }
 
-function secondsFromDuration(value: string): number {
-  const seconds = Number.parseInt(value, 10)
+function secondsFromDuration(value: string | number): number {
+  const seconds = typeof value === 'number' ? value : Number.parseInt(value, 10)
   return Number.isFinite(seconds) && seconds > 0 ? seconds : 15
+}
+
+function durationLabel(seconds: number): string {
+  return `${seconds}s`
+}
+
+function getSingleClipDurationSeconds(modelId: string): number {
+  return SMART_VIDEO_OPTIONS.find(item => item.id === modelId || item.internalId === modelId)?.seconds || 10
+}
+
+function getVideoReferenceImageLimit(modelId: string): number {
+  if (modelId === 'Gemini Omni Video' || modelId === 'GeminiOmni10s') return 7
+  if (modelId === 'veo-3.1-stable' || modelId === 'Veo8s_official') return 3
+  if (modelId === 'veo-3.1-experience' || modelId === 'Veo8s') return 3
+  if (String(modelId || '').startsWith('seedance') || modelId === 'SeeDance15s' || modelId === 'SeeDance15s_ZKJ') return 9
+  if (modelId === 'grok-imagine-video-1-5-preview' || modelId === 'Grok1_5' || modelId === 'grok-video-10s' || modelId === 'grok-video-20s') return 7
+  if (modelId === 'ltx-2.3-10s') return 1
+  return 10
+}
+
+function getModelCallCount(modelId: string, targetDurationSec: number): number {
+  return Math.max(1, Math.ceil(Math.max(1, targetDurationSec) / getSingleClipDurationSeconds(modelId)))
+}
+
+function isUsRegion(region: string): boolean {
+  const normalized = String(region || '').trim()
+  return US_REGION_VALUES.has(normalized) || US_REGION_VALUES.has(normalized.toUpperCase())
 }
 
 function progressPercent(progress: DeepSeenTaskProgress | null): number {
@@ -135,6 +229,32 @@ function collectMediaMaps(value: unknown, key: 'resultImages' | 'resultVideos'):
   ]
 }
 
+function promptVariantRecords(detail: RecreationDetail | null): Record<string, unknown>[] {
+  const variants = detail?.promptData?.prompt_variants
+  return Array.isArray(variants) ? variants.filter(isRecord) : []
+}
+
+function parsePromptVariants(detail: RecreationDetail | null): PromptVariant[] {
+  return promptVariantRecords(detail)
+    .map((item, index) => {
+      const id = String(item.variant_id || item.id || `variant-${index + 1}`)
+      const text = item.displayPromptZh || item.promptZh || item.videoPromptZh || item.prompt || item.videoPrompt || ''
+      return {
+        displayPromptZh: typeof item.displayPromptZh === 'string' ? item.displayPromptZh : undefined,
+        id,
+        prompt: typeof item.prompt === 'string' ? item.prompt : undefined,
+        promptEn: typeof item.promptEn === 'string' ? item.promptEn : undefined,
+        promptZh: typeof item.promptZh === 'string' ? item.promptZh : undefined,
+        referenceImage: typeof item.reference_image === 'string' ? item.reference_image : undefined,
+        strategy: typeof item.strategy === 'string' ? item.strategy : undefined,
+        text: typeof text === 'string' ? text : JSON.stringify(text ?? '', null, 2),
+        videoPrompt: typeof item.videoPrompt === 'string' ? item.videoPrompt : undefined,
+        videoPromptZh: typeof item.videoPromptZh === 'string' ? item.videoPromptZh : undefined
+      }
+    })
+    .filter(item => Boolean(item.text))
+}
+
 function resultMedia(detail: RecreationDetail | null, progress: DeepSeenTaskProgress | null, kind: RecreationKind): MediaItem[] {
   const key = kind === 'image' ? 'resultImages' : 'resultVideos'
   const maps = [
@@ -142,33 +262,29 @@ function resultMedia(detail: RecreationDetail | null, progress: DeepSeenTaskProg
     ...collectMediaMaps(progress, key),
     ...collectMediaMaps(progress?.result, key)
   ]
+  const variants = parsePromptVariants(detail)
   const seen = new Set<string>()
   return maps
     .flatMap(map =>
       Object.entries(map)
         .filter(([, url]) => typeof url === 'string' && Boolean(url))
-        .map(([label, url]) => ({ label, url: String(url) }))
+        .map(([variantId, url]) => {
+          const parentId = variantId.replace(/_clip\d+$/, '')
+          const variant = variants.find(item => item.id === variantId || item.id === parentId)
+          return {
+            label: variant?.strategy || variantId,
+            prompt: variant?.videoPromptZh || variant?.promptZh || variant?.text,
+            referenceImage: variant?.referenceImage,
+            url: String(url),
+            variantId
+          }
+        })
     )
     .filter(item => {
       if (seen.has(item.url)) return false
       seen.add(item.url)
       return true
     })
-}
-
-function promptVariants(detail: RecreationDetail | null): Array<{ id: string; text: string }> {
-  const variants = detail?.promptData?.prompt_variants
-  if (!Array.isArray(variants)) return []
-  return variants
-    .map((item, index) => {
-      if (!isRecord(item)) return null
-      const text = item.displayPromptZh || item.promptZh || item.videoPromptZh || item.prompt
-      return {
-        id: String(item.variant_id || item.id || `variant-${index + 1}`),
-        text: typeof text === 'string' ? text : JSON.stringify(text ?? '', null, 2)
-      }
-    })
-    .filter((item): item is { id: string; text: string } => Boolean(item?.text))
 }
 
 function historyTitle(item: RecreationDetail): string {
@@ -233,7 +349,6 @@ function TaskProgressCard({
           </Button>
         )}
       </div>
-
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-(--ui-bg-tertiary)">
         <div className="h-full bg-primary transition-all" style={{ width: `${percent}%` }} />
       </div>
@@ -241,7 +356,6 @@ function TaskProgressCard({
         <span>{progress?.message || progress?.step || progress?.status || '等待任务进度'}</span>
         <span>{percent}%</span>
       </div>
-
       {fallback && (
         <div className="mt-3 flex flex-col gap-3 rounded border border-amber-400/40 bg-amber-400/10 p-3 text-xs text-(--ui-text-primary) sm:flex-row sm:items-center sm:justify-between">
           <div>{fallbackMessage(progress) || '当前视频需要确认后继续生成。'}</div>
@@ -255,7 +369,6 @@ function TaskProgressCard({
           </div>
         </div>
       )}
-
       {logs.length > 0 && (
         <div className="mt-3 space-y-1 rounded bg-(--ui-bg-primary) p-3 text-xs text-(--ui-text-secondary)">
           {logs.map((log, index) => (
@@ -277,6 +390,7 @@ function UploadStrip({
   disabled,
   label,
   max,
+  maxBytes,
   onChange,
   values
 }: {
@@ -284,6 +398,7 @@ function UploadStrip({
   disabled?: boolean
   label: string
   max: number
+  maxBytes?: number
   onChange: (values: string[]) => void
   values: string[]
 }) {
@@ -297,10 +412,10 @@ function UploadStrip({
     setUploadError('')
     try {
       const next = [...values]
-      const maxBytes = accept.includes('video') ? MAX_VIDEO_UPLOAD_BYTES : MAX_IMAGE_UPLOAD_BYTES
+      const limit = maxBytes || (accept.includes('video') ? MAX_VIDEO_UPLOAD_BYTES : MAX_IMAGE_UPLOAD_BYTES)
       for (const file of Array.from(files).slice(0, Math.max(0, max - values.length))) {
-        if (file.size > maxBytes) {
-          const limitMb = Math.round(maxBytes / 1024 / 1024)
+        if (file.size > limit) {
+          const limitMb = Math.round(limit / 1024 / 1024)
           const sizeMb = (file.size / 1024 / 1024).toFixed(1)
           throw new Error(`${file.name} 为 ${sizeMb}MB，超过 ${limitMb}MB 上传上限`)
         }
@@ -378,9 +493,13 @@ function Select(props: React.ComponentProps<'select'>) {
   return <select {...props} className={cn('h-9 w-full rounded border border-(--ui-stroke-secondary) bg-(--ui-bg-primary) px-3 text-sm text-(--ui-text-primary) outline-none focus:border-primary', props.className)} />
 }
 
+function compactItemLabel(item: KnowledgeItem | ViralDnaOption): string {
+  return item.title || item.productName || item.summary || item.id
+}
+
 export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
   const [imageMode, setImageMode] = useState<ImageMode>('recreate')
-  const [videoMode, setVideoMode] = useState<VideoMode>('recreate')
+  const [videoMode, setVideoMode] = useState<VideoMode>('smart')
   const [phase, setPhase] = useState<WorkPhase>('input')
   const [error, setError] = useState('')
   const [progress, setProgress] = useState<DeepSeenTaskProgress | null>(null)
@@ -391,24 +510,43 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
   const [productUrl, setProductUrl] = useState('')
   const [productTitle, setProductTitle] = useState('')
   const [sellingPoints, setSellingPoints] = useState('')
-  const [region, setRegion] = useState('US')
-  const [aspectRatio, setAspectRatio] = useState('1:1')
+  const [region, setRegion] = useState('美国')
+  const [aspectRatio, setAspectRatio] = useState('9:16')
   const [imageModel, setImageModel] = useState('nano-banana-2')
   const [videoModel, setVideoModel] = useState('seedance-2.0-zkj-15s')
   const [smartVideoModel, setSmartVideoModel] = useState('SeeDance15s_ZKJ')
+  const [videoInputMode, setVideoInputMode] = useState<VideoInputMode>('link')
   const [duration, setDuration] = useState('15s')
+  const [targetDurationSec, setTargetDurationSec] = useState(15)
+  const [minRealRatio, setMinRealRatio] = useState(0.3)
   const [count, setCount] = useState(1)
   const [fallbackConfirming, setFallbackConfirming] = useState(false)
   const [baseImages, setBaseImages] = useState<string[]>([])
   const [referenceVideos, setReferenceVideos] = useState<string[]>([])
   const [realVideos, setRealVideos] = useState<string[]>([])
-  const [mixcutSourceId, setMixcutSourceId] = useState('')
+  const [productMaterialSource, setProductMaterialSource] = useState<ProductMaterialSource>('upload')
+  const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([])
+  const [knowledgeReferenceIds, setKnowledgeReferenceIds] = useState<string[]>([])
+  const [viralDnaOptions, setViralDnaOptions] = useState<ViralDnaOption[]>([])
+  const [selectedViralDnaId, setSelectedViralDnaId] = useState('')
+  const [viralDnaLoading, setViralDnaLoading] = useState(false)
+  const [mixcutSource, setMixcutSource] = useState<MixcutSource | null>(null)
+  const [mixcutCandidates, setMixcutCandidates] = useState<RecreationDetail[]>([])
+  const [sourcePickerSelectedId, setSourcePickerSelectedId] = useState('')
+  const [sourcePickerSelectedVideoIds, setSourcePickerSelectedVideoIds] = useState<string[]>([])
+  const [editedPrompts, setEditedPrompts] = useState<Record<string, string>>({})
+  const [dynamicClipMode, setDynamicClipMode] = useState<'recommended' | 'compress' | ''>('')
   const [preview, setPreview] = useState<ProductPreview | null>(null)
 
   const activeMode = kind === 'image' ? imageMode : videoMode
   const isBusy = phase === 'analyzing' || phase === 'generating'
-  const variants = promptVariants(detail)
+  const variants = parsePromptVariants(detail)
   const media = resultMedia(detail, progress, kind)
+  const modelRisk = (isRecord(detail?.promptData?.modelRisk) ? detail?.promptData?.modelRisk : null) as ModelRisk | null
+  const dynamicClipPlan = isRecord(detail?.promptData?.dynamicClipPlan) ? detail?.promptData?.dynamicClipPlan : null
+  const videoKnowledgeItems = knowledgeItems.filter(item => VIDEO_KNOWLEDGE_TYPES.has(item.type))
+  const selectedSmartModel = SMART_VIDEO_OPTIONS.find(item => item.id === smartVideoModel) || SMART_VIDEO_OPTIONS[0]
+  const smartReferenceImageLimit = kind === 'video' ? getVideoReferenceImageLimit(selectedSmartModel.internalId) : IMAGE_REFERENCE_IMAGE_LIMIT
 
   const refreshHistory = useCallback(async () => {
     try {
@@ -420,6 +558,24 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
     }
   }, [kind])
 
+  const loadKnowledgeItems = useCallback(async () => {
+    try {
+      const data = await deepseenRequest<KnowledgeResponse>('knowledge?active=true&limit=30', { timeoutMs: 60_000 })
+      setKnowledgeItems(data.items || [])
+    } catch {
+      setKnowledgeItems([])
+    }
+  }, [])
+
+  const loadMixcutCandidates = useCallback(async () => {
+    try {
+      const data = await deepseenRequest<RecreationListResponse>('recreation/list?limit=20&type=VIDEO&mode=RECREATION', { timeoutMs: 60_000 })
+      setMixcutCandidates(data.items || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载历史视频失败')
+    }
+  }, [])
+
   useEffect(() => {
     setPhase('input')
     setError('')
@@ -427,27 +583,44 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
     setTaskId('')
     setRecreationId('')
     setDetail(null)
+    setEditedPrompts({})
     void refreshHistory()
-  }, [kind, refreshHistory])
+    void loadKnowledgeItems()
+    if (kind === 'video') void loadMixcutCandidates()
+  }, [kind, loadKnowledgeItems, loadMixcutCandidates, refreshHistory])
 
   useEffect(() => {
     if (!taskId || !isBusy) return
     let disposed = false
-    const tick = async () => {
+    const finishTask = async (next: DeepSeenTaskProgress) => {
       try {
-        const next = await getDeepSeenTaskStatus(taskId)
         if (disposed) return
         setProgress(next)
         const status = normalizedStatus(next.status)
         if (status === 'COMPLETED' || status === 'SUCCESS') {
-          setPhase(phase === 'analyzing' ? 'confirming' : 'done')
-          if (recreationId) {
-            try {
-              const nextDetail = await deepseenRequest<RecreationDetail>(`recreation/${encodeURIComponent(recreationId)}`)
-              if (!disposed) setDetail(nextDetail)
-            } catch {
-              // Smart creation may already carry the media URLs in task progress.
+          if (phase === 'analyzing') {
+            const rId = String(next.result?.recreationId || recreationId || '')
+            if (rId) {
+              const nextDetail = await deepseenRequest<RecreationDetail>(`recreation/${encodeURIComponent(rId)}`)
+              if (!disposed) {
+                setDetail(nextDetail)
+                setRecreationId(rId)
+                setPhase('confirming')
+              }
+            } else {
+              setPhase('confirming')
             }
+          } else {
+            const rId = String(next.result?.recreationId || recreationId || '')
+            if (rId) {
+              try {
+                const nextDetail = await deepseenRequest<RecreationDetail>(`recreation/${encodeURIComponent(rId)}`)
+                if (!disposed) setDetail(nextDetail)
+              } catch {
+                // Smart creation can carry media URLs in task progress.
+              }
+            }
+            setPhase('done')
           }
           void refreshHistory()
           return
@@ -455,18 +628,46 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
         if (status === 'FAILED' || status === 'CANCELLED') {
           setError(next.error || next.message || '任务未完成')
           setPhase('input')
+          void refreshHistory()
         }
       } catch (err) {
         if (!disposed) setError(err instanceof Error ? err.message : '获取任务进度失败')
       }
     }
-    void tick()
-    const timer = window.setInterval(() => void tick(), 5000)
+    const cleanup = streamDeepSeenTask(taskId, {
+      onProgress: next => {
+        if (!disposed) setProgress(next)
+      },
+      onComplete: next => {
+        void finishTask(next)
+      },
+      onError: err => {
+        if (!disposed) setError(err.message || '鑾峰彇浠诲姟杩涘害澶辫触')
+      }
+    })
     return () => {
       disposed = true
-      window.clearInterval(timer)
+      cleanup()
     }
   }, [isBusy, phase, recreationId, refreshHistory, taskId])
+
+  useEffect(() => {
+    const seconds = getSingleClipDurationSeconds(smartVideoModel)
+    if (targetDurationSec < seconds) setTargetDurationSec(seconds)
+  }, [smartVideoModel, targetDurationSec])
+
+  useEffect(() => {
+    if (kind === 'image' && activeMode === 'smart' && baseImages.length > IMAGE_REFERENCE_IMAGE_LIMIT) {
+      setBaseImages(prev => prev.slice(0, IMAGE_REFERENCE_IMAGE_LIMIT))
+    }
+    if (kind === 'video' && activeMode === 'smart' && baseImages.length > smartReferenceImageLimit) {
+      setBaseImages(prev => prev.slice(0, smartReferenceImageLimit))
+    }
+  }, [activeMode, baseImages.length, kind, smartReferenceImageLimit])
+
+  useEffect(() => {
+    if (realVideos.length > MAX_REAL_VIDEOS) setRealVideos(prev => prev.slice(0, MAX_REAL_VIDEOS))
+  }, [realVideos.length])
 
   const previewProduct = async () => {
     if (!productUrl.trim()) return
@@ -476,19 +677,47 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
       timeoutMs: 90_000
     })
     setPreview(data)
-    setProductTitle(prev => prev || data.title || '')
-    setSellingPoints(prev => prev || (data.sellingPoints || []).join('\n'))
-    if (data.images?.length) setBaseImages(data.images.slice(0, 8))
+    setProductTitle(prev => data.title || prev)
+    setSellingPoints(prev => (data.sellingPoints?.length ? data.sellingPoints.join('\n') : prev))
+    if (data.images?.length) setBaseImages(data.images.slice(0, kind === 'video' ? smartReferenceImageLimit : IMAGE_REFERENCE_IMAGE_LIMIT))
   }
 
-  const startAnalyzeFlow = async () => {
+  const loadViralDnaOptions = async () => {
+    if (!productTitle.trim()) {
+      setError('请先填写产品标题')
+      return
+    }
+    setViralDnaLoading(true)
+    setError('')
+    try {
+      const query = new URLSearchParams({
+        limit: '10',
+        productName: productTitle.trim(),
+        region
+      })
+      const items = await deepseenRequest<ViralDnaOption[]>(`viral-dna/reference-options?${query.toString()}`, { timeoutMs: 60_000 })
+      setViralDnaOptions(items || [])
+      const nextId = items?.[0]?.id || ''
+      setSelectedViralDnaId(nextId)
+      if (nextId) setKnowledgeReferenceIds([])
+      const suggested = Number(items?.[0]?.targetDurationSec || 0)
+      if (suggested > 0) setTargetDurationSec(suggested)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载爆款 DNA 失败')
+    } finally {
+      setViralDnaLoading(false)
+    }
+  }
+
+  const startAnalyzeFlow = async (options: { modelRiskAccepted?: boolean } = {}) => {
     setError('')
     setDetail(null)
     setProgress(null)
+    setEditedPrompts({})
     setPhase('analyzing')
-    const effectiveProductUrl = kind === 'video' && referenceVideos[0] ? referenceVideos[0] : productUrl
+    const effectiveProductUrl = kind === 'video' && videoInputMode === 'upload' && referenceVideos[0] ? referenceVideos[0] : productUrl
     if (!effectiveProductUrl.trim()) {
-      throw new Error(kind === 'video' ? '请粘贴参考视频链接或上传参考视频' : '请粘贴商品链接')
+      throw new Error(kind === 'video' ? '请输入视频链接或上传参考视频' : '请输入商品链接')
     }
     const payload: Record<string, unknown> = {
       productUrl: effectiveProductUrl,
@@ -496,22 +725,17 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
       productSellingPoints: sellingPoints.trim() || undefined,
       baseImageUrl: baseImages[0],
       baseImageUrls: baseImages,
-      groupCount: count,
+      groupCount: kind === 'image' ? IMAGE_RECREATE_OUTPUT_COUNT : count,
       type: kind === 'image' ? 'IMAGE' : 'VIDEO',
       aspectRatio,
       duration: kind === 'video' ? duration : undefined,
       region: kind === 'video' ? region : undefined,
       modelId: kind === 'image' ? imageModel : videoModel,
-      modelRiskAccepted: true
+      modelRiskAccepted: Boolean(options.modelRiskAccepted)
     }
     const started = await deepseenRequest<StartTaskResponse>('recreation/analyze', { body: payload, timeoutMs: 120_000 })
     setTaskId(started.taskId)
-    if (started.recreationId) {
-      setRecreationId(started.recreationId)
-      window.setTimeout(() => {
-        void deepseenRequest<RecreationDetail>(`recreation/${encodeURIComponent(started.recreationId!)}`).then(setDetail).catch(() => undefined)
-      }, 1500)
-    }
+    if (started.recreationId) setRecreationId(started.recreationId)
   }
 
   const startSmartFlow = async (options: { aiVoiceoverRiskAcknowledged?: boolean; modelRiskAccepted?: boolean } = {}) => {
@@ -519,7 +743,15 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
     setDetail(null)
     setProgress(null)
     setPhase('generating')
-    const targetDurationSec = secondsFromDuration(duration)
+    let effectiveTargetDurationSec = targetDurationSec
+    if (kind === 'video') {
+      const singleClipSeconds = getSingleClipDurationSeconds(selectedSmartModel.internalId)
+      const callCount = getModelCallCount(selectedSmartModel.internalId, targetDurationSec)
+      if (callCount > 1) {
+        const ok = window.confirm(`系统将按 ${targetDurationSec}s 生成。当前模型单次 ${singleClipSeconds}s；按建议方案每条需要调用 ${callCount} 次。点击“确定”按 ${targetDurationSec}s 生成，点击“取消”压缩成 ${singleClipSeconds}s。`)
+        effectiveTargetDurationSec = ok ? targetDurationSec : singleClipSeconds
+      }
+    }
     const path = kind === 'image' ? 'recreation/smart-image/native' : 'recreation/smart-video/native'
     const body: Record<string, unknown> =
       kind === 'image'
@@ -530,7 +762,8 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
             modelId: imageModel,
             aspectRatio,
             modelRiskAccepted: Boolean(options.modelRiskAccepted),
-            ...(sellingPoints.trim() ? { sellingPoints: sellingPoints.trim() } : {})
+            ...(sellingPoints.trim() ? { sellingPoints: sellingPoints.trim() } : {}),
+            ...(knowledgeReferenceIds.length ? { knowledgeReferenceIds } : {})
           }
         : {
             region,
@@ -539,13 +772,20 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
             ...(sellingPoints.trim() ? { sellingPoints: sellingPoints.trim() } : {}),
             count,
             model: smartVideoModel,
-            targetDurationSec,
+            targetDurationSec: effectiveTargetDurationSec,
+            ...(selectedViralDnaId ? { viralDnaAnalysisId: selectedViralDnaId } : {}),
+            ...(knowledgeReferenceIds.length ? { knowledgeReferenceIds } : {}),
             aiVoiceoverRiskAcknowledged: Boolean(options.aiVoiceoverRiskAcknowledged),
             modelRiskAccepted: Boolean(options.modelRiskAccepted)
           }
     const started = await deepseenRequest<StartTaskResponse>(path, { body, timeoutMs: 300_000 })
     setTaskId(started.taskId)
-    if (started.recreationId) setRecreationId(started.recreationId)
+    if (started.recreationId) {
+      setRecreationId(started.recreationId)
+      if (kind === 'video') {
+        setMixcutSource({ id: started.recreationId, label: productTitle.trim() || started.recreationId })
+      }
+    }
   }
 
   const startMixcutFlow = async () => {
@@ -553,12 +793,14 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
     setDetail(null)
     setProgress(null)
     setPhase('generating')
+    if (!mixcutSource?.id) throw new Error('请选择一个已完成的视频智创结果')
     const started = await deepseenRequest<StartTaskResponse>('recreation/video-mixcut', {
       body: {
-        sourceRecreationId: mixcutSourceId.trim(),
+        sourceRecreationId: mixcutSource.id,
+        ...(mixcutSource.selectedVideoIds?.length ? { selectedVideoIds: mixcutSource.selectedVideoIds } : {}),
         realVideoUrls: realVideos,
-        targetDurationSec: secondsFromDuration(duration),
-        minRealRatio: 0.3
+        targetDurationSec,
+        minRealRatio
       },
       timeoutMs: 120_000
     })
@@ -566,26 +808,34 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
     if (started.recreationId) setRecreationId(started.recreationId)
   }
 
-  const confirmGenerate = async () => {
+  const confirmGenerate = async (options: { modelRiskAccepted?: boolean } = {}) => {
     if (!recreationId) return
     setError('')
     setPhase('generating')
     try {
-      const selectedVariantIds = variants.map(variant => variant.id)
+      const editedVariants = variants
+        .filter(variant => {
+          const next = editedPrompts[variant.id]
+          return next !== undefined && next.trim().length > 0 && next !== variant.text
+        })
+        .map(variant => ({ prompt: editedPrompts[variant.id], promptLanguage: 'zh' as const, variant_id: variant.id }))
       const body: Record<string, unknown> = {
         recreationId,
         modelId: kind === 'image' ? imageModel : videoModel,
-        ...(selectedVariantIds.length ? { selectedVariantIds } : {}),
-        modelRiskAccepted: true
-      }
-      if (kind === 'video') {
-        body.duration = duration
-        body.targetDurationSec = secondsFromDuration(duration)
-        body.riskAccepted = true
+        ...(editedVariants.length ? { editedVariants } : {}),
+        ...(dynamicClipMode ? { dynamicClipMode } : {}),
+        ...(modelRisk?.level === 'WARN' ? { riskAccepted: true } : {}),
+        modelRiskAccepted: Boolean(options.modelRiskAccepted)
       }
       const started = await deepseenRequest<StartTaskResponse>('recreation/confirm', { body, timeoutMs: 120_000 })
       setTaskId(started.taskId)
     } catch (err) {
+      if (err instanceof DeepSeenApiError && err.code === 'MODEL_HIGH_FAILURE_RATE_ACK_REQUIRED') {
+        if (window.confirm(err.message || '当前模型失败率偏高，是否继续使用当前模型？')) {
+          await confirmGenerate({ modelRiskAccepted: true })
+        }
+        return
+      }
       setError(err instanceof Error ? err.message : '确认生成失败')
       setPhase('confirming')
     }
@@ -596,7 +846,13 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
       if (kind === 'video' && videoMode === 'mixcut') {
         await startMixcutFlow()
       } else if (activeMode === 'smart') {
-        await startSmartFlow()
+        if (kind === 'video' && isUsRegion(region)) {
+          const ok = window.confirm('美国市场视频可能包含 AI 配音风险，是否继续生成？')
+          if (!ok) return
+          await startSmartFlow({ aiVoiceoverRiskAcknowledged: true })
+        } else {
+          await startSmartFlow()
+        }
       } else {
         await startAnalyzeFlow()
       }
@@ -611,15 +867,69 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
       if (err instanceof DeepSeenApiError && err.code === 'MODEL_HIGH_FAILURE_RATE_ACK_REQUIRED') {
         setPhase('input')
         if (window.confirm(err.message || '当前模型失败率偏高，是否继续使用当前模型？')) {
-          await startSmartFlow({
-            aiVoiceoverRiskAcknowledged: kind === 'video',
-            modelRiskAccepted: true
-          })
+          if (activeMode === 'smart') {
+            await startSmartFlow({
+              aiVoiceoverRiskAcknowledged: kind === 'video',
+              modelRiskAccepted: true
+            })
+          } else {
+            await startAnalyzeFlow({ modelRiskAccepted: true })
+          }
         }
         return
       }
       setError(err instanceof Error ? err.message : '任务启动失败')
       setPhase('input')
+    }
+  }
+
+  const resetFlow = () => {
+    setPhase('input')
+    setError('')
+    setProgress(null)
+    setTaskId('')
+    setRecreationId('')
+    setDetail(null)
+    setEditedPrompts({})
+    setFallbackConfirming(false)
+  }
+
+  const cancelRecreation = async () => {
+    if (recreationId) {
+      try {
+        await deepseenRequest(`recreation/${encodeURIComponent(recreationId)}/cancel`, {
+          body: {},
+          method: 'POST',
+          timeoutMs: 60_000
+        })
+      } catch {
+        // Keep the local reset path available even if the remote cancel already completed.
+      }
+    }
+    resetFlow()
+    void refreshHistory()
+  }
+
+  const stopRiskRecreation = async () => {
+    if (!recreationId) return
+    try {
+      await deepseenRequest(`recreation/${encodeURIComponent(recreationId)}/stop-risk`, {
+        body: {},
+        method: 'POST',
+        timeoutMs: 60_000
+      })
+      resetFlow()
+      void refreshHistory()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '停止任务失败')
+    }
+  }
+
+  const copyPrompt = async (text: string) => {
+    try {
+      await window.hermesDesktop.writeClipboard(text)
+    } catch {
+      await navigator.clipboard.writeText(text)
     }
   }
 
@@ -644,18 +954,53 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
     } finally {
       setPhase('input')
       setTaskId('')
+      setFallbackConfirming(false)
     }
+  }
+
+  const mixcutVideoOptions = useMemo(() => {
+    return mixcutCandidates.flatMap(item => {
+      const source = String(item.scriptData?.source || item.promptData?.source || '')
+      const isSmartVideo = source === 'SMART_VIDEO_RECREATE' || source === 'SMART_VIDEO_RECREATE_NATIVE' || Boolean(item.resultVideos)
+      if (normalizedStatus(item.status) !== 'COMPLETED' || !isSmartVideo || !item.resultVideos) return []
+      const label = historyTitle(item)
+      return Object.entries(item.resultVideos)
+        .filter(([variantId, url]) => !/_clip\d+$/.test(variantId) && typeof url === 'string' && Boolean(url))
+        .map(([variantId, url]) => ({
+          createdAt: item.createdAt,
+          label,
+          sourceId: item.id,
+          url,
+          variantId
+        }))
+    })
+  }, [mixcutCandidates])
+
+  const confirmSourcePicker = () => {
+    if (!sourcePickerSelectedId || sourcePickerSelectedVideoIds.length === 0) {
+      setError('请至少选择 1 条 AI 视频')
+      return
+    }
+    const selected = mixcutVideoOptions.filter(item => item.sourceId === sourcePickerSelectedId && sourcePickerSelectedVideoIds.includes(item.variantId))
+    const first = selected[0]
+    setMixcutSource({
+      id: sourcePickerSelectedId,
+      label: first ? `${first.label} / ${sourcePickerSelectedVideoIds.join('/')}` : sourcePickerSelectedId,
+      previewUrls: selected.map(item => item.url),
+      selectedVideoIds: sourcePickerSelectedVideoIds
+    })
   }
 
   const canSubmit = useMemo(() => {
     if (isBusy) return false
-    if (kind === 'video' && videoMode === 'mixcut') return Boolean(mixcutSourceId.trim() && realVideos.length)
+    if (kind === 'video' && videoMode === 'mixcut') return Boolean(mixcutSource?.id && realVideos.length)
     if (activeMode === 'smart') return Boolean(productTitle.trim() && baseImages.length)
-    const hasSourceUrl = Boolean(productUrl.trim() || (kind === 'video' && referenceVideos[0]))
+    const hasSourceUrl = Boolean(productUrl.trim() || (kind === 'video' && videoInputMode === 'upload' && referenceVideos[0]))
     return Boolean(productTitle.trim() && baseImages.length && hasSourceUrl)
-  }, [activeMode, baseImages.length, isBusy, kind, mixcutSourceId, productTitle, productUrl, realVideos.length, referenceVideos, videoMode])
+  }, [activeMode, baseImages.length, isBusy, kind, mixcutSource?.id, productTitle, productUrl, realVideos.length, referenceVideos, videoInputMode, videoMode])
 
   const title = kind === 'image' ? '图片复刻' : '视频复刻'
+  const aspectOptions = activeMode === 'smart' ? IMAGE_ASPECT_RATIOS : RECREATE_ASPECT_RATIOS
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-auto bg-(--ui-editor-surface-background) pt-(--titlebar-height)">
@@ -665,7 +1010,7 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
             <div className="text-xs font-semibold text-primary">DeepSeen 创作工作台</div>
             <h1 className="mt-1 text-2xl font-semibold text-(--ui-text-primary)">{title}</h1>
             <p className="mt-1 text-sm text-(--ui-text-secondary)">
-              输入素材后先生成策略和提示词，确认后进入长任务生成。任务进度、日志、预览和下载会在这里完整展示。
+              已按 DeepSeen Web 的图片智创、视频智创、实拍混剪和二创流程接入输入项、任务进度、确认分支和产物回显。
             </p>
           </div>
           <Button onClick={() => void refreshHistory()} type="button" variant="outline">
@@ -674,7 +1019,7 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
           </Button>
         </header>
 
-        <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
+        <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
           <main className="space-y-5">
             <section className="rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) p-4">
               <div className="flex flex-wrap gap-2">
@@ -696,7 +1041,7 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                       视频智创
                     </Button>
                     <Button onClick={() => setVideoMode('mixcut')} type="button" variant={videoMode === 'mixcut' ? 'default' : 'outline'}>
-                      混剪
+                      实拍混剪
                     </Button>
                   </>
                 )}
@@ -705,28 +1050,111 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
 
             <section className="grid gap-4 rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) p-4 lg:grid-cols-[320px_1fr]">
               <div className="space-y-4">
-                {kind === 'video' && activeMode === 'recreate' && (
-                  <UploadStrip accept="video/*" disabled={isBusy} label="参考视频（可选）" max={1} onChange={setReferenceVideos} values={referenceVideos} />
-                )}
                 {kind === 'video' && activeMode === 'mixcut' ? (
-                  <UploadStrip accept="video/*" disabled={isBusy} label="实拍素材视频" max={10} onChange={setRealVideos} values={realVideos} />
+                  <UploadStrip accept="video/*" disabled={isBusy} label="实拍素材视频" max={MAX_REAL_VIDEOS} onChange={setRealVideos} values={realVideos} />
                 ) : (
-                  <UploadStrip accept="image/*" disabled={isBusy} label={activeMode === 'smart' ? '产品参考图' : '产品底图'} max={kind === 'image' ? 10 : 9} onChange={setBaseImages} values={baseImages} />
+                  <>
+                    {kind === 'video' && activeMode === 'smart' && (
+                      <div className="flex rounded border border-(--ui-stroke-secondary) p-1 text-xs">
+                        <button
+                          className={cn('flex-1 rounded px-2 py-1', productMaterialSource === 'upload' && 'bg-primary text-primary-foreground')}
+                          onClick={() => {
+                            if (productMaterialSource !== 'upload') {
+                              setProductMaterialSource('upload')
+                              setBaseImages([])
+                            }
+                          }}
+                          type="button"
+                        >
+                          上传产品图
+                        </button>
+                        <button
+                          className={cn('flex-1 rounded px-2 py-1', productMaterialSource === 'link' && 'bg-primary text-primary-foreground')}
+                          onClick={() => {
+                            if (productMaterialSource !== 'link') {
+                              setProductMaterialSource('link')
+                              setBaseImages([])
+                            }
+                          }}
+                          type="button"
+                        >
+                          商品链接导入
+                        </button>
+                      </div>
+                    )}
+                    {kind === 'video' && activeMode === 'smart' && productMaterialSource === 'link' ? (
+                      <div className="space-y-3">
+                        <Field label="商品链接">
+                          <TextInput disabled={isBusy} onChange={event => setProductUrl(event.target.value)} placeholder="粘贴 TikTok Shop 商品链接" value={productUrl} />
+                        </Field>
+                        <Button disabled={!productUrl || isBusy} onClick={() => void previewProduct()} type="button">
+                          提取商品信息
+                        </Button>
+                        {baseImages.length > 0 && <UploadStrip accept="image/*" disabled={isBusy} label="已提取/可补充参考图" max={smartReferenceImageLimit} onChange={setBaseImages} values={baseImages} />}
+                      </div>
+                    ) : (
+                      <UploadStrip
+                        accept="image/*"
+                        disabled={isBusy}
+                        label={activeMode === 'smart' ? (kind === 'image' ? '自有产品图' : '产品参考图') : '产品底图'}
+                        max={activeMode === 'smart' ? (kind === 'image' ? IMAGE_REFERENCE_IMAGE_LIMIT : smartReferenceImageLimit) : (kind === 'image' ? 10 : 9)}
+                        onChange={setBaseImages}
+                        values={baseImages}
+                      />
+                    )}
+                  </>
                 )}
               </div>
 
               <div className="space-y-4">
-                {activeMode !== 'mixcut' && (
-                  <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-                    <Field label="商品链接（可选，用于自动提取标题、图片和卖点）">
-                      <TextInput disabled={isBusy} onChange={event => setProductUrl(event.target.value)} placeholder="粘贴 TikTok Shop 商品链接" value={productUrl} />
-                    </Field>
-                    <div className="flex items-end">
-                      <Button disabled={!productUrl || isBusy} onClick={() => void previewProduct()} type="button">
-                        提取商品信息
-                      </Button>
+                {activeMode === 'recreate' && (
+                  kind === 'video' ? (
+                    <div className="space-y-3">
+                      <div className="flex rounded border border-(--ui-stroke-secondary) p-1 text-xs">
+                        <button
+                          className={cn('flex-1 rounded px-2 py-1', videoInputMode === 'link' && 'bg-primary text-primary-foreground')}
+                          disabled={isBusy}
+                          onClick={() => {
+                            setVideoInputMode('link')
+                            setReferenceVideos([])
+                            setProductUrl('')
+                          }}
+                          type="button"
+                        >
+                          粘贴链接
+                        </button>
+                        <button
+                          className={cn('flex-1 rounded px-2 py-1', videoInputMode === 'upload' && 'bg-primary text-primary-foreground')}
+                          disabled={isBusy}
+                          onClick={() => {
+                            setVideoInputMode('upload')
+                            setProductUrl('')
+                          }}
+                          type="button"
+                        >
+                          上传视频
+                        </button>
+                      </div>
+                      {videoInputMode === 'upload' ? (
+                        <UploadStrip accept="video/mp4,video/quicktime,video/webm" disabled={isBusy} label="参考视频（15MB 内）" max={1} maxBytes={RECREATE_VIDEO_UPLOAD_BYTES} onChange={setReferenceVideos} values={referenceVideos} />
+                      ) : (
+                        <Field label="视频链接">
+                          <TextArea disabled={isBusy} onChange={event => setProductUrl(event.target.value)} placeholder="粘贴 TikTok 爆款视频链接" value={productUrl} />
+                        </Field>
+                      )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                      <Field label="商品链接">
+                        <TextInput disabled={isBusy} onChange={event => setProductUrl(event.target.value)} placeholder="粘贴 TikTok Shop 商品链接 / 描述" value={productUrl} />
+                      </Field>
+                      <div className="flex items-end">
+                        <Button disabled={!productUrl || isBusy} onClick={() => void previewProduct()} type="button">
+                          提取商品信息
+                        </Button>
+                      </div>
+                    </div>
+                  )
                 )}
 
                 {preview && (
@@ -736,37 +1164,162 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                 )}
 
                 {activeMode === 'mixcut' ? (
-                  <Field label="来源视频任务 ID">
-                    <TextInput disabled={isBusy} onChange={event => setMixcutSourceId(event.target.value)} placeholder="填写已完成的视频智创/二创任务 ID" value={mixcutSourceId} />
-                  </Field>
+                  <div className="space-y-4">
+                    <div className="rounded border border-(--ui-stroke-secondary) bg-(--ui-bg-primary) p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-semibold text-(--ui-text-primary)">引用的视频智创结果</div>
+                          <div className="mt-1 text-xs text-(--ui-text-secondary)">{mixcutSource?.label || '未选择'}</div>
+                        </div>
+                        <Button onClick={() => void loadMixcutCandidates()} size="xs" type="button" variant="outline">
+                          刷新
+                        </Button>
+                      </div>
+                      <div className="mt-3 max-h-60 space-y-2 overflow-auto">
+                        {mixcutVideoOptions.length === 0 ? (
+                          <div className="text-xs text-(--ui-text-secondary)">暂无可用的已完成视频智创结果</div>
+                        ) : (
+                          mixcutVideoOptions.map(option => {
+                            const checked = sourcePickerSelectedId === option.sourceId && sourcePickerSelectedVideoIds.includes(option.variantId)
+                            return (
+                              <label className="flex cursor-pointer items-start gap-2 rounded border border-(--ui-stroke-secondary) p-2 text-xs" key={`${option.sourceId}-${option.variantId}`}>
+                                <input
+                                  checked={checked}
+                                  onChange={() => {
+                                    if (sourcePickerSelectedId && sourcePickerSelectedId !== option.sourceId) {
+                                      setSourcePickerSelectedId(option.sourceId)
+                                      setSourcePickerSelectedVideoIds([option.variantId])
+                                      return
+                                    }
+                                    setSourcePickerSelectedId(option.sourceId)
+                                    setSourcePickerSelectedVideoIds(prev => (prev.includes(option.variantId) ? prev.filter(id => id !== option.variantId) : [...prev, option.variantId]))
+                                  }}
+                                  type="checkbox"
+                                />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate font-semibold text-(--ui-text-primary)">{option.label}</span>
+                                  <span className="block truncate text-(--ui-text-secondary)">{option.variantId}</span>
+                                </span>
+                              </label>
+                            )
+                          })
+                        )}
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                      <Button disabled={!sourcePickerSelectedId && sourcePickerSelectedVideoIds.length === 0 && !mixcutSource} onClick={() => {
+                        setSourcePickerSelectedId('')
+                        setSourcePickerSelectedVideoIds([])
+                        setMixcutSource(null)
+                      }} size="sm" type="button" variant="outline">
+                        取消选择
+                      </Button>
+                      <Button disabled={!sourcePickerSelectedId || sourcePickerSelectedVideoIds.length === 0} onClick={confirmSourcePicker} size="sm" type="button">
+                        确认引用
+                      </Button>
+                      </div>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Field label="目标时长（秒）">
+                        <TextInput disabled={isBusy} max={120} min={6} onChange={event => setTargetDurationSec(Math.min(120, Math.max(6, Number(event.target.value) || 20)))} type="number" value={targetDurationSec} />
+                      </Field>
+                      <Field label="实拍占比（%）">
+                        <TextInput disabled={isBusy} max={90} min={10} onChange={event => setMinRealRatio(Math.min(0.9, Math.max(0.1, (Number(event.target.value) || 30) / 100)))} type="number" value={Math.round(minRealRatio * 100)} />
+                      </Field>
+                    </div>
+                  </div>
                 ) : (
                   <>
-                    <Field label="产品名称 / 关键词">
+                    <Field label={activeMode === 'smart' && kind === 'image' ? '产品名称 / 关键词' : '产品标题 / 关键词'}>
                       <TextInput disabled={isBusy} onChange={event => setProductTitle(event.target.value)} placeholder="例如：美国卷发棒、男士素色 T 恤" value={productTitle} />
                     </Field>
-                    <Field label="核心卖点">
-                      <TextArea disabled={isBusy} onChange={event => setSellingPoints(event.target.value)} placeholder="每行一个卖点，或从商品链接自动提取" value={sellingPoints} />
+                    <Field label={activeMode === 'smart' ? '卖点（可选，1-3 条）' : '核心卖点'}>
+                      {activeMode === 'smart' && (
+                        <div className="mb-2 flex flex-wrap gap-1.5">
+                          {SELLING_POINT_HINT_TAGS.map(tag => {
+                            const prefix = `${tag}: `
+                            const disabled = isBusy || sellingPoints.includes(prefix) || sellingPoints.length >= 1000
+                            return (
+                              <button
+                                className="rounded border border-(--ui-stroke-secondary) bg-(--ui-bg-primary) px-2 py-0.5 text-xs text-(--ui-text-secondary) hover:text-(--ui-text-primary) disabled:opacity-40"
+                                disabled={disabled}
+                                key={tag}
+                                onClick={() => setSellingPoints(prev => (prev ? `${prev}\n${prefix}` : prefix).slice(0, 1000))}
+                                type="button"
+                              >
+                                + {tag}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                      <TextArea disabled={isBusy} maxLength={1000} onChange={event => setSellingPoints(event.target.value.slice(0, 1000))} placeholder="卖点1: ...&#10;卖点2: ...&#10;卖点3: ..." value={sellingPoints} />
                     </Field>
+                    {activeMode === 'smart' && (
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <Field label="知识库参考">
+                          <Select
+                            disabled={isBusy || selectedViralDnaId !== ''}
+                            onChange={event => {
+                              const value = event.target.value
+                              setKnowledgeReferenceIds(value ? [value] : [])
+                              if (value) setSelectedViralDnaId('')
+                            }}
+                            value={knowledgeReferenceIds[0] || ''}
+                          >
+                            <option value="">不使用</option>
+                            {(kind === 'video' ? videoKnowledgeItems : knowledgeItems).map(item => (
+                              <option key={item.id} value={item.id}>{compactItemLabel(item)}</option>
+                            ))}
+                          </Select>
+                        </Field>
+                        {kind === 'video' && (
+                          <Field label="爆款 DNA 参考">
+                            <div className="grid grid-cols-[1fr_auto] gap-2">
+                              <Select
+                                disabled={isBusy || knowledgeReferenceIds.length > 0}
+                                onChange={event => {
+                                  setSelectedViralDnaId(event.target.value)
+                                  if (event.target.value) setKnowledgeReferenceIds([])
+                                  const selected = viralDnaOptions.find(item => item.id === event.target.value)
+                                  const suggested = Number(selected?.targetDurationSec || 0)
+                                  if (suggested > 0) setTargetDurationSec(suggested)
+                                }}
+                                value={selectedViralDnaId}
+                              >
+                                <option value="">不使用</option>
+                                {viralDnaOptions.map(item => (
+                                  <option key={item.id} value={item.id}>{compactItemLabel(item)}</option>
+                                ))}
+                              </Select>
+                              <Button disabled={isBusy || viralDnaLoading || !productTitle.trim()} onClick={() => void loadViralDnaOptions()} size="sm" type="button" variant="outline">
+                                {viralDnaLoading ? '加载中' : '加载'}
+                              </Button>
+                            </div>
+                          </Field>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
 
                 <div className="grid gap-3 md:grid-cols-4">
                   <Field label="地区">
                     <Select disabled={isBusy} onChange={event => setRegion(event.target.value)} value={region}>
-                      <option value="US">美国</option>
-                      <option value="GB">英国</option>
-                      <option value="EU">欧洲</option>
-                      <option value="JP">日本</option>
+                      <option value="美国">美国</option>
+                      <option value="英国">英国</option>
+                      <option value="欧洲">欧洲</option>
+                      <option value="日本">日本</option>
                     </Select>
                   </Field>
-                  <Field label="比例">
-                    <Select disabled={isBusy} onChange={event => setAspectRatio(event.target.value)} value={aspectRatio}>
-                      <option value="1:1">1:1</option>
-                      <option value="4:5">4:5</option>
-                      <option value="9:16">9:16</option>
-                      <option value="16:9">16:9</option>
-                    </Select>
-                  </Field>
+                  {!(kind === 'video' && activeMode === 'mixcut') && (
+                    <Field label="比例">
+                      <Select disabled={isBusy} onChange={event => setAspectRatio(event.target.value)} value={aspectRatio}>
+                        {aspectOptions.map(value => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </Select>
+                    </Field>
+                  )}
                   <Field label="模型">
                     {kind === 'image' ? (
                       <Select disabled={isBusy} onChange={event => setImageModel(event.target.value)} value={imageModel}>
@@ -790,7 +1343,12 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                   </Field>
                   <Field label={kind === 'image' ? '数量' : '时长/数量'}>
                     {kind === 'image' ? (
-                      <TextInput disabled value={activeMode === 'smart' ? '5 张' : '6 张'} />
+                      <TextInput disabled value={activeMode === 'smart' ? `${SMART_IMAGE_OUTPUT_COUNT} 张` : `${IMAGE_RECREATE_OUTPUT_COUNT} 张`} />
+                    ) : activeMode === 'smart' ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <TextInput disabled={isBusy} max={120} min={6} onChange={event => setTargetDurationSec(Math.min(120, Math.max(6, Number(event.target.value) || 15)))} type="number" value={targetDurationSec} />
+                        <TextInput disabled={isBusy} max={10} min={1} onChange={event => setCount(Math.max(1, Math.min(10, Number(event.target.value) || 1)))} type="number" value={count} />
+                      </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-2">
                         <Select disabled={isBusy} onChange={event => setDuration(event.target.value)} value={duration}>
@@ -818,6 +1376,7 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                       setTaskId('')
                       setRecreationId('')
                       setPhase('input')
+                      setEditedPrompts({})
                     }}
                     type="button"
                     variant="outline"
@@ -845,17 +1404,64 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-base font-semibold text-(--ui-text-primary)">确认生成方案</h2>
-                    <p className="mt-1 text-xs text-(--ui-text-secondary)">DeepSeen 已完成素材分析，请确认提示词后开始正式生成。</p>
+                    <p className="mt-1 text-xs text-(--ui-text-secondary)">DeepSeen 已完成素材分析，可编辑提示词后开始正式生成。</p>
                   </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {modelRisk?.level === 'WARN' && (
+                      <Button onClick={() => void stopRiskRecreation()} type="button" variant="outline">
+                        停止并退回生成积分
+                      </Button>
+                    )}
+                    <Button onClick={() => void cancelRecreation()} type="button" variant="outline">
+                      返回修改
+                    </Button>
                   <Button onClick={() => void confirmGenerate()} type="button">
                     确认并生成
                   </Button>
+                  </div>
                 </div>
+                {modelRisk && modelRisk.level !== 'PASS' && (
+                  <div className="mt-3 rounded border border-amber-400/40 bg-amber-400/10 p-3 text-xs text-(--ui-text-primary)">
+                    <div className="font-semibold">{modelRisk.title || '模型风险提示'}</div>
+                    {modelRisk.message && <div className="mt-1">{modelRisk.message}</div>}
+                  </div>
+                )}
+                {kind === 'video' && dynamicClipPlan && (
+                  <Field label="视频生成方式">
+                    <Select onChange={event => setDynamicClipMode(event.target.value as 'recommended' | 'compress' | '')} value={dynamicClipMode}>
+                      <option value="">默认</option>
+                      <option value="recommended">按 DeepSeen 建议时长生成</option>
+                      <option value="compress">压缩成单段生成</option>
+                    </Select>
+                  </Field>
+                )}
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {variants.map((variant, index) => (
                     <article className="rounded border border-(--ui-stroke-secondary) bg-(--ui-bg-primary) p-3" key={variant.id}>
-                      <div className="mb-2 text-xs font-semibold text-primary">方案 {index + 1}</div>
-                      <p className="max-h-36 overflow-auto whitespace-pre-wrap text-xs leading-5 text-(--ui-text-secondary)">{variant.text}</p>
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-primary">方案 {index + 1}</span>
+                        {variant.strategy && <span className="truncate text-[11px] text-(--ui-text-secondary)">{variant.strategy}</span>}
+                      </div>
+                      {variant.referenceImage && <img alt="" className="mb-2 h-20 w-20 rounded object-cover" src={variant.referenceImage} />}
+                      <TextArea
+                        className="max-h-48 text-xs leading-5"
+                        onChange={event => setEditedPrompts(prev => ({ ...prev, [variant.id]: event.target.value }))}
+                        value={editedPrompts[variant.id] ?? variant.text}
+                      />
+                      <div className="mt-2 flex justify-end gap-2">
+                        <Button onClick={() => void copyPrompt(editedPrompts[variant.id] ?? variant.text)} size="xs" type="button" variant="outline">
+                          复制
+                        </Button>
+                        {editedPrompts[variant.id] !== undefined && editedPrompts[variant.id] !== variant.text && (
+                          <Button onClick={() => setEditedPrompts(prev => {
+                            const next = { ...prev }
+                            delete next[variant.id]
+                            return next
+                          })} size="xs" type="button" variant="ghost">
+                            恢复原文
+                          </Button>
+                        )}
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -866,9 +1472,14 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
               <section className="rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-(--ui-text-primary)">生成结果</h2>
+                  <div className="flex gap-2">
+                  <Button onClick={resetFlow} size="xs" type="button" variant="outline">
+                    继续创作
+                  </Button>
                   <Button onClick={() => void refreshHistory()} size="xs" type="button" variant="ghost">
                     刷新历史
                   </Button>
+                  </div>
                 </div>
                 {media.length > 0 ? (
                   <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -883,6 +1494,7 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                             下载
                           </Button>
                         </div>
+                        {item.prompt && <p className="mt-2 line-clamp-3 text-xs text-(--ui-text-secondary)">{item.prompt}</p>}
                       </article>
                     ))}
                   </div>
