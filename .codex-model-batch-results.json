@@ -1,0 +1,900 @@
+{
+  "base_url": "https://api.ominilink.ai/v1",
+  "ok": [
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+    "gpt-4o",
+    "claude-4.5-sonnet",
+    "gpt-5",
+    "gpt-5-chat",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4o-mini",
+    "gemini-2.5-flash-lite",
+    "claude-4.5-haiku",
+    "claude-sonnet-4-5-20250929",
+    "claude-haiku-4-5-20251001",
+    "gemini-3-pro-image-preview",
+    "gemini-2.5-flash-image",
+    "gpt-5.1",
+    "gpt-5.1-chat",
+    "gpt-5.2",
+    "gemini-3-flash-preview",
+    "gpt-5-mini",
+    "claude-opus-4-5-20251101",
+    "gpt-5.2-chat",
+    "gpt-5-nano",
+    "gemini-3.1-pro-preview",
+    "gemini-3.1-flash-image-preview",
+    "gemini-3.1-flash-lite-preview",
+    "gpt-5.4",
+    "grok-4-1-fast-reasoning",
+    "gpt-5.4-nano",
+    "gpt-5.4-mini",
+    "grok-4-20-non-reasoning",
+    "gpt-5.5",
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash",
+    "grok-4.3"
+  ],
+  "bad": [
+    "claude-3-5",
+    "claude-sonnet-4-20250514",
+    "claude-4.1-opus",
+    "claude-3.7-sonnet",
+    "gemini-2.0-flash",
+    "claude-4.0-sonnet",
+    "claude-opus-4-1-20250805",
+    "claude-3-7-sonnet-20250219",
+    "gemini-2.5-flash-image-preview",
+    "gpt-5.1-codex",
+    "gpt-5.1-codex-max",
+    "gpt-5.1-codex-mini",
+    "gpt-5-codex",
+    "gpt-image-1",
+    "gpt-5.2-codex",
+    "claude-opus-4-6",
+    "gpt-image-1.5",
+    "claude-sonnet-4-6",
+    "claude-opus-4-6-thinking",
+    "gpt-5.4-pro",
+    "gpt-5.3-codex",
+    "sora-2",
+    "veo-3.1-generate-001",
+    "veo-3.1-fast-generate-001",
+    "veo-3.1-lite-generate-001",
+    "grok-4-20-reasoning",
+    "claude-opus-4-7",
+    "claude-opus-4-7-thinking",
+    "viduq3-pro",
+    "viduq3-pro-fast",
+    "viduq3-turbo",
+    "viduq3-mix",
+    "viduq3",
+    "gpt-5-pro",
+    "gpt-image-2",
+    "kling-v3",
+    "dreamina-seedance-2-0-fast",
+    "dreamina-seedance-2-0",
+    "claude-opus-4-8",
+    "claude-fable-5",
+    "kling-v2-6",
+    "kling-v3-omni",
+    "kling-video-o1",
+    "kling-v2-5-turbo",
+    "kling-v2-1-master",
+    "kling-v2-master",
+    "2bn5k-viduq3-pro-fast"
+  ],
+  "results": [
+    {
+      "model": "claude-3-5",
+      "ok": false,
+      "seconds": 3.57,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-3.5-sonnet' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "claude-sonnet-4-20250514",
+      "ok": false,
+      "seconds": 3.57,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-sonnet-4-20250514' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gemini-2.5-pro",
+      "ok": true,
+      "seconds": 4.61,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gemini-2.5-flash",
+      "ok": true,
+      "seconds": 4.28,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-4o",
+      "ok": true,
+      "seconds": 4.12,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "claude-4.5-sonnet",
+      "ok": true,
+      "seconds": 5.74,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-5",
+      "ok": true,
+      "seconds": 3.93,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "claude-4.1-opus",
+      "ok": false,
+      "seconds": 1.1,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-opus-4-1-20250805' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "claude-3.7-sonnet",
+      "ok": false,
+      "seconds": 1.1,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-3-7-sonnet-20250219' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5-chat",
+      "ok": true,
+      "seconds": 1.75,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-4.1",
+      "ok": true,
+      "seconds": 3.38,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-4.1-mini",
+      "ok": true,
+      "seconds": 3.13,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-4o-mini",
+      "ok": true,
+      "seconds": 2.36,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gemini-2.5-flash-lite",
+      "ok": true,
+      "seconds": 1.99,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gemini-2.0-flash",
+      "ok": false,
+      "seconds": 1.51,
+      "attempts": [
+        {
+          "status": 404,
+          "failure": "HTTP 404: {\"code\":\"111\",\"msg\":\"后端资源异常,请联系平台管理员!\",\"data\":null}",
+          "sample": "{\"code\":\"111\",\"msg\":\"后端资源异常,请联系平台管理员!\",\"data\":null}"
+        }
+      ]
+    },
+    {
+      "model": "claude-4.0-sonnet",
+      "ok": false,
+      "seconds": 1.07,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-sonnet-4-20250514' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "claude-4.5-haiku",
+      "ok": true,
+      "seconds": 2.3,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "claude-sonnet-4-5-20250929",
+      "ok": true,
+      "seconds": 3.15,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "claude-haiku-4-5-20251001",
+      "ok": true,
+      "seconds": 2.61,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "claude-opus-4-1-20250805",
+      "ok": false,
+      "seconds": 1.11,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-opus-4-1-20250805' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "claude-3-7-sonnet-20250219",
+      "ok": false,
+      "seconds": 1.13,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-3-7-sonnet-20250219' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gemini-3-pro-image-preview",
+      "ok": true,
+      "seconds": 4.4,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gemini-2.5-flash-image-preview",
+      "ok": false,
+      "seconds": 1.53,
+      "attempts": [
+        {
+          "status": 404,
+          "failure": "HTTP 404: {\"code\":\"111\",\"msg\":\"后端资源异常,请联系平台管理员!\",\"data\":null}",
+          "sample": "{\"code\":\"111\",\"msg\":\"后端资源异常,请联系平台管理员!\",\"data\":null}"
+        }
+      ]
+    },
+    {
+      "model": "gemini-2.5-flash-image",
+      "ok": true,
+      "seconds": 1.71,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-5.1",
+      "ok": true,
+      "seconds": 3.33,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "gpt-5.1-codex",
+      "ok": false,
+      "seconds": 1.1,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'gpt-5.1-codex' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.1-codex-max",
+      "ok": false,
+      "seconds": 1.26,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'gpt-5.1-codex-max' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.1-codex-mini",
+      "ok": false,
+      "seconds": 1.07,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'gpt-5.1-codex-mini' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5-codex",
+      "ok": false,
+      "seconds": 1.12,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'gpt-5-codex' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.1-chat",
+      "ok": true,
+      "seconds": 3.52,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "gpt-5.2",
+      "ok": true,
+      "seconds": 3.32,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "ok": true,
+      "seconds": 2.11,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-5-mini",
+      "ok": true,
+      "seconds": 3.63,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "claude-opus-4-5-20251101",
+      "ok": true,
+      "seconds": 3.5,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-5.2-chat",
+      "ok": true,
+      "seconds": 3.49,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "gpt-5-nano",
+      "ok": true,
+      "seconds": 3.85,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "gpt-image-1",
+      "ok": false,
+      "seconds": 1.1,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'gpt-image-1' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.2-codex",
+      "ok": false,
+      "seconds": 1.37,
+      "attempts": [
+        {
+          "status": 400,
+          "failure": "HTTP 400: {\"code\":\"01\",\"msg\":\"400 ## Bad Request ## {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"The requested operation is unsupported.\\\"\\n  }\\n}\",\"data\":null}",
+          "sample": "{\"code\":\"01\",\"msg\":\"400 ## Bad Request ## {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"The requested operation is unsupported.\\\"\\n  }\\n}\",\"data\":null}"
+        }
+      ]
+    },
+    {
+      "model": "claude-opus-4-6",
+      "ok": false,
+      "seconds": 1.1,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-opus-4-6' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-image-1.5",
+      "ok": false,
+      "seconds": 1.11,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'gpt-image-1.5' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "ok": false,
+      "seconds": 1.2,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-sonnet-4-6' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gemini-3.1-pro-preview",
+      "ok": true,
+      "seconds": 3.22,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gemini-3.1-flash-image-preview",
+      "ok": true,
+      "seconds": 1.8,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "claude-opus-4-6-thinking",
+      "ok": false,
+      "seconds": 1.05,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-opus-4-6-thinking' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-lite-preview",
+      "ok": true,
+      "seconds": 1.59,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gpt-5.4",
+      "ok": true,
+      "seconds": 3.46,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "gpt-5.4-pro",
+      "ok": false,
+      "seconds": 1.32,
+      "attempts": [
+        {
+          "status": 400,
+          "failure": "HTTP 400: {\"code\":\"01\",\"msg\":\"400 ## Bad Request ## {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"The requested operation is unsupported.\\\"\\n  }\\n}\",\"data\":null}",
+          "sample": "{\"code\":\"01\",\"msg\":\"400 ## Bad Request ## {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"The requested operation is unsupported.\\\"\\n  }\\n}\",\"data\":null}"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.3-codex",
+      "ok": false,
+      "seconds": 1.28,
+      "attempts": [
+        {
+          "status": 400,
+          "failure": "HTTP 400: {\"code\":\"01\",\"msg\":\"400 ## Bad Request ## {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"The requested operation is unsupported.\\\"\\n  }\\n}\",\"data\":null}",
+          "sample": "{\"code\":\"01\",\"msg\":\"400 ## Bad Request ## {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"The requested operation is unsupported.\\\"\\n  }\\n}\",\"data\":null}"
+        }
+      ]
+    },
+    {
+      "model": "grok-4-1-fast-reasoning",
+      "ok": true,
+      "seconds": 2.58,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "sora-2",
+      "ok": false,
+      "seconds": 1.17,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'sora-2' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "veo-3.1-generate-001",
+      "ok": false,
+      "seconds": 1.13,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'veo-3.1-generate-001' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "veo-3.1-fast-generate-001",
+      "ok": false,
+      "seconds": 1.21,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'veo-3.1-fast-generate-001' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.4-nano",
+      "ok": true,
+      "seconds": 4.14,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "ok": true,
+      "seconds": 3.24,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "veo-3.1-lite-generate-001",
+      "ok": false,
+      "seconds": 1.15,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'veo-3.1-lite-generate-001' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "grok-4-20-reasoning",
+      "ok": false,
+      "seconds": 1.19,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'grok-4-20-reasoning' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "grok-4-20-non-reasoning",
+      "ok": true,
+      "seconds": 1.97,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "claude-opus-4-7",
+      "ok": false,
+      "seconds": 1.06,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-opus-4-7' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "claude-opus-4-7-thinking",
+      "ok": false,
+      "seconds": 1.32,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-opus-4-7-thinking' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "viduq3-pro",
+      "ok": false,
+      "seconds": 1.17,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'viduq3-pro' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "viduq3-pro-fast",
+      "ok": false,
+      "seconds": 1.28,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'viduq3-pro-fast' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "viduq3-turbo",
+      "ok": false,
+      "seconds": 1.14,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'viduq3-turbo' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "viduq3-mix",
+      "ok": false,
+      "seconds": 1.15,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'viduq3-mix' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "viduq3",
+      "ok": false,
+      "seconds": 1.23,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'viduq3' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5-pro",
+      "ok": false,
+      "seconds": 1.33,
+      "attempts": [
+        {
+          "status": 400,
+          "failure": "HTTP 400: {\"code\":\"01\",\"msg\":\"400 ## Bad Request ## {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"The requested operation is unsupported.\\\"\\n  }\\n}\",\"data\":null}",
+          "sample": "{\"code\":\"01\",\"msg\":\"400 ## Bad Request ## {\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"The requested operation is unsupported.\\\"\\n  }\\n}\",\"data\":null}"
+        }
+      ]
+    },
+    {
+      "model": "gpt-image-2",
+      "ok": false,
+      "seconds": 1.1,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'gpt-image-2' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.5",
+      "ok": true,
+      "seconds": 3.42,
+      "attempt": 2,
+      "status": 200
+    },
+    {
+      "model": "kling-v3",
+      "ok": false,
+      "seconds": 1.11,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'kling-v3' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "ok": true,
+      "seconds": 1.74,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "gemini-3.5-flash",
+      "ok": true,
+      "seconds": 1.8,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "grok-4.3",
+      "ok": true,
+      "seconds": 5.06,
+      "attempt": 1,
+      "status": 200
+    },
+    {
+      "model": "dreamina-seedance-2-0-fast",
+      "ok": false,
+      "seconds": 1.11,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'dreamina-seedance-2-0-fast' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "dreamina-seedance-2-0",
+      "ok": false,
+      "seconds": 1.13,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'dreamina-seedance-2-0' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "claude-opus-4-8",
+      "ok": false,
+      "seconds": 1.07,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-opus-4-8' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "claude-fable-5",
+      "ok": false,
+      "seconds": 1.2,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'claude-fable-5' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "kling-v2-6",
+      "ok": false,
+      "seconds": 1.18,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'kling-v2-6' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "kling-v3-omni",
+      "ok": false,
+      "seconds": 1.27,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'kling-v3-omni' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "kling-video-o1",
+      "ok": false,
+      "seconds": 1.2,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'kling-video-o1' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "kling-v2-5-turbo",
+      "ok": false,
+      "seconds": 1.12,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'kling-v2-5-turbo' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "kling-v2-1-master",
+      "ok": false,
+      "seconds": 1.1,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'kling-v2-1-master' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "kling-v2-master",
+      "ok": false,
+      "seconds": 1.12,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name 'kling-v2-master' with protocol 'chat'"
+        }
+      ]
+    },
+    {
+      "model": "2bn5k-viduq3-pro-fast",
+      "ok": false,
+      "seconds": 1.13,
+      "attempts": [
+        {
+          "status": 200,
+          "failure": "gateway returned no available supplier",
+          "sample": "No available supplier models found for model_name '2bn5k-viduq3-pro-fast' with protocol 'chat'"
+        }
+      ]
+    }
+  ]
+}
