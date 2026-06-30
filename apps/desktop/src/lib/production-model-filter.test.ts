@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest'
 import { filterDeepseenProductionModelOptions } from './production-model-filter'
 
 describe('production model filter', () => {
-  it('keeps only available Deepseen production models in a fixed order', () => {
+  it('keeps the six Deepseen production models in a fixed provider split', () => {
     const result = filterDeepseenProductionModelOptions({
       model: 'gpt-4o-mini',
       provider: 'openai-api',
       providers: [
         {
-          models: ['gpt-4o', 'gpt-5.5', 'gemini-3.1-pro-preview'],
+          models: ['gpt-4o'],
           name: 'OPENAI-API',
           slug: 'openai-api'
         },
@@ -33,8 +33,8 @@ describe('production model filter', () => {
       total_models: 2
     })
     expect(result?.providers?.[0]?.models).toEqual([
-      'gpt-5.5',
-      'gemini-3.1-pro-preview'
+      'deepseek-v4-pro',
+      'glm-5.1'
     ])
     expect(result?.providers?.[1]).toMatchObject({
       name: 'KIE.AI',

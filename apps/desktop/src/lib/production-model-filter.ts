@@ -6,10 +6,10 @@ function modelCandidates(model: (typeof HERBOUND_PRODUCTION_MODELS)[number]): st
   return [model.id, ...(model.aliases ?? [])]
 }
 
-function firstMatchingModel(provider: ModelOptionProvider, model: (typeof HERBOUND_PRODUCTION_MODELS)[number]): string | null {
+function firstMatchingModel(provider: ModelOptionProvider, model: (typeof HERBOUND_PRODUCTION_MODELS)[number]): string {
   const available = new Set((provider.models ?? []).map(value => String(value)))
 
-  return modelCandidates(model).find(candidate => available.has(candidate)) ?? null
+  return modelCandidates(model).find(candidate => available.has(candidate)) ?? model.id
 }
 
 function findProvider(options: ModelOptionsResponse, slug: 'kie' | 'openai-api'): ModelOptionProvider | null {
@@ -36,9 +36,7 @@ function productionProvider(options: ModelOptionsResponse, slug: 'kie' | 'openai
   }
 
   const configuredModels = HERBOUND_PRODUCTION_MODELS.filter(model => model.provider === slug)
-  const models = configuredModels
-    .map(model => firstMatchingModel(source, model))
-    .filter((model): model is string => Boolean(model))
+  const models = configuredModels.map(model => firstMatchingModel(source, model))
   const allowed = new Set(models)
   const pricing = source.pricing
     ? Object.fromEntries(Object.entries(source.pricing).filter(([model]) => allowed.has(model)))
