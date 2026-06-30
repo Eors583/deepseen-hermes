@@ -7,7 +7,18 @@ import {
   type SyntaxHighlighterProps
 } from '@assistant-ui/react-streamdown'
 import { code } from '@streamdown/code'
-import { type ComponentProps, memo, type ReactNode, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  createContext,
+  type ComponentProps,
+  memo,
+  type ReactNode,
+  useContext,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 
 import { PreviewAttachment } from '@/components/chat/preview-attachment'
 import { SyntaxHighlighter } from '@/components/chat/shiki-highlighter'
@@ -41,6 +52,7 @@ import { cn } from '@/lib/utils'
 // `singleDollarTextMath: true` enables `$x^2$` for inline math (de-facto
 // LLM convention). The default false-setting only accepts `$$...$$`.
 const mathPlugin = createMemoizedMathPlugin({ singleDollarTextMath: true })
+const MarkdownSourceContext = createContext('')
 
 async function mediaSrc(path: string): Promise<string> {
   if (/^(?:https?|data):/i.test(path)) {
@@ -85,8 +97,78 @@ interface DownloadResult {
   path: string
 }
 
-async function downloadMediaFile(path: string, onStatus: (status: DownloadStatus) => void): Promise<DownloadResult> {
+function mediaDownloadName(path: string): string {
   const name = mediaName(path)
+  if (/^deepseen-.+\.(?:md|docx)$/i.test(name)) {
+    return name.replace(/\.(?:md|docx)$/i, '.pdf')
+  }
+  return name
+}
+
+function isDeepSeenReportPath(path: string): boolean {
+  return /^deepseen-.+\.(?:pdf|md|docx)$/i.test(mediaName(path))
+}
+
+function dataUrlToText(dataUrl: string): string {
+  const match = /^data:[^;,]*(?:;charset=[^;,]+)?(;base64)?,(.*)$/i.exec(dataUrl)
+  if (!match) {
+    return ''
+  }
+
+  if (match[1]) {
+    const binary = window.atob(match[2])
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0))
+    return new TextDecoder('utf-8').decode(bytes)
+  }
+
+  return decodeURIComponent(match[2])
+}
+
+async function readMediaMarkdown(path: string): Promise<string> {
+  if (!/\.md(?:[?#].*)?$/i.test(path)) {
+    return ''
+  }
+
+  if (window.hermesDesktop && isRemoteGateway()) {
+    return dataUrlToText(await gatewayMediaDataUrl(path))
+  }
+
+  if (window.hermesDesktop?.readFileText) {
+    const result = await window.hermesDesktop.readFileText(filePathFromMediaPath(path))
+    return result.binary ? '' : result.text
+  }
+
+  return ''
+}
+
+function stripAttachmentControls(markdown: string): string {
+  return markdown
+    .replace(/###\s*附件下载[\s\S]*?(?=\n#{1,3}\s|\n\n\S|$)/g, '')
+    .replace(/-\s*\[[^\]]*DeepSeen[^\]]*\]\(#media:[^)]+\)/g, '')
+    .trim()
+}
+
+async function downloadMediaFile(
+  path: string,
+  onStatus: (status: DownloadStatus) => void,
+  sourceMarkdown = ''
+): Promise<DownloadResult> {
+  const name = mediaDownloadName(path)
+
+  if (isDeepSeenReportPath(path) && window.hermesDesktop?.saveMarkdownPdfAs) {
+    onStatus('preparing')
+    let markdown = ''
+    try {
+      markdown = await readMediaMarkdown(path)
+    } catch {
+      markdown = ''
+    }
+    markdown = stripAttachmentControls(markdown || sourceMarkdown)
+    if (markdown) {
+      onStatus('saving')
+      return window.hermesDesktop.saveMarkdownPdfAs({ markdown, name })
+    }
+  }
 
   if (/^https?:/i.test(path)) {
     onStatus('preparing')
@@ -124,7 +206,7 @@ async function downloadMediaFile(path: string, onStatus: (status: DownloadStatus
   return { canceled: false, path: '' }
 }
 
-function MediaAttachment({ path }: { path: string }) {
+function MediaAttachment({ path, sourceMarkdown = '' }: { path: string; sourceMarkdown?: string }) {
   const [src, setSrc] = useState('')
   const [failed, setFailed] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
@@ -132,7 +214,7 @@ function MediaAttachment({ path }: { path: string }) {
   const [downloadError, setDownloadError] = useState('')
   const [savedPath, setSavedPath] = useState('')
   const kind = mediaKind(path)
-  const name = mediaName(path)
+  const name = mediaDownloadName(path)
 
   useEffect(() => {
     let cancelled = false
@@ -242,7 +324,7 @@ function MediaAttachment({ path }: { path: string }) {
               } else if (status === 'saving') {
                 setDownloadProgress(value => Math.max(value, 55))
               }
-            })
+            }, sourceMarkdown)
               .then(result => {
                 if (result.canceled) {
                   setDownloadProgress(0)
@@ -338,9 +420,10 @@ function childrenToText(children: unknown): string {
 
 function MarkdownLink({ children, className, href, ...props }: ComponentProps<'a'>) {
   const mediaPath = mediaPathFromMarkdownHref(href)
+  const sourceMarkdown = useContext(MarkdownSourceContext)
 
   if (mediaPath) {
-    return <MediaAttachment path={mediaPath} />
+    return <MediaAttachment path={mediaPath} sourceMarkdown={sourceMarkdown} />
   }
 
   const previewTarget = previewTargetFromMarkdownHref(href)
@@ -642,21 +725,27 @@ interface MarkdownTextContentProps extends MarkdownTextSurfaceProps {
 
 export function MarkdownTextContent({ isRunning, text, ...surfaceProps }: MarkdownTextContentProps) {
   return (
-    <TextMessagePartProvider isRunning={isRunning} text={text}>
-      <SmoothStreamingText>
-        <DeferStreamingText>
-          <MarkdownTextSurface {...surfaceProps} />
-        </DeferStreamingText>
-      </SmoothStreamingText>
-    </TextMessagePartProvider>
+    <MarkdownSourceContext.Provider value={text}>
+      <TextMessagePartProvider isRunning={isRunning} text={text}>
+        <SmoothStreamingText>
+          <DeferStreamingText>
+            <MarkdownTextSurface {...surfaceProps} />
+          </DeferStreamingText>
+        </SmoothStreamingText>
+      </TextMessagePartProvider>
+    </MarkdownSourceContext.Provider>
   )
 }
 
 const MarkdownTextImpl = () => {
+  const { text } = useMessagePartText()
+
   return (
-    <DeferStreamingText>
-      <MarkdownTextSurface />
-    </DeferStreamingText>
+    <MarkdownSourceContext.Provider value={text}>
+      <DeferStreamingText>
+        <MarkdownTextSurface />
+      </DeferStreamingText>
+    </MarkdownSourceContext.Provider>
   )
 }
 

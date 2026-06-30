@@ -6,7 +6,7 @@ export default {
     placeholder: '存取權杖',
     submit: '登入',
     registerTitle: '建立帳戶',
-    registerDescription: '註冊 Herbound 帳戶以繼續。',
+    registerDescription: '註冊 Deepseen 帳戶以繼續。',
     registerSubmit: '註冊並登入',
     createAccount: '建立新帳戶',
     backToLogin: '返回登入',

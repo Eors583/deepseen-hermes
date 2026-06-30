@@ -14,7 +14,7 @@ from hermes_cli import postgres_store
 PROVIDER = "deepseen"
 KEY_NAME = "api_key"
 LOCAL_USER_KEY = "local"
-MANAGED_CLIENT_NAME = "Herbound 自动托管"
+MANAGED_CLIENT_NAME = "Deepseen 自动托管"
 
 
 def _connect() -> Any:

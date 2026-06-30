@@ -6,7 +6,7 @@ export default {
     placeholder: '액세스 토큰',
     submit: '로그인',
     registerTitle: '계정 만들기',
-    registerDescription: '계속하려면 Herbound 계정을 등록하세요.',
+    registerDescription: '계속하려면 Deepseen 계정을 등록하세요.',
     registerSubmit: '등록하고 로그인',
     createAccount: '새 계정 만들기',
     backToLogin: '로그인으로 돌아가기',

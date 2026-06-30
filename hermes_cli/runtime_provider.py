@@ -1337,7 +1337,7 @@ def resolve_runtime_provider(
     if explicit_runtime:
         return explicit_runtime
 
-    should_use_pool = provider != "openrouter"
+    should_use_pool = provider not in {"openrouter", "kie"}
     if provider == "openrouter":
         cfg_provider = str(model_cfg.get("provider") or "").strip().lower()
         cfg_base_url = str(model_cfg.get("base_url") or "").strip()
@@ -1671,7 +1671,14 @@ def resolve_runtime_provider(
             cfg_base_url = (model_cfg.get("base_url") or "").strip().rstrip("/")
         base_url = cfg_base_url or creds.get("base_url", "").rstrip("/")
         api_mode = "chat_completions"
-        if provider == "copilot":
+        if provider == "kie":
+            from hermes_cli.kie_provider import resolve_kie_route
+
+            _effective = target_model or model_cfg.get("default", "")
+            _canonical_model, _kie_base_url, _kie_api_mode = resolve_kie_route(_effective)
+            base_url = _kie_base_url
+            api_mode = _kie_api_mode
+        elif provider == "copilot":
             api_mode = _copilot_runtime_api_mode(model_cfg, creds.get("api_key", ""))
         elif provider == "xai":
             api_mode = "codex_responses"

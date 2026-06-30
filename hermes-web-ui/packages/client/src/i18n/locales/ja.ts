@@ -6,7 +6,7 @@ export default {
     placeholder: 'アクセストークン',
     submit: 'ログイン',
     registerTitle: 'アカウント作成',
-    registerDescription: 'Herbound アカウントを作成して続行します。',
+    registerDescription: 'Deepseen アカウントを作成して続行します。',
     registerSubmit: '登録してログイン',
     createAccount: '新しいアカウントを作成',
     backToLogin: 'ログインに戻る',

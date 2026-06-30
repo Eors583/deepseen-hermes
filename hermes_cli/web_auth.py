@@ -1,4 +1,4 @@
-"""FastAPI-native auth for the Herbound web UI.
+"""FastAPI-native auth for the Deepseen web UI.
 
 This module ports the hermes-web-ui Koa auth surface into Hermes' native
 FastAPI server so production deployments can run a single backend.

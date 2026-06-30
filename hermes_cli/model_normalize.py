@@ -449,6 +449,15 @@ def normalize_model_for_provider(model_input: str, target_provider: str) -> str:
             return bare
         return _normalize_for_deepseek(bare)
 
+    # --- KIE.AI: canonical route IDs map to model-specific endpoints ---
+    if provider == "kie":
+        try:
+            from hermes_cli.kie_provider import canonical_kie_model
+
+            return canonical_kie_model(name)
+        except Exception:
+            return name
+
     # --- Direct providers: repair matching provider prefixes only ---
     if provider in _MATCHING_PREFIX_STRIP_PROVIDERS:
         result = _strip_matching_provider_prefix(name, provider)
@@ -469,4 +478,3 @@ def normalize_model_for_provider(model_input: str, target_provider: str) -> str:
 # ---------------------------------------------------------------------------
 # Batch / convenience helpers
 # ---------------------------------------------------------------------------
-

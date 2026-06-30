@@ -94,7 +94,7 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
     return {
       status: 'ok',
       platform: 'hermes',
-      version: 'Herbound',
+      version: 'Deepseen',
       gateway: 'native',
       webui_version: __APP_VERSION__,
       node_version: '23.0.0',
@@ -109,9 +109,9 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
           name: 'default',
           active: true,
           model: 'gpt-4o-mini',
-          alias: 'Herbound',
+          alias: 'Deepseen',
           gatewayStatus: 'running',
-          avatar: { type: 'generated', seed: 'Herbound' },
+          avatar: { type: 'generated', seed: 'Deepseen' },
         }],
       } as T
     }
@@ -150,7 +150,7 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
         skills: 1,
         hasEnv: true,
         hasSoulMd: true,
-        avatar: { type: 'generated', seed: 'Herbound' },
+        avatar: { type: 'generated', seed: 'Deepseen' },
       },
     } as T
   }
@@ -177,7 +177,7 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
         default_provider: 'custom',
         groups: [group],
       }],
-      model_aliases: { custom: { 'gpt-4o-mini': 'Herbound 默认模型' } },
+      model_aliases: { custom: { 'gpt-4o-mini': 'Deepseen 默认模型' } },
       model_visibility: {},
       custom_models: {},
     } as T
@@ -186,7 +186,7 @@ async function nativeHermesResponse<T>(path: string, options: RequestInit): Prom
   if (pathname === '/api/hermes/config/models') {
     return {
       default: 'gpt-4o-mini',
-      groups: [{ provider: 'custom', models: [{ id: 'gpt-4o-mini', label: 'Herbound 默认模型' }] }],
+      groups: [{ provider: 'custom', models: [{ id: 'gpt-4o-mini', label: 'Deepseen 默认模型' }] }],
     } as T
   }
 

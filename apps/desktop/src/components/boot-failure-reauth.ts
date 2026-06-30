@@ -41,7 +41,7 @@ export function isRemoteReauthFailure(config: DesktopConnectionConfig | null | u
 }
 
 // Derive the display label from the probed providers. Legacy password-provider
-// flags are ignored because Herbound uses the FastAPI/JWT login flow.
+// flags are ignored because Deepseen uses the FastAPI/JWT login flow.
 export function deriveProviderShape(providers: DesktopAuthProvider[] | null | undefined): {
   isPassword: false
   providerLabel: string

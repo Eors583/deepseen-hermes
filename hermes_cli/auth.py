@@ -188,6 +188,14 @@ PROVIDER_REGISTRY: Dict[str, ProviderConfig] = {
         api_key_env_vars=("OPENAI_API_KEY",),
         base_url_env_var="OPENAI_BASE_URL",
     ),
+    "kie": ProviderConfig(
+        id="kie",
+        name="KIE.AI",
+        auth_type="api_key",
+        inference_base_url="https://api.kie.ai",
+        api_key_env_vars=("KIE_API_KEY",),
+        base_url_env_var="KIE_BASE_URL",
+    ),
     "xai-oauth": ProviderConfig(
         id="xai-oauth",
         name="xAI Grok OAuth (SuperGrok / Premium+)",

@@ -83,7 +83,7 @@ describe('resolveGatewayWsUrl', () => {
   })
 
   describe('jwt mode', () => {
-    it('mints with the stored Herbound auth token', async () => {
+    it('mints with the stored Deepseen auth token', async () => {
       const token = jwt(Math.floor(Date.now() / 1000) + 3600)
       const getGatewayWsUrl = vi.fn().mockResolvedValue('ws://host/api/ws?ticket=fresh')
 
@@ -115,7 +115,7 @@ describe('resolveGatewayWsUrl', () => {
       expect(getGatewayWsUrl).toHaveBeenCalledWith(null, token)
     })
 
-    it('requires login when the Herbound auth token is missing', async () => {
+    it('requires login when the Deepseen auth token is missing', async () => {
       persistAuthToken(null)
 
       await expect(resolveGatewayWsUrl({ getGatewayWsUrl: vi.fn() }, jwtConn)).rejects.toBeInstanceOf(

@@ -446,6 +446,24 @@ def _is_kimi_coding_endpoint(base_url: str | None) -> bool:
     return normalized.rstrip("/").lower().startswith("https://api.kimi.com/coding")
 
 
+def _is_kie_anthropic_endpoint(base_url: str | None) -> bool:
+    """Return True for KIE.AI's Anthropic-compatible Claude endpoint."""
+    normalized = _normalize_base_url_text(base_url)
+    if not normalized:
+        return False
+    return normalized.rstrip("/").lower().startswith("https://api.kie.ai/claude")
+
+
+def _kie_default_headers() -> dict[str, str]:
+    return {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/126.0.0.0 Safari/537.36 Deepseen/0.15.1"
+        )
+    }
+
+
 # Model-name prefixes that identify the Kimi / Moonshot family.  Covers
 # - official slugs: ``kimi-k2.5``, ``kimi_thinking``, ``moonshot-v1-8k``
 # - common release lines: ``k1.5-...``, ``k2-thinking``, ``k25-...``, ``k2.5-...``
@@ -541,7 +559,11 @@ def _requires_bearer_auth(base_url: str | None) -> bool:
         return False
     normalized = normalized.rstrip("/").lower()
     return (
-        normalized.startswith(("https://api.minimax.io/anthropic", "https://api.minimaxi.com/anthropic"))
+        normalized.startswith((
+            "https://api.minimax.io/anthropic",
+            "https://api.minimaxi.com/anthropic",
+            "https://api.kie.ai/claude",
+        ))
         or "azure.com" in normalized
     )
 
@@ -787,16 +809,26 @@ def build_anthropic_client(
         # not use Anthropic's sk-ant-api prefix and would otherwise be misread as
         # Anthropic OAuth/setup tokens.
         kwargs["auth_token"] = api_key
+        if _is_kie_anthropic_endpoint(normalized_base_url):
+            kwargs["default_headers"] = _kie_default_headers()
         if common_betas:
-            kwargs["default_headers"] = {"anthropic-beta": ",".join(common_betas)}
+            kwargs["default_headers"] = {
+                **kwargs.get("default_headers", {}),
+                "anthropic-beta": ",".join(common_betas),
+            }
     elif _is_third_party_anthropic_endpoint(base_url):
         # Third-party proxies (Microsoft Foundry, AWS Bedrock, etc.) use their
         # own API keys with x-api-key auth. Skip OAuth detection — their keys
         # don't follow Anthropic's sk-ant-* prefix convention and would be
         # misclassified as OAuth tokens.
         kwargs["api_key"] = api_key
+        if _is_kie_anthropic_endpoint(normalized_base_url):
+            kwargs["default_headers"] = _kie_default_headers()
         if common_betas:
-            kwargs["default_headers"] = {"anthropic-beta": ",".join(common_betas)}
+            kwargs["default_headers"] = {
+                **kwargs.get("default_headers", {}),
+                "anthropic-beta": ",".join(common_betas),
+            }
     elif _is_oauth_token(api_key):
         # OAuth access token / setup-token → Bearer auth + Claude Code identity.
         # Anthropic routes OAuth requests based on user-agent and headers;

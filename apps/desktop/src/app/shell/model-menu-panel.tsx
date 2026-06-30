@@ -19,7 +19,7 @@ import type { HermesGateway } from '@/hermes'
 import { getGlobalModelOptions } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { displayModelName, modelDisplayParts, reasoningEffortLabel } from '@/lib/model-status-label'
-import { filterHerboundProductionModelOptions } from '@/lib/production-model-filter'
+import { filterDeepseenProductionModelOptions } from '@/lib/production-model-filter'
 import { cn } from '@/lib/utils'
 import {
   $visibleModels,
@@ -78,7 +78,7 @@ export function ModelMenuPanel({ gateway, onSelectModel, requestGateway }: Model
   })
 
   const filteredModelOptions = useMemo(
-    () => filterHerboundProductionModelOptions(modelOptions.data) ?? modelOptions.data,
+    () => filterDeepseenProductionModelOptions(modelOptions.data) ?? modelOptions.data,
     [modelOptions.data]
   )
   const optionsModel = String(filteredModelOptions?.model ?? currentModel ?? '')

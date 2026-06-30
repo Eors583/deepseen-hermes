@@ -6,7 +6,7 @@ export default {
     placeholder: 'Jeton d\'acces',
     submit: 'Connexion',
     registerTitle: 'Creer un compte',
-    registerDescription: 'Creez un compte Herbound pour continuer.',
+    registerDescription: 'Creez un compte Deepseen pour continuer.',
     registerSubmit: 'Creer et se connecter',
     createAccount: 'Creer un nouveau compte',
     backToLogin: 'Retour a la connexion',

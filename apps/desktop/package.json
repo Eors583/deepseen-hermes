@@ -1,9 +1,9 @@
 {
   "name": "hermes",
-  "productName": "Herbound",
+  "productName": "Deepseen",
   "private": true,
   "version": "0.15.1",
-  "description": "Native desktop shell for Herbound Agent.",
+  "description": "Native desktop shell for Deepseen Agent.",
   "author": "Nous Research",
   "type": "module",
   "main": "electron/main.cjs",
@@ -132,17 +132,17 @@
   "build": {
     "electronVersion": "40.9.3",
     "appId": "com.nousresearch.hermes",
-    "productName": "Herbound",
-    "executableName": "Herbound",
+    "productName": "Deepseen",
+    "executableName": "Deepseen",
     "protocols": [
       {
-        "name": "Herbound Protocol",
+        "name": "Deepseen Protocol",
         "schemes": [
           "hermes"
         ]
       }
     ],
-    "artifactName": "Herbound-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Deepseen-${version}-${os}-${arch}.${ext}",
     "icon": "assets/icon",
     "directories": {
       "output": "release"
@@ -187,11 +187,11 @@
       "entitlements": "electron/entitlements.mac.plist",
       "entitlementsInherit": "electron/entitlements.mac.inherit.plist",
       "extendInfo": {
-        "CFBundleDisplayName": "Herbound",
-        "CFBundleExecutable": "Herbound",
-        "CFBundleName": "Herbound",
-        "NSAudioCaptureUsageDescription": "Herbound uses audio capture for voice conversations.",
-        "NSMicrophoneUsageDescription": "Herbound uses the microphone for voice input and voice conversations."
+        "CFBundleDisplayName": "Deepseen",
+        "CFBundleExecutable": "Deepseen",
+        "CFBundleName": "Deepseen",
+        "NSAudioCaptureUsageDescription": "Deepseen uses audio capture for voice conversations.",
+        "NSMicrophoneUsageDescription": "Deepseen uses the microphone for voice input and voice conversations."
       },
       "gatekeeperAssess": false,
       "hardenedRuntime": true,
@@ -201,7 +201,7 @@
       ]
     },
     "dmg": {
-      "title": "Install Herbound",
+      "title": "Install Deepseen",
       "backgroundColor": "#f5f5f7",
       "iconSize": 96,
       "window": {
@@ -223,7 +223,7 @@
       ]
     },
     "win": {
-      "legalTrademarks": "Herbound",
+      "legalTrademarks": "Deepseen",
       "target": [
         "nsis",
         "msi"
@@ -233,7 +233,7 @@
     "linux": {
       "category": "Development",
       "maintainer": "Nous Research <support@nousresearch.com>",
-      "synopsis": "Native desktop shell for Herbound Agent.",
+      "synopsis": "Native desktop shell for Deepseen Agent.",
       "target": [
         "AppImage",
         "deb",
@@ -244,8 +244,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
-      "shortcutName": "Herbound",
-      "uninstallDisplayName": "Herbound",
+      "shortcutName": "Deepseen",
+      "uninstallDisplayName": "Deepseen",
       "warningsAsErrors": false
     }
   }

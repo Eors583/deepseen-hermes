@@ -5,6 +5,8 @@ export const COMMAND_CENTER_ROUTE = '/command-center'
 export const SKILLS_ROUTE = '/skills'
 export const IMAGE_RECREATION_ROUTE = '/image-recreation'
 export const VIDEO_RECREATION_ROUTE = '/video-recreation'
+export const ADS_DIAGNOSIS_ROUTE = '/ads-diagnosis'
+export const GEO_OPTIMIZATION_ROUTE = '/geo-optimization'
 export const MESSAGING_ROUTE = '/messaging'
 export const ARTIFACTS_ROUTE = '/artifacts'
 export const CRON_ROUTE = '/cron'
@@ -18,6 +20,8 @@ export type AppView =
   | 'command-center'
   | 'cron'
   | 'image-recreation'
+  | 'ads-diagnosis'
+  | 'geo-optimization'
   | 'messaging'
   | 'profiles'
   | 'settings'
@@ -30,6 +34,8 @@ export type AppRouteId =
   | 'command-center'
   | 'cron'
   | 'image-recreation'
+  | 'ads-diagnosis'
+  | 'geo-optimization'
   | 'messaging'
   | 'new'
   | 'profiles'
@@ -48,6 +54,8 @@ export const APP_ROUTES = [
   { id: 'settings', path: SETTINGS_ROUTE, view: 'settings' },
   { id: 'command-center', path: COMMAND_CENTER_ROUTE, view: 'command-center' },
   { id: 'skills', path: SKILLS_ROUTE, view: 'skills' },
+  { id: 'ads-diagnosis', path: ADS_DIAGNOSIS_ROUTE, view: 'ads-diagnosis' },
+  { id: 'geo-optimization', path: GEO_OPTIMIZATION_ROUTE, view: 'geo-optimization' },
   { id: 'image-recreation', path: IMAGE_RECREATION_ROUTE, view: 'image-recreation' },
   { id: 'video-recreation', path: VIDEO_RECREATION_ROUTE, view: 'video-recreation' },
   { id: 'messaging', path: MESSAGING_ROUTE, view: 'messaging' },

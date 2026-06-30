@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils'
 
 type RecreationKind = 'image' | 'video'
-type ImageMode = 'recreate' | 'smart'
+type ImageMode = 'recreate' | 'smart' | 'original'
 type VideoMode = 'recreate' | 'smart' | 'mixcut'
 type WorkPhase = 'input' | 'analyzing' | 'confirming' | 'generating' | 'done'
 type ProductMaterialSource = 'upload' | 'link'
@@ -510,6 +510,9 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
   const [productUrl, setProductUrl] = useState('')
   const [productTitle, setProductTitle] = useState('')
   const [sellingPoints, setSellingPoints] = useState('')
+  const [originalScript, setOriginalScript] = useState('')
+  const [originalEnhancePrompt, setOriginalEnhancePrompt] = useState(false)
+  const [originalCount, setOriginalCount] = useState(1)
   const [region, setRegion] = useState('美国')
   const [aspectRatio, setAspectRatio] = useState('9:16')
   const [imageModel, setImageModel] = useState('nano-banana-2')
@@ -550,13 +553,14 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
 
   const refreshHistory = useCallback(async () => {
     try {
-      const query = `recreation/list?limit=12&type=${kind === 'image' ? 'IMAGE' : 'VIDEO'}&mode=RECREATION`
+      const mode = kind === 'image' && imageMode === 'original' ? 'ORIGINAL' : 'RECREATION'
+      const query = `recreation/list?limit=12&type=${kind === 'image' ? 'IMAGE' : 'VIDEO'}&mode=${mode}`
       const data = await deepseenRequest<RecreationListResponse>(query, { timeoutMs: 60_000 })
       setHistory(data.items || [])
     } catch {
       setHistory([])
     }
-  }, [kind])
+  }, [imageMode, kind])
 
   const loadKnowledgeItems = useCallback(async () => {
     try {
@@ -788,6 +792,32 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
     }
   }
 
+  const startOriginalImageFlow = async (options: { modelRiskAccepted?: boolean } = {}) => {
+    if (!originalScript.trim()) {
+      throw new Error('请输入原创脚本或创意描述')
+    }
+    setError('')
+    setDetail(null)
+    setProgress(null)
+    setPhase('generating')
+    const started = await deepseenRequest<StartTaskResponse>('recreation/original', {
+      body: {
+        mode: 'SCRIPT',
+        baseImageUrl: baseImages[0],
+        baseImageUrls: baseImages,
+        fullScript: originalScript.trim(),
+        count: originalCount,
+        aspectRatio,
+        enhancePrompt: originalEnhancePrompt,
+        modelId: imageModel,
+        modelRiskAccepted: Boolean(options.modelRiskAccepted)
+      },
+      timeoutMs: 300_000
+    })
+    setTaskId(started.taskId)
+    if (started.recreationId) setRecreationId(started.recreationId)
+  }
+
   const startMixcutFlow = async () => {
     setError('')
     setDetail(null)
@@ -843,7 +873,9 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
 
   const submit = async () => {
     try {
-      if (kind === 'video' && videoMode === 'mixcut') {
+      if (kind === 'image' && imageMode === 'original') {
+        await startOriginalImageFlow()
+      } else if (kind === 'video' && videoMode === 'mixcut') {
         await startMixcutFlow()
       } else if (activeMode === 'smart') {
         if (kind === 'video' && isUsRegion(region)) {
@@ -867,7 +899,9 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
       if (err instanceof DeepSeenApiError && err.code === 'MODEL_HIGH_FAILURE_RATE_ACK_REQUIRED') {
         setPhase('input')
         if (window.confirm(err.message || '当前模型失败率偏高，是否继续使用当前模型？')) {
-          if (activeMode === 'smart') {
+          if (kind === 'image' && imageMode === 'original') {
+            await startOriginalImageFlow({ modelRiskAccepted: true })
+          } else if (activeMode === 'smart') {
             await startSmartFlow({
               aiVoiceoverRiskAcknowledged: kind === 'video',
               modelRiskAccepted: true
@@ -993,14 +1027,15 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
 
   const canSubmit = useMemo(() => {
     if (isBusy) return false
+    if (kind === 'image' && imageMode === 'original') return Boolean(originalScript.trim())
     if (kind === 'video' && videoMode === 'mixcut') return Boolean(mixcutSource?.id && realVideos.length)
     if (activeMode === 'smart') return Boolean(productTitle.trim() && baseImages.length)
     const hasSourceUrl = Boolean(productUrl.trim() || (kind === 'video' && videoInputMode === 'upload' && referenceVideos[0]))
     return Boolean(productTitle.trim() && baseImages.length && hasSourceUrl)
-  }, [activeMode, baseImages.length, isBusy, kind, mixcutSource?.id, productTitle, productUrl, realVideos.length, referenceVideos, videoInputMode, videoMode])
+  }, [activeMode, baseImages.length, imageMode, isBusy, kind, mixcutSource?.id, originalScript, productTitle, productUrl, realVideos.length, referenceVideos, videoInputMode, videoMode])
 
-  const title = kind === 'image' ? '图片复刻' : '视频复刻'
-  const aspectOptions = activeMode === 'smart' ? IMAGE_ASPECT_RATIOS : RECREATE_ASPECT_RATIOS
+  const title = kind === 'image' ? '图片创作' : '视频创作'
+  const aspectOptions = activeMode === 'recreate' ? RECREATE_ASPECT_RATIOS : IMAGE_ASPECT_RATIOS
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-auto bg-(--ui-editor-surface-background) pt-(--titlebar-height)">
@@ -1030,6 +1065,9 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                     </Button>
                     <Button onClick={() => setImageMode('smart')} type="button" variant={imageMode === 'smart' ? 'default' : 'outline'}>
                       图片智创
+                    </Button>
+                    <Button onClick={() => setImageMode('original')} type="button" variant={imageMode === 'original' ? 'default' : 'outline'}>
+                      图片原创
                     </Button>
                   </>
                 ) : (
@@ -1227,6 +1265,22 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                       </Field>
                     </div>
                   </div>
+                ) : activeMode === 'original' ? (
+                  <>
+                    <Field label="原创脚本 / 创意描述">
+                      <TextArea
+                        disabled={isBusy}
+                        maxLength={2000}
+                        onChange={event => setOriginalScript(event.target.value.slice(0, 2000))}
+                        placeholder="描述画面、场景、主体、动作、风格、卖点；也可以粘贴完整分镜脚本。"
+                        value={originalScript}
+                      />
+                    </Field>
+                    <label className="flex items-center gap-2 text-xs text-(--ui-text-secondary)">
+                      <input checked={originalEnhancePrompt} disabled={isBusy} onChange={event => setOriginalEnhancePrompt(event.target.checked)} type="checkbox" />
+                      使用 DeepSeen 提示词增强
+                    </label>
+                  </>
                 ) : (
                   <>
                     <Field label={activeMode === 'smart' && kind === 'image' ? '产品名称 / 关键词' : '产品标题 / 关键词'}>
@@ -1342,7 +1396,9 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                     )}
                   </Field>
                   <Field label={kind === 'image' ? '数量' : '时长/数量'}>
-                    {kind === 'image' ? (
+                    {kind === 'image' && activeMode === 'original' ? (
+                      <TextInput disabled={isBusy} max={10} min={1} onChange={event => setOriginalCount(Math.max(1, Math.min(10, Number(event.target.value) || 1)))} type="number" value={originalCount} />
+                    ) : kind === 'image' ? (
                       <TextInput disabled value={activeMode === 'smart' ? `${SMART_IMAGE_OUTPUT_COUNT} 张` : `${IMAGE_RECREATE_OUTPUT_COUNT} 张`} />
                     ) : activeMode === 'smart' ? (
                       <div className="grid grid-cols-2 gap-2">
@@ -1377,6 +1433,9 @@ export function DeepSeenRecreationView({ kind }: { kind: RecreationKind }) {
                       setRecreationId('')
                       setPhase('input')
                       setEditedPrompts({})
+                      setOriginalScript('')
+                      setOriginalEnhancePrompt(false)
+                      setOriginalCount(1)
                     }}
                     type="button"
                     variant="outline"

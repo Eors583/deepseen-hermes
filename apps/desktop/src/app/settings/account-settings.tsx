@@ -58,7 +58,7 @@ export function AccountSettings() {
     <div className="mx-auto grid max-w-2xl gap-5 px-6 pb-8">
       <div>
         <h2 className="text-lg font-semibold">账号</h2>
-        <p className="mt-1 text-sm text-muted-foreground">管理当前 Herbound 登录状态。</p>
+        <p className="mt-1 text-sm text-muted-foreground">管理当前 Deepseen 登录状态。</p>
       </div>
 
       <section className="grid gap-4 rounded-lg border border-border bg-card p-4">

@@ -24,7 +24,7 @@ const routeProfile = computed(() => {
   return typeof value === 'string' && value.trim() ? value : null
 })
 
-const productTitle = 'Herbound'
+const productTitle = 'Deepseen'
 const tabTitle = computed(() => {
   if (route.name !== 'hermes.session') return productTitle
   return chatStore.activeSession?.title?.trim() || productTitle

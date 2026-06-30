@@ -88,7 +88,7 @@ def require_postgres_url() -> str:
     if not value:
         keys = ", ".join(POSTGRES_ENV_KEYS)
         raise RuntimeError(
-            "PostgreSQL is required for the Herbound FastAPI backend. "
+            "PostgreSQL is required for the Deepseen FastAPI backend. "
             f"Set one of: {keys}"
         )
     return value

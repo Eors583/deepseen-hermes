@@ -41,7 +41,7 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'NOUS_',
     name: 'Nous Portal',
-    description: '托管的 Herbound 与 Nous 系列模型',
+    description: '托管的 Deepseen 与 Nous 系列模型',
     docsUrl: 'https://portal.nousresearch.com',
     priority: 0
   },
@@ -442,7 +442,7 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
     personality: '新会话默认使用的助手表达风格。',
     showReasoning: '当后端返回推理内容时，在对话中展示推理区块。'
   },
-  timezone: 'Herbound 需要本地时间上下文时使用，留空则使用系统时区。',
+  timezone: 'Deepseen 需要本地时间上下文时使用，留空则使用系统时区。',
   agent: {
     imageInputMode: '控制图片附件如何发送给模型。',
     maxTurns: '单次任务中工具调用和模型思考的最大步数。'
@@ -461,7 +461,7 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
   },
   fileReadMaxChars: '单次读取文件时最多允许读取的字符数。',
   approvals: {
-    mode: 'Herbound 遇到需要确认的命令时如何处理。',
+    mode: 'Deepseen 遇到需要确认的命令时如何处理。',
     timeout: '审批提示等待用户确认的最长时间。'
   },
   security: {

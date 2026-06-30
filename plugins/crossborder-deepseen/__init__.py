@@ -9,6 +9,9 @@ import subprocess
 import sys
 import threading
 import time
+import unicodedata
+import zipfile
+from html import escape as _xml_escape
 from pathlib import Path
 from urllib.parse import quote
 from typing import Any, Callable
@@ -932,11 +935,599 @@ def _safe_report_part(value: str) -> str:
     return text[:64] or "result"
 
 
+def _docx_text_run(text: str) -> str:
+    return f"<w:r><w:t xml:space=\"preserve\">{_xml_escape(text)}</w:t></w:r>"
+
+
+def _docx_paragraph(text: str = "", *, style: str | None = None) -> str:
+    ppr = f"<w:pPr><w:pStyle w:val=\"{style}\"/></w:pPr>" if style else ""
+    return f"<w:p>{ppr}{_docx_text_run(text)}</w:p>"
+
+
+def _markdown_to_docx_document(markdown: str) -> str:
+    paragraphs: list[str] = []
+    for raw_line in markdown.splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            paragraphs.append(_docx_paragraph())
+            continue
+        if stripped.startswith("# "):
+            paragraphs.append(_docx_paragraph(stripped[2:].strip(), style="Heading1"))
+            continue
+        if stripped.startswith("## "):
+            paragraphs.append(_docx_paragraph(stripped[3:].strip(), style="Heading2"))
+            continue
+        if stripped.startswith("### "):
+            paragraphs.append(_docx_paragraph(stripped[4:].strip(), style="Heading3"))
+            continue
+        if stripped.startswith("- "):
+            paragraphs.append(_docx_paragraph(f"• {stripped[2:].strip()}"))
+            continue
+        paragraphs.append(_docx_paragraph(stripped))
+
+    body = "".join(paragraphs) or _docx_paragraph("DeepSeen 报告")
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" '
+        'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" '
+        'xmlns:o="urn:schemas-microsoft-com:office:office" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
+        'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" '
+        'xmlns:v="urn:schemas-microsoft-com:vml" '
+        'xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" '
+        'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" '
+        'xmlns:w10="urn:schemas-microsoft-com:office:word" '
+        'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+        'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" '
+        'xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" '
+        'xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" '
+        'xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" '
+        'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" '
+        'mc:Ignorable="w14 wp14">'
+        f"<w:body>{body}"
+        '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" '
+        'w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>'
+        "</w:body></w:document>"
+    )
+
+
+def _docx_styles_xml() -> str:
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        '<w:style w:type="paragraph" w:default="1" w:styleId="Normal">'
+        '<w:name w:val="Normal"/><w:qFormat/></w:style>'
+        '<w:style w:type="paragraph" w:styleId="Heading1">'
+        '<w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/>'
+        '<w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr>'
+        '<w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style>'
+        '<w:style w:type="paragraph" w:styleId="Heading2">'
+        '<w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/>'
+        '<w:pPr><w:spacing w:before="200" w:after="100"/></w:pPr>'
+        '<w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style>'
+        '<w:style w:type="paragraph" w:styleId="Heading3">'
+        '<w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/>'
+        '<w:pPr><w:spacing w:before="160" w:after="80"/></w:pPr>'
+        '<w:rPr><w:b/><w:sz w:val="22"/></w:rPr></w:style>'
+        "</w:styles>"
+    )
+
+
+def _write_docx_report(path: Path, markdown: str) -> None:
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as docx:
+        docx.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/word/document.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            '<Override PartName="/word/styles.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+            "</Types>",
+        )
+        docx.writestr(
+            "_rels/.rels",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+            'Target="word/document.xml"/></Relationships>',
+        )
+        docx.writestr(
+            "word/_rels/document.xml.rels",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>',
+        )
+        docx.writestr("word/styles.xml", _docx_styles_xml())
+        docx.writestr("word/document.xml", _markdown_to_docx_document(markdown))
+
+
+def _pdf_text_width_units(text: str) -> int:
+    width = 0
+    for char in text:
+        width += 2 if unicodedata.east_asian_width(char) in {"F", "W"} else 1
+    return width
+
+
+def _wrap_pdf_text(text: str, max_units: int) -> list[str]:
+    if not text:
+        return [""]
+    lines: list[str] = []
+    current = ""
+    current_units = 0
+    for token in re.split(r"(\s+)", text):
+        if not token:
+            continue
+        token_units = _pdf_text_width_units(token)
+        if current and current_units + token_units > max_units:
+            lines.append(current.rstrip())
+            current = token.lstrip()
+            current_units = _pdf_text_width_units(current)
+            continue
+        while token_units > max_units and not token.isspace():
+            remaining = max_units - current_units
+            if remaining <= 4:
+                lines.append(current.rstrip())
+                current = ""
+                current_units = 0
+                remaining = max_units
+            piece = ""
+            piece_units = 0
+            for char in token:
+                char_units = _pdf_text_width_units(char)
+                if piece_units + char_units > remaining:
+                    break
+                piece += char
+                piece_units += char_units
+            if piece:
+                current += piece
+                current_units += piece_units
+                token = token[len(piece):]
+                token_units = _pdf_text_width_units(token)
+                if token:
+                    lines.append(current.rstrip())
+                    current = ""
+                    current_units = 0
+            else:
+                break
+        if token:
+            current += token
+            current_units += _pdf_text_width_units(token)
+    if current.strip():
+        lines.append(current.rstrip())
+    return lines or [text]
+
+
+def _markdown_to_pdf_rows(markdown: str) -> list[tuple[str, int, bool]]:
+    rows: list[tuple[str, int, bool]] = []
+    for raw_line in markdown.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            rows.append(("", 11, False))
+            continue
+        size = 11
+        bold = False
+        text = stripped
+        if stripped.startswith("# "):
+            text = stripped[2:].strip()
+            size = 18
+            bold = True
+        elif stripped.startswith("## "):
+            text = stripped[3:].strip()
+            size = 15
+            bold = True
+        elif stripped.startswith("### "):
+            text = stripped[4:].strip()
+            size = 13
+            bold = True
+        elif stripped.startswith("- "):
+            text = f"• {stripped[2:].strip()}"
+        max_units = 58 if size >= 15 else 82
+        for wrapped in _wrap_pdf_text(text, max_units):
+            rows.append((wrapped, size, bold))
+    return rows
+
+
+def _pdf_hex_text(text: str) -> str:
+    return text.encode("utf-16-be", errors="replace").hex().upper()
+
+
+def _write_pdf_report(path: Path, markdown: str) -> None:
+    rows = _markdown_to_pdf_rows(markdown)
+    page_width = 595
+    page_height = 842
+    margin_x = 54
+    margin_top = 62
+    margin_bottom = 54
+    y = page_height - margin_top
+    pages: list[list[tuple[str, int, bool, int]]] = [[]]
+
+    for text, size, bold in rows:
+        line_height = max(15, int(size * 1.45))
+        if y - line_height < margin_bottom:
+            pages.append([])
+            y = page_height - margin_top
+        pages[-1].append((text, size, bold, y))
+        y -= line_height
+
+    objects: list[bytes] = []
+
+    def add_object(content: str | bytes) -> int:
+        data = content.encode("latin-1") if isinstance(content, str) else content
+        objects.append(data)
+        return len(objects)
+
+    catalog_id = add_object("PLACEHOLDER")
+    pages_id = add_object("PLACEHOLDER")
+    font_id = add_object(
+        "<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light "
+        "/Encoding /UniGB-UCS2-H /DescendantFonts [4 0 R] >>"
+    )
+    cid_font_id = add_object(
+        "<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light "
+        "/CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 2 >> "
+        "/DW 1000 >>"
+    )
+    assert cid_font_id == 4
+
+    page_ids: list[int] = []
+    for page_rows in pages:
+        stream_lines = ["BT"]
+        for text, size, bold, row_y in page_rows:
+            if not text:
+                continue
+            stream_lines.append(f"/F1 {size} Tf")
+            stream_lines.append(f"{margin_x} {row_y} Td")
+            stream_lines.append(f"<{_pdf_hex_text(text)}> Tj")
+            if bold:
+                stream_lines.append(f"0.35 0 Td <{_pdf_hex_text(text)}> Tj")
+            stream_lines.append(f"{-margin_x} {-row_y} Td")
+        stream_lines.append("ET")
+        stream = "\n".join(stream_lines).encode("latin-1")
+        content_id = add_object(b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream")
+        page_id = add_object(
+            f"<< /Type /Page /Parent {pages_id} 0 R /MediaBox [0 0 {page_width} {page_height}] "
+            f"/Resources << /Font << /F1 {font_id} 0 R >> >> /Contents {content_id} 0 R >>"
+        )
+        page_ids.append(page_id)
+
+    objects[catalog_id - 1] = f"<< /Type /Catalog /Pages {pages_id} 0 R >>".encode("latin-1")
+    kids = " ".join(f"{page_id} 0 R" for page_id in page_ids)
+    objects[pages_id - 1] = f"<< /Type /Pages /Kids [{kids}] /Count {len(page_ids)} >>".encode("latin-1")
+
+    output = bytearray(b"%PDF-1.4\n%\xE2\xE3\xCF\xD3\n")
+    offsets: list[int] = [0]
+    for index, obj in enumerate(objects, start=1):
+        offsets.append(len(output))
+        output.extend(f"{index} 0 obj\n".encode("ascii"))
+        output.extend(obj)
+        output.extend(b"\nendobj\n")
+    xref_offset = len(output)
+    output.extend(f"xref\n0 {len(objects) + 1}\n".encode("ascii"))
+    output.extend(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        output.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
+    output.extend(
+        f"trailer\n<< /Size {len(objects) + 1} /Root {catalog_id} 0 R >>\n"
+        f"startxref\n{xref_offset}\n%%EOF\n".encode("ascii")
+    )
+    path.write_bytes(bytes(output))
+
+
+_CLEAN_ACTION_LABELS = {
+    "smart_image": "图片智创",
+    "smart_video": "视频智创",
+    "image_recreation": "图片创作",
+    "video_recreation": "视频创作",
+    "product_report": "选品分析",
+    "competitor_single": "单竞品分析",
+    "competitor_multi": "多竞品分析",
+    "creator_analysis": "达人分析",
+    "creator_score": "达人评分",
+    "creator_rank": "达人排序",
+    "video_analysis": "视频分析",
+}
+
+_CLEAN_REPORT_LABELS = {
+    "productname": "产品名称",
+    "product_name": "产品名称",
+    "producturl": "商品链接",
+    "product_url": "商品链接",
+    "targetmarket": "目标市场",
+    "target_market": "目标市场",
+    "region": "地区",
+    "market": "市场",
+    "price": "价格",
+    "rating": "评分",
+    "soldcount": "销量",
+    "sold_count": "销量",
+    "videocount": "视频数",
+    "video_count": "视频数",
+    "creatorcount": "达人数量",
+    "creator_count": "达人数量",
+    "shopname": "店铺名称",
+    "shop_name": "店铺名称",
+    "brand": "品牌",
+    "category": "类目",
+    "categoryname": "类目",
+    "category_name": "类目",
+    "analysis": "分析",
+    "summary": "摘要",
+    "recommendation": "建议",
+    "recommendations": "建议",
+    "risk": "风险",
+    "risks": "风险",
+    "opportunity": "机会",
+    "opportunities": "机会",
+    "topproducts": "代表性商品",
+    "top_products": "代表性商品",
+    "products": "商品",
+    "competitors": "竞品",
+    "creators": "达人",
+    "score": "分数",
+    "rank": "排名",
+    "gmv": "GMV",
+    "fans": "粉丝数",
+    "followers": "粉丝数",
+    "engagementrate": "互动率",
+    "engagement_rate": "互动率",
+    "commissionrate": "佣金率",
+    "commission_rate": "佣金率",
+    "evidence": "依据",
+    "evidencelevel": "数据可靠性",
+    "evidence_level": "数据可靠性",
+    "sourcenotes": "数据来源说明",
+    "source_notes": "数据来源说明",
+}
+
+_REPORT_WRAPPER_KEYS = {
+    "data",
+    "payload",
+    "result",
+    "analysisresult",
+    "analysis_result",
+    "uservisiblefields",
+    "user_visible_fields",
+}
+
+
+def _clean_action_label(action: str) -> str:
+    return _CLEAN_ACTION_LABELS.get(action, _ACTION_LABELS.get(action, action))
+
+
+def _clean_business_label(key: str) -> str:
+    normalized = _report_key_id(key)
+    if normalized in _CLEAN_REPORT_LABELS:
+        return _CLEAN_REPORT_LABELS[normalized]
+    if key in _CLEAN_REPORT_LABELS:
+        return _CLEAN_REPORT_LABELS[key]
+    text = re.sub(r"[_-]+", " ", key).strip()
+    text = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", text)
+    return text[:1].upper() + text[1:] if text else "内容"
+
+
+def _clean_business_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "是" if value else "否"
+    text = _clean_report_text(value)
+    replacements = {
+        "sufficient": "数据可靠",
+        "partial": "部分可靠",
+        "insufficient": "数据有待考究",
+        "unknown": "未知",
+        "true": "是",
+        "false": "否",
+    }
+    return replacements.get(text.lower(), text)
+
+
+def _meaningful_report_root(payload: dict[str, Any]) -> Any:
+    for key in ("user_visible_fields", "result", "data", "analysisResult", "analysis_result"):
+        value = payload.get(key)
+        if isinstance(value, dict) and value:
+            nested = _meaningful_report_root(value)
+            return nested if nested else value
+    return payload
+
+
+def _render_business_details(value: Any, *, depth: int = 0, max_items: int = 25) -> list[str]:
+    if depth > 5:
+        text = _clean_business_value(value)
+        return [text] if text else []
+    if isinstance(value, dict):
+        lines: list[str] = []
+        for key, item in value.items():
+            key_text = str(key)
+            normalized = _report_key_id(key_text)
+            if _looks_like_noise_key(key_text) or normalized in {"raw", "hiddenfields", "metadata", "usage"}:
+                continue
+            rendered = _render_business_details(item, depth=depth + 1, max_items=max_items)
+            if not rendered:
+                continue
+            if normalized in _REPORT_WRAPPER_KEYS:
+                lines.extend(rendered)
+                continue
+            label = _clean_business_label(key_text)
+            if len(rendered) == 1 and not rendered[0].startswith(("-", "1.", "|")):
+                lines.append(f"- {label}: {rendered[0]}")
+            else:
+                lines.append(f"- {label}:")
+                lines.extend(f"  {line}" for line in rendered[:max_items])
+            if len(lines) >= max_items * 6:
+                break
+        return lines
+    if isinstance(value, list):
+        lines: list[str] = []
+        for index, item in enumerate(value[:max_items], 1):
+            rendered = _render_business_details(item, depth=depth + 1, max_items=max_items)
+            if not rendered:
+                continue
+            if len(rendered) == 1 and not rendered[0].startswith(("-", "|")):
+                lines.append(f"{index}. {rendered[0]}")
+            else:
+                lines.append(f"{index}.")
+                lines.extend(f"   {line}" for line in rendered[:max_items])
+        return lines
+    text = _clean_business_value(value)
+    return [text] if text else []
+
+
+def _build_business_report(action: str, markdown: str, payload: dict[str, Any]) -> str:
+    action_label = _clean_action_label(action)
+    root = _meaningful_report_root(payload)
+    lines = [
+        f"# DeepSeen {action_label}报告",
+        "",
+        f"- 生成时间: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"- 报告类型: {action_label}",
+        "",
+    ]
+
+    findings = _report_key_findings(action, markdown, payload, limit=6)
+    if findings:
+        lines.extend(["## 一、关键结论", "", *findings, ""])
+
+    readable = _clean_report_markdown(markdown)
+    if readable and len(readable) > 30:
+        lines.extend(["## 二、摘要", "", readable, ""])
+
+    details = _render_business_details(root, max_items=30)
+    if details:
+        lines.extend(["## 三、详细数据", "", *details, ""])
+
+    output_urls = payload.get("output_urls")
+    if isinstance(output_urls, list):
+        urls = [_clean_report_text(url) for url in output_urls if _clean_report_text(url)]
+        if urls:
+            lines.extend(["## 四、结果链接", "", *[f"- {url}" for url in urls], ""])
+
+    lines.extend(
+        [
+            "## 五、说明",
+            "",
+            "- 本报告仅保留面向业务决策的关键结论和代表性数据。",
+            "- 已过滤任务 ID、状态、内部字段、接口字段名和其他对用户无意义的技术信息。",
+            "- 具体数据以 DeepSeen 工具返回结果为准。",
+        ]
+    )
+    return "\n".join(lines).strip() + "\n"
+
+
+def _find_pdf_font() -> str | None:
+    candidates = [
+        os.environ.get("HERBOUND_PDF_FONT", ""),
+        "C:/Windows/Fonts/msyh.ttc",
+        "C:/Windows/Fonts/simhei.ttf",
+        "C:/Windows/Fonts/simsun.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).exists():
+            return candidate
+    return None
+
+
+def _draw_wrapped_text(draw: Any, text: str, font: Any, max_width: int) -> list[str]:
+    lines: list[str] = []
+    current = ""
+    for char in text:
+        candidate = current + char
+        if char == "\n":
+            if current:
+                lines.append(current)
+            current = ""
+            continue
+        if draw.textlength(candidate, font=font) <= max_width or not current:
+            current = candidate
+            continue
+        lines.append(current.rstrip())
+        current = char.lstrip()
+    if current:
+        lines.append(current.rstrip())
+    return lines or [""]
+
+
+def _write_pdf_report(path: Path, markdown: str) -> None:
+    from PIL import Image, ImageDraw, ImageFont
+
+    font_path = _find_pdf_font()
+    if not font_path:
+        raise RuntimeError("No PDF font available")
+
+    page_w, page_h = 1240, 1754
+    margin_x, margin_y = 96, 92
+    max_width = page_w - margin_x * 2
+    line_gap = 10
+    fonts = {
+        "h1": ImageFont.truetype(font_path, 34),
+        "h2": ImageFont.truetype(font_path, 26),
+        "body": ImageFont.truetype(font_path, 21),
+        "small": ImageFont.truetype(font_path, 18),
+    }
+    pages: list[Image.Image] = []
+    img = Image.new("RGB", (page_w, page_h), "white")
+    draw = ImageDraw.Draw(img)
+    y = margin_y
+
+    def new_page() -> None:
+        nonlocal img, draw, y
+        pages.append(img)
+        img = Image.new("RGB", (page_w, page_h), "white")
+        draw = ImageDraw.Draw(img)
+        y = margin_y
+
+    def write_line(text: str, font: Any, fill: str = "#111827", extra_before: int = 0, extra_after: int = 0) -> None:
+        nonlocal y
+        y += extra_before
+        for wrapped in _draw_wrapped_text(draw, text, font, max_width):
+            bbox = draw.textbbox((margin_x, y), wrapped or " ", font=font)
+            height = max(24, bbox[3] - bbox[1])
+            if y + height > page_h - margin_y:
+                new_page()
+            draw.text((margin_x, y), wrapped, font=font, fill=fill)
+            y += height + line_gap
+        y += extra_after
+
+    for raw in markdown.splitlines():
+        line = raw.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            y += 16
+            continue
+        if stripped.startswith("# "):
+            write_line(stripped[2:].strip(), fonts["h1"], "#0f172a", extra_after=18)
+        elif stripped.startswith("## "):
+            write_line(stripped[3:].strip(), fonts["h2"], "#111827", extra_before=18, extra_after=10)
+        elif stripped.startswith("- "):
+            write_line(f"• {stripped[2:].strip()}", fonts["body"], "#1f2937")
+        elif re.match(r"^\d+\.\s+", stripped):
+            write_line(stripped, fonts["body"], "#1f2937")
+        elif stripped.startswith("|"):
+            text = re.sub(r"\s*\|\s*", "  |  ", stripped.strip("| "))
+            if set(text.replace(" ", "").replace("|", "").replace("-", "")) == set():
+                continue
+            write_line(text, fonts["small"], "#374151")
+        else:
+            write_line(stripped, fonts["body"], "#1f2937")
+
+    pages.append(img)
+    first, rest = pages[0], pages[1:]
+    first.save(path, "PDF", resolution=150.0, save_all=True, append_images=rest)
+
+
 def _write_deepseen_report(action: str, markdown: str, payload: dict[str, Any]) -> Path | None:
     try:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        report_path = _deepseen_report_dir() / f"deepseen-{_safe_report_part(action)}-{timestamp}.md"
-        report_path.write_text(_build_business_report(action, markdown, payload), encoding="utf-8")
+        report_path = _deepseen_report_dir() / f"deepseen-{_safe_report_part(action)}-{timestamp}.pdf"
+        _write_pdf_report(report_path, _build_business_report(action, markdown, payload))
         return report_path
     except Exception:
         return None
@@ -958,6 +1549,33 @@ def _with_report_download(action: str, markdown: str, payload: dict[str, Any]) -
         f"{summary}\n\n"
         "### 附件下载\n"
         f"- [下载 DeepSeen 完整报告]({report_href})"
+    ).strip()
+
+
+def _compact_deepseen_summary(action: str, markdown: str, payload: dict[str, Any]) -> str:
+    action_label = _ACTION_LABELS.get(action, action)
+    findings = _report_key_findings(action, markdown, payload, limit=4)
+    return "\n".join(
+        [
+            f"**DeepSeen {action_label}完成**",
+            "",
+            *findings,
+            "",
+            "> 详细分析已整理成 PDF 附件，可在下方下载。",
+        ]
+    ).strip()
+
+
+def _with_report_download(action: str, markdown: str, payload: dict[str, Any]) -> str:
+    report_path = _write_deepseen_report(action, markdown, payload)
+    summary = _compact_deepseen_summary(action, markdown, payload)
+    if not report_path:
+        return summary
+    report_href = f"#media:{quote(str(report_path), safe='')}"
+    return (
+        f"{summary}\n\n"
+        "### 附件下载\n"
+        f"- [下载 DeepSeen PDF 报告]({report_href})"
     ).strip()
 
 

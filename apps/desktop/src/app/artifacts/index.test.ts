@@ -62,7 +62,7 @@ describe('collectArtifactsForSession', () => {
 
   it('indexes DeepSeen media attachments from assistant markdown', () => {
     const reportPath =
-      'D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\.hermes\\deepseen-reports\\deepseen-creator_analysis-20260625-104820.md'
+      'D:\\Users\\Administrator\\Desktop\\hermes-agent-main\\.hermes\\deepseen-reports\\deepseen-creator_analysis-20260625-104820.pdf'
 
     const artifacts = collectArtifactsForSession(makeSession({ id: 'session-3' }), [
       {
@@ -75,9 +75,9 @@ describe('collectArtifactsForSession', () => {
     expect(artifacts).toHaveLength(1)
     expect(artifacts[0]).toMatchObject({
       href:
-        'file:///D:/Users/Administrator/Desktop/hermes-agent-main/.hermes/deepseen-reports/deepseen-creator_analysis-20260625-104820.md',
+        'file:///D:/Users/Administrator/Desktop/hermes-agent-main/.hermes/deepseen-reports/deepseen-creator_analysis-20260625-104820.pdf',
       kind: 'file',
-      label: 'deepseen-creator_analysis-20260625-104820.md',
+      label: 'deepseen-creator_analysis-20260625-104820.pdf',
       value: reportPath
     })
   })

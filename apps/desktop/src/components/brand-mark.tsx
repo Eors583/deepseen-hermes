@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 
 const assetPath = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
 
-// Brand badge: Herbound mark on a white tile, identical in light/dark.
+// Brand badge: Deepseen mark on a white tile, identical in light/dark.
 // Fills the tile (softly rounded); size via className (default size-14).
 export function BrandMark({ className, ...props }: React.ComponentProps<'span'>) {
   return (

@@ -36,7 +36,13 @@ import {
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tip } from '@/components/ui/tooltip'
-import { searchSessions, type SessionInfo, type SessionSearchResult } from '@/hermes'
+import {
+  getDeepSeenCreditBalance,
+  searchSessions,
+  type DeepSeenCreditBalance,
+  type SessionInfo,
+  type SessionSearchResult
+} from '@/hermes'
 import { useI18n } from '@/i18n'
 import { profileColor } from '@/lib/profile-color'
 import { sessionMatchesSearch } from '@/lib/session-search'
@@ -92,7 +98,9 @@ import {
 
 import {
   type AppView,
+  ADS_DIAGNOSIS_ROUTE,
   ARTIFACTS_ROUTE,
+  GEO_OPTIMIZATION_ROUTE,
   IMAGE_RECREATION_ROUTE,
   MESSAGING_ROUTE,
   SKILLS_ROUTE,
@@ -128,6 +136,7 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
     icon: props => <Codicon name="robot" {...props} />,
     action: 'new-session'
   },
+  { id: 'messaging', label: '', icon: props => <Codicon name="comment" {...props} />, route: MESSAGING_ROUTE },
   {
     id: 'skills',
     label: '',
@@ -136,17 +145,28 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
   },
   {
     id: 'image-recreation',
-    label: '图片复刻',
+    label: '图片创作',
     icon: props => <Codicon name="file-media" {...props} />,
     route: IMAGE_RECREATION_ROUTE
   },
   {
     id: 'video-recreation',
-    label: '视频复刻',
+    label: '视频创作',
     icon: props => <Codicon name="device-camera-video" {...props} />,
     route: VIDEO_RECREATION_ROUTE
   },
-  { id: 'messaging', label: '', icon: props => <Codicon name="comment" {...props} />, route: MESSAGING_ROUTE },
+  {
+    id: 'ads-diagnosis',
+    label: '广告投放',
+    icon: props => <Codicon name="graph" {...props} />,
+    route: ADS_DIAGNOSIS_ROUTE
+  },
+  {
+    id: 'geo-optimization',
+    label: 'GEO优化',
+    icon: props => <Codicon name="compass" {...props} />,
+    route: GEO_OPTIMIZATION_ROUTE
+  },
   { id: 'artifacts', label: '', icon: props => <Codicon name="files" {...props} />, route: ARTIFACTS_ROUTE }
 ]
 
@@ -172,6 +192,18 @@ const parseGroupDndId = (id: string) =>
   id.startsWith(GROUP_DND_ID_PREFIX) ? id.slice(GROUP_DND_ID_PREFIX.length) : null
 
 const countLabel = (loaded: number, total: number) => (total > loaded ? `${loaded}/${total}` : String(loaded))
+
+const DEEPSEEN_PLAN_LABELS: Record<string, string> = {
+  FLAGSHIP: '旗舰版',
+  FREE: '免费版',
+  PRO: '专业版',
+  STARTER: '体验版',
+  ULTIMATE: '至尊版'
+}
+
+function formatCredits(value: number): string {
+  return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 }).format(Math.max(0, Math.floor(value)))
+}
 const sessionTime = (s: SessionInfo) => s.last_active || s.started_at || 0
 
 function orderByIds<T>(items: T[], getId: (item: T) => string, orderIds: string[]): T[] {
@@ -806,6 +838,10 @@ export function ChatSidebar({
 
                 const active =
                   (item.id === 'skills' && currentView === 'skills') ||
+                  (item.id === 'image-recreation' && currentView === 'image-recreation') ||
+                  (item.id === 'video-recreation' && currentView === 'video-recreation') ||
+                  (item.id === 'ads-diagnosis' && currentView === 'ads-diagnosis') ||
+                  (item.id === 'geo-optimization' && currentView === 'geo-optimization') ||
                   (item.id === 'messaging' && currentView === 'messaging') ||
                   (item.id === 'artifacts' && currentView === 'artifacts')
 
@@ -1066,11 +1102,106 @@ export function ChatSidebar({
 
         {contentVisible && (
           <div className="shrink-0 px-0.5 pb-1 pt-0.5">
+            <DeepSeenCreditUsage />
             <ProfileRail />
           </div>
         )}
       </SidebarContent>
     </Sidebar>
+  )
+}
+
+function DeepSeenCreditUsage() {
+  const [balance, setBalance] = useState<DeepSeenCreditBalance | null>(null)
+  const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  const refresh = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true)
+    try {
+      const next = await getDeepSeenCreditBalance()
+      setBalance(next)
+      setError(false)
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+
+    const load = async (showLoading = false) => {
+      if (showLoading) setLoading(true)
+      try {
+        const next = await getDeepSeenCreditBalance()
+        if (!mounted) return
+        setBalance(next)
+        setError(false)
+      } catch {
+        if (mounted) setError(true)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    void load(true)
+    const interval = window.setInterval(() => void load(false), 5 * 60 * 1000)
+    return () => {
+      mounted = false
+      window.clearInterval(interval)
+    }
+  }, [])
+
+  const freeCredits = Number(balance?.freeCredits || 0)
+  const paidCredits = Number(balance?.paidCredits || 0)
+  const totalCredits = freeCredits + paidCredits
+  const planLabel = balance?.planTier ? (DEEPSEEN_PLAN_LABELS[balance.planTier] || balance.planTier) : ''
+
+  return (
+    <div className="pb-1.5">
+      <div className="rounded-md border border-(--ui-stroke-tertiary) bg-(--ui-control-background) px-2 py-1.5 text-xs text-(--ui-text-secondary)">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-[0.6875rem] font-medium text-(--ui-text-tertiary)">积分用量</div>
+            {loading ? (
+              <div className="mt-1 h-4 w-24 animate-pulse rounded bg-(--ui-control-hover-background)" />
+            ) : error && !balance ? (
+              <div className="mt-0.5 truncate text-[0.75rem] text-(--ui-red)">读取失败</div>
+            ) : (
+              <div className="mt-0.5 flex items-baseline gap-1.5">
+                <span className="truncate text-[0.9375rem] font-semibold leading-none text-foreground">
+                  {formatCredits(totalCredits)}
+                </span>
+                <span className="shrink-0 text-[0.6875rem] text-(--ui-text-tertiary)">积分</span>
+              </div>
+            )}
+          </div>
+          <Tip label="刷新积分">
+            <Button
+              aria-label="刷新积分"
+              className="size-6 shrink-0 text-(--ui-text-tertiary) hover:bg-(--ui-control-hover-background) hover:text-foreground"
+              disabled={loading}
+              onClick={() => void refresh(true)}
+              size="icon-xs"
+              type="button"
+              variant="ghost"
+            >
+              <Codicon name="refresh" size="0.75rem" />
+            </Button>
+          </Tip>
+        </div>
+        {!loading && balance && (
+          <div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[0.6875rem] text-(--ui-text-tertiary)">
+            <span className="truncate">
+              免费 {formatCredits(freeCredits)} · 付费 {formatCredits(paidCredits)}
+            </span>
+            {planLabel && <span className="shrink-0">{planLabel}</span>}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -109,8 +109,10 @@ export type CommandDispatchResponse =
   | SendCommandDispatchResponse
 
 export type SidebarNavId =
+  | 'ads-diagnosis'
   | 'artifacts'
   | 'command-center'
+  | 'geo-optimization'
   | 'image-recreation'
   | 'messaging'
   | 'new-session'

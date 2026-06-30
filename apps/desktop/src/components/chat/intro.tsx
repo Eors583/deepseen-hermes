@@ -28,7 +28,7 @@ const FALLBACK_COPY: IntroCopy[] = [
     body: "Bring the code, question, or stuck part. I'll read the room before making changes."
   },
   {
-    headline: 'What should Herbound look at?',
+    headline: 'What should Deepseen look at?',
     body: "Send the task, failing path, or half-formed plan. I'll help turn it into action."
   },
   {
@@ -120,7 +120,7 @@ function fallbackCopyForPersonality(personalityKey: string): IntroCopy[] {
       body: "Send the task, file, or rough idea. I'll use your configured voice and keep the work grounded in this repo."
     },
     {
-      headline: `What does ${label} Herbound need to see?`,
+      headline: `What does ${label} Deepseen need to see?`,
       body: "Bring the context or the stuck part. I'll adapt to your configured personality."
     },
     {
@@ -128,7 +128,7 @@ function fallbackCopyForPersonality(personalityKey: string): IntroCopy[] {
       body: "Send the problem, file, or idea. I'll follow the personality you've configured."
     },
     {
-      headline: `What should ${label} Herbound tackle?`,
+      headline: `What should ${label} Deepseen tackle?`,
       body: "Drop the task here. I'll keep the work grounded in the repo."
     },
     {
@@ -154,7 +154,7 @@ function resolveCopy(personality?: string, seed?: number): IntroCopy {
 
 export function Intro({ personality, seed }: IntroProps) {
   const [mountSeed] = useState(() => Math.floor(Math.random() * 100000))
-  const copy = resolveCopy(personality, mountSeed + (seed ?? 0))
+  resolveCopy(personality, mountSeed + (seed ?? 0))
 
   return (
     <div
@@ -162,7 +162,12 @@ export function Intro({ personality, seed }: IntroProps) {
       data-slot="aui_intro"
     >
       <div className="w-full min-w-0">
-        <p className="m-0 text-center leading-normal tracking-tight">{copy.body}</p>
+        <h1 className="m-0 text-center text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+          无疆智体 Deepseen
+        </h1>
+        <p className="m-0 mt-3 text-center text-base leading-normal tracking-normal text-muted-foreground">
+          专为跨境人而生的智能体
+        </p>
       </div>
     </div>
   )

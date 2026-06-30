@@ -374,7 +374,7 @@ const BOOT_FAKE_STEP_MS = (() => {
   if (!Number.isFinite(raw) || raw <= 0) return 650
   return Math.max(120, raw)
 })()
-const APP_NAME = 'Herbound'
+const APP_NAME = 'Deepseen'
 const TITLEBAR_HEIGHT = 34
 const MACOS_TRAFFIC_LIGHTS_HEIGHT = 14
 const WINDOW_BUTTON_POSITION = {
@@ -427,6 +427,7 @@ function getTitleBarOverlayOptions() {
 const MEDIA_MIME_TYPES = {
   '.avi': 'video/x-msvideo',
   '.bmp': 'image/bmp',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.flac': 'audio/flac',
   '.gif': 'image/gif',
   '.jpeg': 'image/jpeg',
@@ -438,6 +439,7 @@ const MEDIA_MIME_TYPES = {
   '.mp4': 'video/mp4',
   '.ogg': 'audio/ogg',
   '.opus': 'audio/ogg; codecs=opus',
+  '.pdf': 'application/pdf',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.wav': 'audio/wav',
@@ -2685,10 +2687,23 @@ async function fetchMultipartFile(url, token, options = {}) {
 
   const filename = path.basename(String(options.filename || resolvedPath)).replace(/[\r\n"]/g, '_')
   const uploadType = String(options.type || 'recreation').replace(/[\r\n"]/g, '_')
-  const boundary = `----HerboundDeepSeen${crypto.randomBytes(12).toString('hex')}`
+  const fields = options.fields && typeof options.fields === 'object' ? options.fields : {}
+  const boundary = `----DeepseenDeepSeen${crypto.randomBytes(12).toString('hex')}`
   const fileBuffer = await fs.promises.readFile(resolvedPath)
-  const chunks = [
-    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="type"\r\n\r\n${uploadType}\r\n`),
+  const chunks = []
+  const appendField = (name, value) => {
+    if (value === undefined || value === null) return
+    chunks.push(
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="${String(name).replace(/[\r\n"]/g, '_')}"\r\n\r\n${String(value)}\r\n`
+      )
+    )
+  }
+  appendField('type', uploadType)
+  for (const [key, value] of Object.entries(fields)) {
+    appendField(key, value)
+  }
+  chunks.push(
     Buffer.from(
       `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
@@ -2696,7 +2711,7 @@ async function fetchMultipartFile(url, token, options = {}) {
     ),
     fileBuffer,
     Buffer.from(`\r\n--${boundary}--\r\n`)
-  ]
+  )
   const body = Buffer.concat(chunks)
   const parsed = new URL(url)
   const client = parsed.protocol === 'https:' ? https : http
@@ -2770,16 +2785,15 @@ function deepSeenAppApiBases(connection) {
     bases.push(explicit)
   }
 
-  // Production desktop builds usually talk to the Herbound FastAPI gateway on
-  // the same public host as the DeepSeen web API.  If the gateway has not been
-  // redeployed with the upload proxy yet, fall back to the DeepSeen app API on
-  // that host before trying the canonical SaaS domain.
+  // Keep the desktop recreation flow aligned with the DeepSeen web frontend:
+  // call the DeepSeen app API directly first, and only use the Deepseen
+  // FastAPI proxy as a compatibility fallback for older deployments.
+  bases.push('https://deepseen.ai/api')
+
   try {
     const remote = new URL(connection?.baseUrl || '')
     bases.push(`${remote.protocol}//${remote.host}/api`)
   } catch {}
-
-  bases.push('https://deepseen.ai/api')
 
   return [...new Set(bases.map(base => base.replace(/\/+$/, '')).filter(Boolean))]
 }
@@ -4085,7 +4099,7 @@ async function mintGatewayWsTicket(baseUrl) {
 async function mintGatewayWsTicketWithAuthToken(baseUrl, authToken) {
   const token = (typeof authToken === 'string' ? authToken.trim() : '') || desktopJwtAuthToken || ''
   if (!token) {
-    const err = new Error('Herbound login token is required before opening the gateway WebSocket.')
+    const err = new Error('Deepseen login token is required before opening the gateway WebSocket.')
     err.needsLogin = true
     rememberLog('[auth] cannot mint JWT WebSocket ticket: missing renderer/main auth token')
     throw err
@@ -4234,7 +4248,7 @@ function readDesktopConnectionConfig() {
 
     if (parsed && typeof parsed === 'object') {
       const remote = parsed.remote && typeof parsed.remote === 'object' ? parsed.remote : {}
-      // authMode lives on the remote sub-object: 'jwt' (Herbound/FastAPI
+      // authMode lives on the remote sub-object: 'jwt' (Deepseen/FastAPI
       // login), 'oauth' (cookie + ws-ticket), or 'token' (legacy static
       // session token). Default to 'token' for old user-saved configs.
       remote.authMode = normAuthMode(remote.authMode)
@@ -5838,6 +5852,30 @@ ipcMain.handle('hermes:deepseen:upload-file', async (_event, request) => {
   }
 })
 
+ipcMain.handle('hermes:deepseen:ad-diagnosis-file', async (_event, request) => {
+  const connection = await ensureBackend(request?.profile)
+  let lastError = null
+  for (const base of deepSeenAppApiBases(connection)) {
+    try {
+      rememberLog(`[deepseen] POST /ad-diagnosis/analyze via ${base} multipart auth=${request?.authToken ? 'bearer' : connection?.token ? 'session-token' : 'none'}`)
+      return await fetchMultipartFile(`${base}/ad-diagnosis/analyze`, connection.token, {
+        authToken: request?.authToken,
+        fields: request?.fields || {},
+        filePath: request?.filePath,
+        filename: request?.filename,
+        timeoutMs: request?.timeoutMs || 300_000,
+        type: 'ad-diagnosis'
+      })
+    } catch (error) {
+      lastError = error
+      if (!shouldTryNextDeepSeenBase(error)) {
+        throw error
+      }
+    }
+  }
+  throw lastError || new Error('DeepSeen ad diagnosis endpoint unavailable')
+})
+
 ipcMain.handle('hermes:notify', (_event, payload) => {
   if (!Notification.isSupported()) return false
   new Notification({
@@ -5884,15 +5922,18 @@ ipcMain.handle('hermes:readFileText', async (_event, filePath) => {
   }
 })
 
+ipcMain.handle('hermes:listGeneratedResults', async () => ({
+  items: await listGeneratedResultsForIpc()
+}))
+
 async function resolveDeepSeenReportFallback(filePath) {
   const raw = String(filePath || '')
-  const normalized = raw.replace(/\\/g, '/')
-  if (!normalized.includes('/deepseen-reports/')) {
+  const requestedName = path.basename(raw)
+  if (!/^deepseen-.+\.(?:pdf|docx|md)$/i.test(requestedName)) {
     return ''
   }
 
-  const requestedName = path.basename(raw)
-  const actionPrefix = requestedName.replace(/-\d{8}-\d{6}\.md$/i, '')
+  const actionPrefix = requestedName.replace(/-\d{8}-\d{6}\.(?:pdf|docx|md)$/i, '')
   const candidates = [
     path.join(HERMES_HOME, 'deepseen-reports'),
     path.join(app.getPath('appData'), 'hermes', 'deepseen-reports'),
@@ -5904,11 +5945,11 @@ async function resolveDeepSeenReportFallback(filePath) {
     try {
       const entries = await fs.promises.readdir(dir, { withFileTypes: true })
       for (const entry of entries) {
-        if (!entry.isFile() || !entry.name.endsWith('.md')) {
+        if (!entry.isFile() || !/\.pdf$/i.test(entry.name)) {
           continue
         }
 
-        if (entry.name !== requestedName && !entry.name.startsWith(`${actionPrefix}-`)) {
+        if (!entry.name.startsWith(`${actionPrefix}-`)) {
           continue
         }
 
@@ -5925,12 +5966,337 @@ async function resolveDeepSeenReportFallback(filePath) {
   return matches[0]?.fullPath || ''
 }
 
+const GENERATED_RESULTS_REGISTRY_PATH = path.join(app.getPath('userData'), 'generated-results.json')
+const GENERATED_RESULT_EXT_RE =
+  /\.(?:png|jpe?g|gif|webp|svg|bmp|pdf|docx?|xlsx?|pptx?|txt|json|md|csv|zip|rar|7z|tar|gz|mp3|wav|mp4|mov)$/i
+
+function generatedResultKind(filePath) {
+  return /\.(?:png|jpe?g|gif|webp|svg|bmp)$/i.test(path.extname(filePath)) ? 'image' : 'file'
+}
+
+async function readGeneratedResultsRegistry() {
+  try {
+    const raw = await fs.promises.readFile(GENERATED_RESULTS_REGISTRY_PATH, 'utf8')
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed?.items) ? parsed.items : []
+  } catch {
+    return []
+  }
+}
+
+async function writeGeneratedResultsRegistry(items) {
+  await fs.promises.mkdir(path.dirname(GENERATED_RESULTS_REGISTRY_PATH), { recursive: true })
+  await fs.promises.writeFile(
+    GENERATED_RESULTS_REGISTRY_PATH,
+    JSON.stringify({ items: items.slice(0, 500), updatedAt: Date.now(), version: 1 }, null, 2),
+    'utf8'
+  )
+}
+
+async function rememberGeneratedResult(filePath, source = 'download') {
+  const resolvedPath = path.resolve(String(filePath || ''))
+  if (!resolvedPath || !GENERATED_RESULT_EXT_RE.test(resolvedPath)) {
+    return
+  }
+
+  let stat
+  try {
+    stat = await fs.promises.stat(resolvedPath)
+  } catch {
+    return
+  }
+
+  if (!stat.isFile()) {
+    return
+  }
+
+  const items = await readGeneratedResultsRegistry()
+  const normalized = path.normalize(resolvedPath).toLowerCase()
+  const nextItem = {
+    kind: generatedResultKind(resolvedPath),
+    name: path.basename(resolvedPath),
+    path: resolvedPath,
+    size: stat.size,
+    source,
+    timestamp: Date.now()
+  }
+
+  const next = [nextItem, ...items.filter(item => path.normalize(String(item?.path || '')).toLowerCase() !== normalized)]
+  await writeGeneratedResultsRegistry(next)
+}
+
+async function scanGeneratedResultDir(dir, source) {
+  const results = []
+  try {
+    const entries = await fs.promises.readdir(dir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isFile() || !GENERATED_RESULT_EXT_RE.test(entry.name)) {
+        continue
+      }
+
+      const fullPath = path.join(dir, entry.name)
+      const lowerName = entry.name.toLowerCase()
+      if (!lowerName.startsWith('deepseen-') && source !== 'saved') {
+        continue
+      }
+
+      const stat = await fs.promises.stat(fullPath)
+      results.push({
+        kind: generatedResultKind(fullPath),
+        name: entry.name,
+        path: fullPath,
+        size: stat.size,
+        source,
+        timestamp: stat.mtimeMs
+      })
+    }
+  } catch {
+    return []
+  }
+
+  return results
+}
+
+async function listGeneratedResultsForIpc() {
+  const registryItems = await readGeneratedResultsRegistry()
+  const registry = []
+
+  for (const item of registryItems) {
+    const filePath = String(item?.path || '')
+    if (!filePath || !GENERATED_RESULT_EXT_RE.test(filePath)) {
+      continue
+    }
+
+    try {
+      const stat = await fs.promises.stat(filePath)
+      if (!stat.isFile()) {
+        continue
+      }
+      registry.push({
+        kind: item.kind === 'image' ? 'image' : 'file',
+        name: path.basename(filePath),
+        path: filePath,
+        size: stat.size,
+        source: item.source || 'saved',
+        timestamp: Number(item.timestamp || stat.mtimeMs || Date.now())
+      })
+    } catch {
+      // Saved file was moved or deleted; skip it without failing the page.
+    }
+  }
+
+  const dirs = [
+    path.join(HERMES_HOME, 'deepseen-reports'),
+    path.join(app.getPath('appData'), 'hermes', 'deepseen-reports'),
+    path.join(app.getPath('userData'), 'deepseen-reports'),
+    ...(IS_WINDOWS ? ['D:\\Deepseen'] : []),
+    path.join(app.getPath('downloads'), 'Deepseen')
+  ]
+
+  const scanned = (await Promise.all(dirs.map(dir => scanGeneratedResultDir(dir, 'deepseen')))).flat()
+  const byPath = new Map()
+
+  for (const item of [...registry, ...scanned]) {
+    const key = path.normalize(item.path).toLowerCase()
+    const existing = byPath.get(key)
+    if (!existing || item.timestamp > existing.timestamp) {
+      byPath.set(key, item)
+    }
+  }
+
+  return Array.from(byPath.values()).sort((a, b) => b.timestamp - a.timestamp).slice(0, 500)
+}
+
+function escapeReportHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function markdownInlineToHtml(value) {
+  let html = escapeReportHtml(value)
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, href) => {
+    const safeHref = escapeReportHtml(href)
+    return `<a href="${safeHref}">${label}</a>`
+  })
+  return html
+}
+
+function markdownToReportHtml(markdown) {
+  const lines = String(markdown || '').replace(/\r\n/g, '\n').split('\n')
+  const parts = []
+  let listOpen = false
+
+  const closeList = () => {
+    if (listOpen) {
+      parts.push('</ul>')
+      listOpen = false
+    }
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+    if (!line) {
+      closeList()
+      parts.push('<div class="spacer"></div>')
+      continue
+    }
+
+    if (/^#{1,3}\s+/.test(line)) {
+      closeList()
+      const level = Math.min(3, line.match(/^#+/)?.[0]?.length || 1)
+      const text = line.replace(/^#{1,3}\s+/, '')
+      parts.push(`<h${level}>${markdownInlineToHtml(text)}</h${level}>`)
+      continue
+    }
+
+    if (/^[-*]\s+/.test(line)) {
+      if (!listOpen) {
+        parts.push('<ul>')
+        listOpen = true
+      }
+      parts.push(`<li>${markdownInlineToHtml(line.replace(/^[-*]\s+/, ''))}</li>`)
+      continue
+    }
+
+    if (/^\d+\.\s+/.test(line)) {
+      closeList()
+      parts.push(`<p>${markdownInlineToHtml(line)}</p>`)
+      continue
+    }
+
+    closeList()
+    parts.push(`<p>${markdownInlineToHtml(line)}</p>`)
+  }
+
+  closeList()
+  return parts.join('\n')
+}
+
+function markdownPdfDocument(markdown) {
+  const body = markdownToReportHtml(markdown)
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    @page { size: A4; margin: 22mm 20mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #111827;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.72;
+    }
+    h1 {
+      margin: 0 0 18px;
+      color: #0f172a;
+      font-size: 24px;
+      line-height: 1.3;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin: 24px 0 10px;
+      color: #111827;
+      font-size: 17px;
+      line-height: 1.45;
+      font-weight: 700;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      font-weight: 700;
+    }
+    p { margin: 7px 0; }
+    ul { margin: 7px 0 7px 18px; padding: 0; }
+    li { margin: 3px 0; padding-left: 2px; }
+    a { color: #2563eb; text-decoration: none; overflow-wrap: anywhere; }
+    code {
+      border-radius: 4px;
+      background: #f3f4f6;
+      padding: 1px 4px;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 12px;
+    }
+    .spacer { height: 4px; }
+  </style>
+</head>
+<body>${body || '<h1>DeepSeen 报告</h1><p>暂无可导出的内容。</p>'}</body>
+</html>`
+}
+
+ipcMain.handle('hermes:saveMarkdownPdfAs', async (_event, payload = {}) => {
+  const markdown = String(payload?.markdown || '').trim()
+  const requestedName = String(payload?.name || 'deepseen-report.pdf').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+  const defaultName = requestedName.replace(/\.(?:md|docx)$/i, '.pdf').replace(/\.pdf$/i, '') + '.pdf'
+  if (!markdown) {
+    throw new Error('No report content available')
+  }
+
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: defaultName,
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    title: '保存附件'
+  })
+
+  if (result.canceled || !result.filePath) {
+    return { canceled: true, path: '' }
+  }
+
+  const pdfWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    }
+  })
+
+  try {
+    const html = markdownPdfDocument(markdown)
+    await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+    const pdf = await pdfWindow.webContents.printToPDF({
+      marginsType: 0,
+      pageSize: 'A4',
+      printBackground: true
+    })
+    await fs.promises.writeFile(result.filePath, pdf)
+    await rememberGeneratedResult(result.filePath, 'deepseen-pdf')
+    return { canceled: false, path: result.filePath }
+  } finally {
+    if (!pdfWindow.isDestroyed()) {
+      pdfWindow.close()
+    }
+  }
+})
+
 ipcMain.handle('hermes:saveFileAs', async (_event, filePath) => {
   let resolvedPath
+  const legacyDeepSeenReport = /^deepseen-.+\.(?:docx|md)$/i.test(path.basename(String(filePath || '')))
   try {
-    ;({ resolvedPath } = await resolveReadableFileForIpc(filePath, {
-      purpose: 'File download'
-    }))
+    if (legacyDeepSeenReport) {
+      const fallbackPath = await resolveDeepSeenReportFallback(filePath)
+      if (fallbackPath) {
+        ;({ resolvedPath } = await resolveReadableFileForIpc(fallbackPath, {
+          purpose: 'File download'
+        }))
+      }
+    }
+    if (!resolvedPath) {
+      ;({ resolvedPath } = await resolveReadableFileForIpc(filePath, {
+        purpose: 'File download'
+      }))
+    }
   } catch (error) {
     const fallbackPath = await resolveDeepSeenReportFallback(filePath)
     if (!fallbackPath) {
@@ -5950,6 +6316,7 @@ ipcMain.handle('hermes:saveFileAs', async (_event, filePath) => {
   }
 
   await fs.promises.copyFile(resolvedPath, result.filePath)
+  await rememberGeneratedResult(result.filePath, 'download')
   return { canceled: false, path: result.filePath }
 })
 
@@ -5972,6 +6339,7 @@ ipcMain.handle('hermes:saveDataUrlAs', async (_event, payload = {}) => {
   }
 
   await fs.promises.writeFile(result.filePath, Buffer.from(match[2], 'base64'))
+  await rememberGeneratedResult(result.filePath, 'download')
   return { canceled: false, path: result.filePath }
 })
 

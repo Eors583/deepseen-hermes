@@ -1,3 +1,5 @@
+import { HERBOUND_PRODUCTION_MODEL_LABELS } from '@/lib/herbound-production-models'
+
 const REASONING_LABELS: Record<string, string> = {
   none: 'Off',
   minimal: 'Min',
@@ -38,6 +40,11 @@ const VARIANT_TAGS: ReadonlyArray<readonly [RegExp, string]> = [
 const titleCase = (text: string): string => text.replace(/\b\w/g, char => char.toUpperCase()).trim()
 
 function prettifyBase(base: string): string {
+  const override = HERBOUND_PRODUCTION_MODEL_LABELS.get(base)
+  if (override) {
+    return override
+  }
+
   if (/^claude-/i.test(base)) {
     return titleCase(base.replace(/^claude-/i, '').replace(/-/g, ' '))
   }

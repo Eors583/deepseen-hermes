@@ -189,7 +189,7 @@ async function checkRuntime(ctx: OnboardingContext): Promise<RuntimeReadinessRes
 }
 
 function notifyReady(provider: string) {
-  notify({ kind: 'success', title: 'Herbound 已就绪', message: `${provider} 已连接。` })
+  notify({ kind: 'success', title: 'Deepseen 已就绪', message: `${provider} 已连接。` })
 }
 
 // Human-friendly labels for tools auto-routed through the Nous Tool Gateway,
@@ -360,8 +360,8 @@ function providerResolutionFailure(reason: null | string) {
   const detail = reason?.trim()
 
   return detail
-    ? `已经连接，但 Herbound 仍未找到可用的模型服务。${detail}`
-    : '已经连接，但 Herbound 仍未找到可用的模型服务。'
+    ? `已经连接，但 Deepseen 仍未找到可用的模型服务。${detail}`
+    : '已经连接，但 Deepseen 仍未找到可用的模型服务。'
 }
 
 async function refreshProviders() {
@@ -722,7 +722,7 @@ export async function recheckExternalSignin(ctx: OnboardingContext) {
       provider,
       message:
         reason?.trim() ||
-        `Herbound 仍无法连接 ${provider.name}。请先在终端运行 \`${provider.cli_command}\`。`
+        `Deepseen 仍无法连接 ${provider.name}。请先在终端运行 \`${provider.cli_command}\`。`
     })
   )
 }
@@ -837,7 +837,7 @@ export async function saveOnboardingLocalEndpoint(baseUrl: string, apiKey: strin
     if (!runtime.ready) {
       const detail = (runtime.reason ?? '').trim()
 
-      return { ok: false, message: detail || `已保存，但 Herbound 仍无法连接 ${url}。` }
+      return { ok: false, message: detail || `已保存，但 Deepseen 仍无法连接 ${url}。` }
     }
 
     notifyReady('本地或自定义接口')

@@ -46,12 +46,12 @@ PUBLIC_API_PATHS: frozenset[str] = frozenset({
     # Read-only theme + plugin manifests for the dashboard skin engine.
     "/api/dashboard/themes",
     "/api/dashboard/plugins",
-    # Herbound web UI username/password login. These are public by necessity;
+    # Deepseen web UI username/password login. These are public by necessity;
     # all other /api/auth/* routes require a valid user JWT or dashboard token.
     "/api/auth/status",
     "/api/auth/login",
     "/api/auth/register",
-    # The route validates either a dashboard cookie session or a Herbound Web UI
+    # The route validates either a dashboard cookie session or a Deepseen Web UI
     # bearer JWT itself. Keeping it out of the outer gate lets split frontend
     # deployments mint WebSocket tickets without requiring dashboard cookies.
     "/api/auth/ws-ticket",

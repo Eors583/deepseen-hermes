@@ -2673,6 +2673,22 @@ OPTIONAL_ENV_VARS = {
         "category": "provider",
         "advanced": True,
     },
+    "KIE_API_KEY": {
+        "description": "KIE.AI API key for model-specific chat endpoints",
+        "prompt": "KIE.AI API key",
+        "url": "https://kie.ai/",
+        "password": True,
+        "category": "provider",
+        "advanced": True,
+    },
+    "KIE_BASE_URL": {
+        "description": "KIE.AI base URL override",
+        "prompt": "KIE.AI base URL (leave empty for default)",
+        "url": None,
+        "password": False,
+        "category": "provider",
+        "advanced": True,
+    },
     "KIMI_API_KEY": {
         "description": "Kimi / Moonshot API key",
         "prompt": "Kimi API key",
@@ -2792,7 +2808,7 @@ OPTIONAL_ENV_VARS = {
         "category": "provider",
     },
     "DEEPSEEN_API_KEY": {
-        "description": "DeepSeen SDK API key for Herbound cross-border ecommerce tools",
+        "description": "DeepSeen SDK API key for Deepseen cross-border ecommerce tools",
         "prompt": "DeepSeen SDK API Key",
         "url": "https://deepseen.ai/",
         "password": True,

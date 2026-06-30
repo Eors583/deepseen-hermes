@@ -101,22 +101,25 @@ export function AppShell({
   const leftEdgePaneOpen =
     !isSecondaryWindow() && ((!narrowViewport && collapsibleLeftPaneOpen) || persistentLeftPaneOpen)
 
+  const LEFT_TOOL_COUNT = 3
+  const titlebarLeftClusterWidth = titlebarControls.left + LEFT_TOOL_COUNT * 24 + 12
   const titlebarContentInset = leftEdgePaneOpen
     ? 0
-    : titlebarControls.left + TITLEBAR_HEIGHT + Math.round(TITLEBAR_HEIGHT / 2)
+    : titlebarLeftClusterWidth
 
-  // The static system cluster (brand mark, haptics, keybinds, settings,
-  // right-sidebar) is hardcoded in TitlebarControls. Pane-supplied tools
-  // (preview's group) render in a separate cluster anchored further left.
+  // The static system cluster (haptics, keybinds, settings, right-sidebar) is
+  // hardcoded in TitlebarControls. Pane-supplied tools (preview's group) render
+  // in a separate cluster anchored further left.
   //
   // Width math has to include the `gap-x-1` (0.25rem) between buttons:
   // N buttons + (N - 1) inner gaps, plus one extra 0.25rem of breathing room
   // between the pane-tool cluster and the system cluster so they don't sit
   // flush against each other. Modeled as N gaps (N - 1 inner + 1 trailing)
   // to keep the formula generic for any pane-tool count.
-  const SYSTEM_TOOL_COUNT = 5
+  const SYSTEM_TOOL_COUNT = 4
   const paneToolCount = titlebarTools?.filter(tool => !tool.hidden).length ?? 0
   const systemToolsWidth = `calc(${SYSTEM_TOOL_COUNT} * (var(--titlebar-control-size) + 0.25rem))`
+  const leftTitlebarControlsWidth = `calc(var(--titlebar-controls-left) + ${LEFT_TOOL_COUNT} * (var(--titlebar-control-size) + 0.25rem) + 0.75rem)`
 
   const fileBrowserWidth =
     fileBrowserWidthOverride !== undefined ? `${fileBrowserWidthOverride}px` : FILE_BROWSER_DEFAULT_WIDTH
@@ -172,7 +175,8 @@ export function AppShell({
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute top-0 z-1 h-(--titlebar-height) left-[calc(var(--titlebar-controls-left)+(var(--titlebar-control-size)*2)+0.75rem)] right-[calc(var(--titlebar-tools-right)+var(--titlebar-tools-width)+0.75rem)] [-webkit-app-region:drag]"
+            className="pointer-events-none absolute top-0 z-1 h-(--titlebar-height) right-[calc(var(--titlebar-tools-right)+var(--titlebar-tools-width)+0.75rem)] [-webkit-app-region:drag]"
+            style={{ left: leftTitlebarControlsWidth }}
           />
 
           {children}

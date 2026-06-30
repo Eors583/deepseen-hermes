@@ -6,7 +6,7 @@ import type { ModelOptionProvider, ModelOptionsResponse, ModelPricing } from '@/
 
 import type { HermesGateway } from '../hermes'
 import { getGlobalModelOptions } from '../hermes'
-import { filterHerboundProductionModelOptions } from '../lib/production-model-filter'
+import { filterDeepseenProductionModelOptions } from '../lib/production-model-filter'
 import { cn } from '../lib/utils'
 import { startManualOnboarding } from '../store/onboarding'
 
@@ -68,7 +68,7 @@ export function ModelPickerDialog({
     enabled: open
   })
 
-  const filteredModelOptions = filterHerboundProductionModelOptions(modelOptions.data) ?? modelOptions.data
+  const filteredModelOptions = filterDeepseenProductionModelOptions(modelOptions.data) ?? modelOptions.data
   const providers = filteredModelOptions?.providers ?? []
   const optionsModel = String(filteredModelOptions?.model ?? currentModel ?? '')
   const optionsProvider = String(filteredModelOptions?.provider ?? currentProvider ?? '')

@@ -10,7 +10,7 @@
  * main.cjs requires these and wires them into the electron-coupled IPC layer.
  *
  * Background on the two auth models a remote gateway can use:
- *   - 'jwt': Herbound/FastAPI production auth. REST uses the user's login JWT;
+ *   - 'jwt': Deepseen/FastAPI production auth. REST uses the user's login JWT;
  *     WS upgrades mint a single-use `?ticket=` with that JWT.
  *   - 'token': legacy static dashboard session token. REST uses an
  *     `X-Hermes-Session-Token` header; WS uses `?token=`.

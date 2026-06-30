@@ -763,6 +763,14 @@ def init_agent(
                 client_kwargs["default_headers"] = {
                     "User-Agent": "claude-code/0.1.0",
                 }
+            elif base_url_host_matches(effective_base, "api.kie.ai"):
+                client_kwargs["default_headers"] = {
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/126.0.0.0 Safari/537.36 Deepseen/0.15.1"
+                    )
+                }
             elif base_url_host_matches(effective_base, "portal.qwen.ai"):
                 client_kwargs["default_headers"] = _ra()._qwen_portal_headers()
             elif base_url_host_matches(effective_base, "chatgpt.com"):

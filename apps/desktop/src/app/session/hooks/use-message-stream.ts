@@ -619,7 +619,7 @@ export function useMessageStream({
 
       if (document.hidden && sessionId === activeSessionIdRef.current) {
         void window.hermesDesktop?.notify({
-          title: 'Herbound finished',
+          title: 'Deepseen finished',
           body: text.slice(0, 140) || 'The response is ready.'
         })
       }
@@ -633,7 +633,7 @@ export function useMessageStream({
         const streamId = state.streamId ?? `assistant-error-${Date.now()}`
         const groupId = state.pendingBranchGroup ?? undefined
         const prev = state.messages
-        const error = errorMessage.trim() || 'Herbound reported an error'
+        const error = errorMessage.trim() || 'Deepseen reported an error'
 
         const nextMessages = prev.some(m => m.id === streamId)
           ? prev.map(message =>
@@ -990,7 +990,7 @@ export function useMessageStream({
           })
         }
       } else if (event.type === 'error') {
-        const errorMessage = payload?.message || 'Herbound reported an error'
+        const errorMessage = payload?.message || 'Deepseen reported an error'
         const looksLikeProviderSetup = isProviderSetupErrorMessage(errorMessage)
 
         // A turn that errors out has also ended — drop any open blocking prompt
@@ -1005,7 +1005,7 @@ export function useMessageStream({
         } else if (isActiveEvent) {
           notify({
             kind: 'error',
-            title: 'Herbound error',
+            title: 'Deepseen error',
             message: errorMessage
           })
         }

@@ -1,7 +1,7 @@
 import { JsonRpcGatewayClient } from '@hermes/shared'
 
 import { getStoredAuthToken, isAuthTokenExpired } from '@/lib/auth-token'
-import { filterHerboundProductionModelOptions } from '@/lib/production-model-filter'
+import { filterDeepseenProductionModelOptions } from '@/lib/production-model-filter'
 import type {
   ActionResponse,
   ActionStatusResponse,
@@ -88,7 +88,7 @@ function persistDeepSeenTokens(accessToken?: string | null, refreshToken?: strin
       window.localStorage.setItem(DEEPSEEN_REFRESH_TOKEN_KEY, refreshToken.trim())
     }
   } catch {
-    // DeepSeen token persistence is best-effort; Herbound login remains the primary gate.
+    // DeepSeen token persistence is best-effort; Deepseen login remains the primary gate.
   }
 }
 
@@ -158,10 +158,10 @@ export type {
 export class HermesGateway extends JsonRpcGatewayClient {
   constructor() {
     super({
-      closedErrorMessage: 'Herbound gateway connection closed',
-      connectErrorMessage: 'Could not connect to Herbound gateway',
+      closedErrorMessage: 'Deepseen gateway connection closed',
+      connectErrorMessage: 'Could not connect to Deepseen gateway',
       createRequestId: nextId => nextId,
-      notConnectedErrorMessage: 'Herbound gateway is not connected',
+      notConnectedErrorMessage: 'Deepseen gateway is not connected',
       requestTimeoutMs: DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS
     })
   }
@@ -742,7 +742,7 @@ export function getGlobalModelOptions(): Promise<ModelOptionsResponse> {
   return desktopApi<ModelOptionsResponse>({
     ...profileScoped(),
     path: '/api/model/options'
-  }).then(options => filterHerboundProductionModelOptions(options) ?? options)
+  }).then(options => filterDeepseenProductionModelOptions(options) ?? options)
 }
 
 export interface RecommendedDefaultModel {
@@ -882,6 +882,14 @@ export interface DeepSeenUploadResponse {
   url: string
 }
 
+export interface DeepSeenCreditBalance {
+  freeCredits?: number
+  frozenPersonalCredits?: number
+  paidCredits?: number
+  planTier?: string
+  teamOwnerName?: string
+}
+
 type DeepSeenUploadType = 'analyze' | 'avatar' | 'common' | 'competitor' | 'recreation' | 'video-analysis'
 
 export class DeepSeenApiError extends Error {
@@ -956,6 +964,10 @@ export async function deepseenRequest<T>(
   }
 }
 
+export function getDeepSeenCreditBalance(): Promise<DeepSeenCreditBalance> {
+  return deepseenRequest<DeepSeenCreditBalance>('credits/balance', { timeoutMs: 30_000 })
+}
+
 export function uploadDeepSeenDataUrl(payload: {
   dataUrl: string
   filename: string
@@ -977,6 +989,21 @@ export function uploadDeepSeenFile(payload: {
   const token = getStoredDeepSeenAccessToken() || getStoredAuthToken() || undefined
   return window.hermesDesktop
     .deepseenUploadFile<DeepSeenApiEnvelope<DeepSeenUploadResponse>>({
+      ...payload,
+      ...(token ? { authToken: token } : {}),
+      timeoutMs: 300_000
+    })
+    .then(unwrapDeepSeenResponse)
+}
+
+export function analyzeDeepSeenAdDiagnosisFile<T = unknown>(payload: {
+  fields: Record<string, string | number | boolean>
+  filePath: string
+  filename?: string
+}): Promise<T> {
+  const token = getStoredDeepSeenAccessToken() || getStoredAuthToken() || undefined
+  return window.hermesDesktop
+    .deepseenAdDiagnosisFile<DeepSeenApiEnvelope<T>>({
       ...payload,
       ...(token ? { authToken: token } : {}),
       timeoutMs: 300_000

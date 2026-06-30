@@ -157,6 +157,12 @@ export function TitlebarControls({ leftTools = [], tools = [], onOpenSettings }:
         aria-label={t.shell.windowControls}
         className="fixed left-(--titlebar-controls-left) top-(--titlebar-controls-top) z-70 flex translate-y-0.5 flex-row items-center gap-x-1 pointer-events-auto select-none [-webkit-app-region:no-drag]"
       >
+        <BrandMark
+          aria-label="Deepseen"
+          className="size-(--titlebar-control-size) rounded-sm"
+          role="img"
+          title="Deepseen"
+        />
         {leftToolbarTools
           .filter(tool => !tool.hidden)
           .map(tool => (
@@ -187,12 +193,6 @@ export function TitlebarControls({ leftTools = [], tools = [], onOpenSettings }:
         aria-label={t.shell.appControls}
         className="fixed right-(--titlebar-tools-right) top-(--titlebar-controls-top) z-70 flex flex-row items-center justify-end gap-x-1 pointer-events-auto select-none [-webkit-app-region:no-drag]"
       >
-        <BrandMark
-          aria-label="Herbound"
-          className="size-(--titlebar-control-size) rounded-sm"
-          role="img"
-          title="Herbound"
-        />
         {visibleSystemToolsBeforeSettings.map(tool => (
           <TitlebarToolButton key={tool.id} navigate={navigate} tool={tool} />
         ))}

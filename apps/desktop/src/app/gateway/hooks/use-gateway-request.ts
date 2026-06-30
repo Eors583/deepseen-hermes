@@ -98,7 +98,7 @@ export function useGatewayRequest() {
       const gateway = gatewayRef.current
 
       if (!gateway) {
-        throw new Error('Herbound gateway unavailable')
+        throw new Error('Deepseen gateway unavailable')
       }
 
       try {

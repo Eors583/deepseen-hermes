@@ -164,7 +164,7 @@ function selectFirstInCategory(category: string) {
   <div class="skills-view">
     <header class="skills-header">
       <div>
-        <h2>Herbound 跨境技能中心</h2>
+        <h2>Deepseen 跨境技能中心</h2>
         <p>这些是当前智能体优先识别和调用的业务能力，底层统一接入 DeepSeen SDK 工具集。</p>
       </div>
       <input v-model="query" class="skill-search" placeholder="搜索能力、工具或业务场景" />
@@ -244,7 +244,7 @@ function selectFirstInCategory(category: string) {
 
         <div class="policy-band">
           <div>
-            <h4>Herbound 执行规则</h4>
+            <h4>Deepseen 执行规则</h4>
             <p>先判断业务意图，再选择对应 DeepSeen 工具。工具调用完成后只做字段翻译、富媒体展示和结构化排版，不增加二次业务结论。</p>
           </div>
           <div>

@@ -19,7 +19,7 @@ import { getGlobalModelOptions, type HermesGateway } from '@/hermes'
 import type { ChatMessage } from '@/lib/chat-messages'
 import { quickModelOptions, sessionTitle, toRuntimeMessage } from '@/lib/chat-runtime'
 import { useIncrementalExternalStoreRuntime } from '@/lib/incremental-external-store-runtime'
-import { filterHerboundProductionModelOptions } from '@/lib/production-model-filter'
+import { filterDeepseenProductionModelOptions } from '@/lib/production-model-filter'
 import { cn } from '@/lib/utils'
 import type { ComposerAttachment } from '@/store/composer'
 import { $pinnedSessionIds } from '@/store/layout'
@@ -219,7 +219,7 @@ export function ChatView({
       }
 
       if (!gateway) {
-        throw new Error('Herbound gateway unavailable')
+        throw new Error('Deepseen gateway unavailable')
       }
 
       return gateway.request<ModelOptionsResponse>('model.options', { session_id: activeSessionId })
@@ -228,7 +228,7 @@ export function ChatView({
   })
 
   const filteredModelOptions = useMemo(
-    () => filterHerboundProductionModelOptions(modelOptionsQuery.data) ?? modelOptionsQuery.data,
+    () => filterDeepseenProductionModelOptions(modelOptionsQuery.data) ?? modelOptionsQuery.data,
     [modelOptionsQuery.data]
   )
 

@@ -215,6 +215,12 @@ _PROVIDER_MODELS: dict[str, list[str]] = {
         "gpt-4o",
         "gpt-4o-mini",
     ],
+    "kie": [
+        "gpt-5-5",
+        "gemini-3.1-pro",
+        "claude-sonnet-4-6",
+        "claude-opus-4-8",
+    ],
     "openai-codex": _codex_curated_models(),
     "xai-oauth": _xai_curated_models(),
     "copilot-acp": [
@@ -996,6 +1002,7 @@ CANONICAL_PROVIDERS: list[ProviderEntry] = [
     ProviderEntry("anthropic",      "Anthropic",                "Anthropic (Claude models via API key or Claude Code)"),
     ProviderEntry("openai-codex",   "OpenAI Codex",             "OpenAI Codex (Codex CLI via ChatGPT subscription or API key)"),
     ProviderEntry("openai-api",     "OpenAI API",               "OpenAI API (api.openai.com, API key)"),
+    ProviderEntry("kie",            "KIE.AI",                   "KIE.AI (model-specific endpoints via KIE_API_KEY)"),
     ProviderEntry("alibaba",        "Qwen Cloud",               "Qwen Cloud / DashScope (Qwen + multi-provider)"),
     ProviderEntry("xai-oauth",      "xAI Grok OAuth (SuperGrok / Premium+)", "xAI Grok OAuth (SuperGrok / Premium+ subscription)"),
     ProviderEntry("xiaomi",         "Xiaomi MiMo",              "Xiaomi MiMo (MiMo-V2.5 and V2 models: pro, omni, flash)"),
@@ -1154,6 +1161,8 @@ def group_providers(slugs):
 
 
 _PROVIDER_ALIASES = {
+    "kie-ai": "kie",
+    "kieai": "kie",
     "glm": "zai",
     "z-ai": "zai",
     "z.ai": "zai",
@@ -2158,6 +2167,12 @@ def provider_model_ids(provider: Optional[str], *, force_refresh: bool = False) 
     on the platform appear in ``/model`` without a Hermes release.
     """
     normalized = normalize_provider(provider)
+    if normalized == "kie":
+        try:
+            from hermes_cli.kie_provider import kie_model_ids
+            return kie_model_ids()
+        except Exception:
+            return list(_PROVIDER_MODELS.get("kie", []))
     if normalized == "openrouter":
         return model_ids(force_refresh=force_refresh)
     if normalized == "openai-codex":

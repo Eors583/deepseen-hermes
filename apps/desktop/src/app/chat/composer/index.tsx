@@ -94,10 +94,10 @@ import { VoiceActivity, VoicePlaybackActivity } from './voice-activity'
 
 const COMPOSER_STACK_BREAKPOINT_PX = 320
 
-// A single editor line is ~28px (--composer-input-min-height 1.625rem + 0.5rem
+// A single editor line is ~84px (--composer-input-min-height 4rem + 0.75rem
 // vertical padding). Anything taller means the text wrapped to a second line,
 // which is when the composer should expand to the stacked layout.
-const COMPOSER_SINGLE_LINE_MAX_PX = 36
+const COMPOSER_SINGLE_LINE_MAX_PX = 96
 
 const COMPOSER_FADE_BACKGROUND =
   'linear-gradient(to bottom, transparent, color-mix(in srgb, var(--dt-background) 10%, transparent))'

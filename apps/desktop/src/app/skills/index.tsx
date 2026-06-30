@@ -24,7 +24,73 @@ import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 const SKILLS_MODES = ['skills', 'toolsets'] as const
 type SkillsMode = (typeof SKILLS_MODES)[number]
 
+interface CachedCapabilities {
+  skills: SkillInfo[]
+  toolsets: ToolsetInfo[]
+}
+
+let cachedCapabilities: CachedCapabilities | null = null
+let cachedCapabilitiesRequest: Promise<CachedCapabilities> | null = null
+
+function loadCapabilities(): Promise<CachedCapabilities> {
+  if (!cachedCapabilitiesRequest) {
+    cachedCapabilitiesRequest = Promise.all([getSkills(), getToolsets()])
+      .then(([skills, toolsets]) => {
+        cachedCapabilities = { skills, toolsets }
+        return cachedCapabilities
+      })
+      .finally(() => {
+        cachedCapabilitiesRequest = null
+      })
+  }
+
+  return cachedCapabilitiesRequest
+}
+
+export function preloadSkillsViewData(): Promise<CachedCapabilities> {
+  return loadCapabilities()
+}
+
 const FEATURED_CAPABILITY_TERMS = ['deepseen', 'crossborder', 'crossborder-deepseen'] as const
+
+const DEEPSEEN_CORE_TOOLS = [
+  {
+    title: '商品分析',
+    description: '围绕商品链接、类目、卖点和市场信息生成选品与销售判断。'
+  },
+  {
+    title: '竞品分析',
+    description: '对单品或多品竞品做价格、销量、达人、内容和机会点对比。'
+  },
+  {
+    title: '达人分析',
+    description: '筛选并评估 TikTok 带货达人，输出适合合作的达人样本。'
+  },
+  {
+    title: '素材创作分析',
+    description: '分析商品图、卖点和素材方向，为图片/视频生成准备策略。'
+  },
+  {
+    title: '图片创作',
+    description: '根据产品图、参考图和商品信息生成图片创作任务并回显结果。'
+  },
+  {
+    title: '视频创作',
+    description: '根据素材、脚本和商品信息生成视频创作任务并回显结果。'
+  },
+  {
+    title: '图片智创',
+    description: '按 DeepSeen Web 的图片智创流程生成图片任务、进度和产物。'
+  },
+  {
+    title: '视频智创',
+    description: '按 DeepSeen Web 的视频智创流程生成视频任务、进度和产物。'
+  },
+  {
+    title: '摘要与附件',
+    description: '将工具返回数据整理成用户友好的摘要，并生成可下载附件。'
+  }
+] as const
 
 const CATEGORY_LABELS: Record<string, string> = {
   'agent-generated': '智能体沉淀',
@@ -66,7 +132,7 @@ const SKILL_LABELS: Record<string, string> = {
   'design-md': 'Markdown 设计稿',
   excalidraw: 'Excalidraw 绘图',
   findmy: '查找设备',
-  'hermes-agent': 'Herbound 智能体开发',
+  'hermes-agent': 'Deepseen 智能体开发',
   humanizer: '内容拟人化',
   imessage: 'iMessage 消息',
   'macos-computer-use': 'macOS 电脑操作',
@@ -84,7 +150,7 @@ const SKILL_DESCRIPTION_LABELS: Record<string, string> = {
   'apikey-image-gen': '调用已配置的图片生成工具，并把生成结果回显到对话中。',
   'crossborder-deepseen': '调用 DeepSeen 跨境工具完成商品、达人、竞品等业务分析，并按用户友好的形式展示结果。',
   codex: '协助使用 Codex 进行代码阅读、修改、测试和交付。',
-  'hermes-agent': '处理 Herbound 智能体自身的配置、运行、调试和开发任务。'
+  'hermes-agent': '处理 Deepseen 智能体自身的配置、运行、调试和开发任务。'
 }
 
 const TOOLSET_LABELS: Record<string, string> = {
@@ -225,27 +291,32 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
   const { t } = useI18n()
   const [mode, setMode] = useRouteEnumParam('tab', SKILLS_MODES, 'skills')
   const [query, setQuery] = useState('')
-  const [skills, setSkills] = useState<SkillInfo[] | null>(null)
-  const [toolsets, setToolsets] = useState<ToolsetInfo[] | null>(null)
+  const [skills, setSkills] = useState<SkillInfo[] | null>(() => cachedCapabilities?.skills ?? null)
+  const [toolsets, setToolsets] = useState<ToolsetInfo[] | null>(() => cachedCapabilities?.toolsets ?? null)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [savingSkill, setSavingSkill] = useState<string | null>(null)
   const [savingToolset, setSavingToolset] = useState<string | null>(null)
   const [expandedToolset, setExpandedToolset] = useState<string | null>(null)
+  const [showDeepSeenCoreTools, setShowDeepSeenCoreTools] = useState(true)
   const [showSupportingSkills, setShowSupportingSkills] = useState(false)
   const [showSupportingToolsets, setShowSupportingToolsets] = useState(false)
 
-  const refreshCapabilities = useCallback(async () => {
-    setRefreshing(true)
+  const refreshCapabilities = useCallback(async (silent = false) => {
+    if (!silent) {
+      setRefreshing(true)
+    }
 
     try {
-      const [nextSkills, nextToolsets] = await Promise.all([getSkills(), getToolsets()])
-      setSkills(nextSkills)
-      setToolsets(nextToolsets)
+      const next = await loadCapabilities()
+      setSkills(next.skills)
+      setToolsets(next.toolsets)
     } catch (err) {
       notifyError(err, t.skills.skillsLoadFailed)
     } finally {
-      setRefreshing(false)
+      if (!silent) {
+        setRefreshing(false)
+      }
     }
   }, [t])
 
@@ -258,7 +329,7 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
   useRefreshHotkey(refreshCapabilities)
 
   useEffect(() => {
-    void refreshCapabilities()
+    void refreshCapabilities(Boolean(cachedCapabilities))
   }, [refreshCapabilities])
 
   const categories = useMemo(() => {
@@ -318,6 +389,12 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
     try {
       await toggleSkill(skill.name, enabled)
       setSkills(current => current?.map(row => (row.name === skill.name ? { ...row, enabled } : row)) ?? current)
+      if (cachedCapabilities) {
+        cachedCapabilities = {
+          ...cachedCapabilities,
+          skills: cachedCapabilities.skills.map(row => (row.name === skill.name ? { ...row, enabled } : row))
+        }
+      }
       notify({
         kind: 'success',
         title: enabled ? t.skills.skillEnabled : t.skills.skillDisabled,
@@ -339,6 +416,14 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
         current =>
           current?.map(row => (row.name === toolset.name ? { ...row, enabled, available: enabled } : row)) ?? current
       )
+      if (cachedCapabilities) {
+        cachedCapabilities = {
+          ...cachedCapabilities,
+          toolsets: cachedCapabilities.toolsets.map(row =>
+            row.name === toolset.name ? { ...row, available: enabled, enabled } : row
+          )
+        }
+      }
       notify({
         kind: 'success',
         title: enabled ? t.skills.toolsetEnabled : t.skills.toolsetDisabled,
@@ -411,7 +496,18 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
             <div className="space-y-4">
               {featuredSkills.length > 0 && (
                 <CapabilitySection
-                  count={featuredSkills.length}
+                  action={
+                    <Button
+                      className="h-6 gap-1 rounded-md px-2 text-[0.68rem]"
+                      onClick={() => setShowDeepSeenCoreTools(open => !open)}
+                      type="button"
+                      variant="ghost"
+                    >
+                      <Codicon name={showDeepSeenCoreTools ? 'chevron-down' : 'chevron-right'} size="0.75rem" />
+                      {showDeepSeenCoreTools ? '收起工具' : '展开工具'}
+                    </Button>
+                  }
+                  count={DEEPSEEN_CORE_TOOLS.length}
                   subtitle="围绕跨境选品、竞品分析、达人分析、素材创作等 DeepSeen 业务链路优先展示。"
                   title="DeepSeen 核心技能"
                   tone="featured"
@@ -425,6 +521,7 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
                       skill={skill}
                     />
                   ))}
+                  {showDeepSeenCoreTools && <DeepSeenCoreToolList />}
                 </CapabilitySection>
               )}
               {supportingSkillGroups.length > 0 && (
@@ -541,12 +638,14 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
 }
 
 function CapabilitySection({
+  action,
   children,
   count,
   subtitle,
   title,
   tone
 }: {
+  action?: React.ReactNode
   children: React.ReactNode
   count: number
   subtitle: string
@@ -573,12 +672,44 @@ function CapabilitySection({
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
         </div>
-        <Badge className={tone === 'featured' ? 'bg-sky-400/15 text-sky-700 dark:text-sky-200' : undefined}>
-          {count}
-        </Badge>
+        <div className="flex shrink-0 items-center gap-2">
+          {action}
+          <Badge className={tone === 'featured' ? 'bg-sky-400/15 text-sky-700 dark:text-sky-200' : undefined}>
+            {count}
+          </Badge>
+        </div>
       </div>
       <div className="space-y-1">{children}</div>
     </section>
+  )
+}
+
+function DeepSeenCoreToolList() {
+  return (
+    <div className="mt-2 rounded-md border border-sky-400/25 bg-sky-400/[0.05] p-2">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-sky-700/80 dark:text-sky-200/80">
+          业务工具
+        </div>
+        <span className="text-[0.68rem] text-muted-foreground">{DEEPSEEN_CORE_TOOLS.length} 项</span>
+      </div>
+      <div className="grid gap-1.5 md:grid-cols-2 xl:grid-cols-3">
+        {DEEPSEEN_CORE_TOOLS.map((tool, index) => (
+          <div
+            className="rounded-md border border-sky-400/15 bg-background/45 px-2.5 py-2"
+            key={tool.title}
+          >
+            <div className="flex items-center gap-2">
+              <span className="grid size-4 shrink-0 place-items-center rounded bg-sky-400/15 text-[0.625rem] font-semibold text-sky-700 dark:text-sky-200">
+                {index + 1}
+              </span>
+              <span className="truncate text-xs font-semibold text-foreground">{tool.title}</span>
+            </div>
+            <p className="mt-1 line-clamp-2 text-[0.68rem] leading-4 text-muted-foreground">{tool.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 

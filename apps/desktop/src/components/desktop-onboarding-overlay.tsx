@@ -265,7 +265,7 @@ export function DesktopOnboardingOverlay({ enabled, onCompleted, requestGateway 
     }
   }, [ctx, onboarding.flow.status, onboarding.manual, onboarding.providers])
 
-  // Herbound uses the server-side DeepSeen account/model configuration, so the
+  // Deepseen uses the server-side DeepSeen account/model configuration, so the
   // desktop app must not block first launch on the generic Hermes provider
   // picker. Keep the shared flow available only when settings or an explicit
   // recovery path asks for it.

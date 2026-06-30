@@ -407,7 +407,7 @@ async function nativeSessionFor(uiSessionId: string): Promise<string> {
   const created = await gateway.request<{ session_id: string }>('session.create', {
     session_id: uiSessionId,
     session_key: uiSessionId,
-    title: 'Herbound',
+    title: 'Deepseen',
     close_on_disconnect: false,
     ...(getAuthUserId() ? { user_id: getAuthUserId() } : {}),
   })
@@ -421,7 +421,7 @@ async function recreateNativeSessionFor(uiSessionId: string): Promise<string> {
   const created = await gateway.request<{ session_id: string }>('session.create', {
     session_id: uiSessionId,
     session_key: uiSessionId,
-    title: 'Herbound',
+    title: 'Deepseen',
     close_on_disconnect: false,
     ...(getAuthUserId() ? { user_id: getAuthUserId() } : {}),
   })

@@ -6,7 +6,7 @@ export default {
     placeholder: 'Zugangs-Token',
     submit: 'Anmelden',
     registerTitle: 'Konto erstellen',
-    registerDescription: 'Registrieren Sie ein Herbound-Konto, um fortzufahren.',
+    registerDescription: 'Registrieren Sie ein Deepseen-Konto, um fortzufahren.',
     registerSubmit: 'Registrieren und anmelden',
     createAccount: 'Neues Konto erstellen',
     backToLogin: 'Zuruck zur Anmeldung',

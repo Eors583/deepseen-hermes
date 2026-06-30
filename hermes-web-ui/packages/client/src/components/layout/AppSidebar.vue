@@ -89,8 +89,8 @@ function openVersionManagement() {
 <template>
   <aside class="sidebar" :class="{ open: appStore.sidebarOpen, collapsed: appStore.sidebarCollapsed }">
     <RouteLinkItem class="sidebar-logo" :to="{ name: 'hermes.chat' }">
-      <img :src="logoPath" alt="Herbound" class="logo-img" />
-      <span class="logo-text">Herbound</span>
+      <img :src="logoPath" alt="Deepseen" class="logo-img" />
+      <span class="logo-text">Deepseen</span>
       <!-- <video class="logo-dance" :src="isDark ? danceVideoDark : danceVideoLight" autoplay loop muted playsinline /> -->
     </RouteLinkItem>
 
@@ -301,7 +301,7 @@ function openVersionManagement() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           </a>
         </div>
-        <span class="version-text" @click="openChangelog">Herbound v{{ appStore.serverVersion || "0.1.0" }}</span>
+        <span class="version-text" @click="openChangelog">Deepseen v{{ appStore.serverVersion || "0.1.0" }}</span>
         <ThemeSwitch />
       </div>
       <NButton v-if="isDesktopShell" type="primary" size="tiny" block class="update-btn" @click="openVersionManagement">

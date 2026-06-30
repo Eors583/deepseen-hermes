@@ -1,60 +1,73 @@
 import type { ModelOptionProvider, ModelOptionsResponse } from '@/types/hermes'
 
-const HIDDEN_PROVIDERS = new Set(['gemini'])
+import { HERBOUND_PRODUCTION_MODELS } from '@/lib/herbound-production-models'
 
-const OPENAI_API_ALLOWED_MODELS = new Set([
-  'gpt-5.5',
-  'gpt-5.4',
-  'gpt-5.4-mini',
-  'gpt-5.4-nano',
-  'gpt-5-mini',
-  'gpt-4.1',
-  'gpt-4o',
-  'gpt-4o-mini'
-])
+function modelCandidates(model: (typeof HERBOUND_PRODUCTION_MODELS)[number]): string[] {
+  return [model.id, ...(model.aliases ?? [])]
+}
 
-function filterProvider(provider: ModelOptionProvider): ModelOptionProvider | null {
-  const slug = String(provider.slug || '').trim().toLowerCase()
-  if (HIDDEN_PROVIDERS.has(slug)) {
+function firstMatchingModel(provider: ModelOptionProvider, model: (typeof HERBOUND_PRODUCTION_MODELS)[number]): string | null {
+  const available = new Set((provider.models ?? []).map(value => String(value)))
+
+  return modelCandidates(model).find(candidate => available.has(candidate)) ?? null
+}
+
+function findProvider(options: ModelOptionsResponse, slug: 'kie' | 'openai-api'): ModelOptionProvider | null {
+  const providers = options.providers ?? []
+  if (slug === 'kie') {
+    return (
+      providers.find(provider => String(provider.slug || '').toLowerCase() === 'kie') ??
+      providers.find(provider => String(provider.name || '').toLowerCase().includes('kie')) ??
+      null
+    )
+  }
+  return (
+    providers.find(provider => String(provider.slug || '').toLowerCase() === 'openai-api') ??
+    providers.find(provider => String(provider.name || '').toLowerCase().includes('openai')) ??
+    null
+  )
+}
+
+function productionProvider(options: ModelOptionsResponse, slug: 'kie' | 'openai-api'): ModelOptionProvider | null {
+  const source = findProvider(options, slug)
+
+  if (!source) {
     return null
   }
 
-  if (slug !== 'openai-api') {
-    return provider
-  }
-
-  const models = (provider.models ?? []).filter(model => OPENAI_API_ALLOWED_MODELS.has(String(model)))
-  if (models.length === 0) {
-    return null
-  }
-
+  const configuredModels = HERBOUND_PRODUCTION_MODELS.filter(model => model.provider === slug)
+  const models = configuredModels
+    .map(model => firstMatchingModel(source, model))
+    .filter((model): model is string => Boolean(model))
   const allowed = new Set(models)
-  const pricing = provider.pricing
-    ? Object.fromEntries(Object.entries(provider.pricing).filter(([model]) => allowed.has(model)))
+  const pricing = source.pricing
+    ? Object.fromEntries(Object.entries(source.pricing).filter(([model]) => allowed.has(model)))
     : undefined
-  const capabilities = provider.capabilities
-    ? Object.fromEntries(Object.entries(provider.capabilities).filter(([model]) => allowed.has(model)))
+  const capabilities = source.capabilities
+    ? Object.fromEntries(Object.entries(source.capabilities).filter(([model]) => allowed.has(model)))
     : undefined
 
   return {
-    ...provider,
+    ...source,
+    name: source.name || (slug === 'kie' ? 'KIE.AI' : 'OPENAI-API'),
+    slug: source.slug || slug,
     models,
     total_models: models.length,
     ...(pricing ? { pricing } : {}),
     ...(capabilities ? { capabilities } : {}),
-    unavailable_models: (provider.unavailable_models ?? []).filter(model => allowed.has(String(model)))
+    unavailable_models: (source.unavailable_models ?? []).filter(model => allowed.has(String(model)))
   }
 }
 
-export function filterHerboundProductionModelOptions(options?: ModelOptionsResponse | null): ModelOptionsResponse | undefined {
+export function filterDeepseenProductionModelOptions(options?: ModelOptionsResponse | null): ModelOptionsResponse | undefined {
   if (!options) {
     return undefined
   }
 
   return {
     ...options,
-    providers: (options.providers ?? [])
-      .map(filterProvider)
-      .filter((provider): provider is ModelOptionProvider => provider !== null)
+    providers: (['openai-api', 'kie'] as const)
+      .map(slug => productionProvider(options, slug))
+      .filter((provider): provider is ModelOptionProvider => provider !== null && (provider.models ?? []).length > 0)
   }
 }

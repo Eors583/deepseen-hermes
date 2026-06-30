@@ -33,6 +33,28 @@ interface MessagingViewProps extends React.ComponentProps<'section'> {
 
 type EditMap = Record<string, Record<string, string>>
 
+let cachedMessagingPlatforms: MessagingPlatformInfo[] | null = null
+let cachedMessagingPlatformsRequest: Promise<MessagingPlatformInfo[]> | null = null
+
+function loadMessagingPlatforms(): Promise<MessagingPlatformInfo[]> {
+  if (!cachedMessagingPlatformsRequest) {
+    cachedMessagingPlatformsRequest = getMessagingPlatforms()
+      .then(result => {
+        cachedMessagingPlatforms = result.platforms
+        return result.platforms
+      })
+      .finally(() => {
+        cachedMessagingPlatformsRequest = null
+      })
+  }
+
+  return cachedMessagingPlatformsRequest
+}
+
+export function preloadMessagingViewData(): Promise<MessagingPlatformInfo[]> {
+  return loadMessagingPlatforms()
+}
+
 const PILL_TONE: Record<StatusTone, string> = {
   good: 'bg-primary/10 text-primary',
   muted: 'bg-muted text-muted-foreground',
@@ -97,7 +119,7 @@ function fieldCopy(field: MessagingEnvVarInfo, m: Translations['messaging']) {
 export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...props }: MessagingViewProps) {
   const { t } = useI18n()
   const m = t.messaging
-  const [platforms, setPlatforms] = useState<MessagingPlatformInfo[] | null>(null)
+  const [platforms, setPlatforms] = useState<MessagingPlatformInfo[] | null>(() => cachedMessagingPlatforms)
   const [edits, setEdits] = useState<EditMap>({})
   const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
@@ -111,8 +133,8 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     }
 
     try {
-      const result = await getMessagingPlatforms()
-      setPlatforms(result.platforms)
+      const result = await loadMessagingPlatforms()
+      setPlatforms(result)
     } catch (err) {
       if (!silent) {
         notifyError(err, m.loadFailed)
@@ -127,7 +149,7 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   useRefreshHotkey(() => void refreshPlatforms())
 
   useEffect(() => {
-    void refreshPlatforms()
+    void refreshPlatforms(Boolean(cachedMessagingPlatforms))
   }, [refreshPlatforms])
 
   // Auto-poll while the user is on the messaging page so connection status
@@ -182,18 +204,16 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
 
     try {
       await updateMessagingPlatform(platform.id, { enabled })
-      setPlatforms(
-        current =>
-          current?.map(row =>
-            row.id === platform.id
-              ? {
-                  ...row,
-                  enabled,
-                  state: enabled ? (row.configured ? 'pending_restart' : 'not_configured') : 'disabled'
-                }
-              : row
-          ) ?? current
-      )
+      const updateRow = (row: MessagingPlatformInfo) =>
+        row.id === platform.id
+          ? {
+              ...row,
+              enabled,
+              state: enabled ? (row.configured ? 'pending_restart' : 'not_configured') : 'disabled'
+            }
+          : row
+      setPlatforms(current => current?.map(updateRow) ?? current)
+      cachedMessagingPlatforms = cachedMessagingPlatforms?.map(updateRow) ?? cachedMessagingPlatforms
       notify({
         kind: 'success',
         title: enabled ? m.platformEnabled(platform.name) : m.platformDisabled(platform.name),
@@ -511,7 +531,7 @@ const PLATFORM_INTRO: Record<string, string> = {
   signal:
     '运行一个可访问的 signal-cli REST 桥接服务，然后填写服务地址和已注册手机号。',
   whatsapp:
-    '启动 Herbound 自带的 WhatsApp 桥接服务，首次运行时扫码，然后启用该平台。',
+    '启动 Deepseen 自带的 WhatsApp 桥接服务，首次运行时扫码，然后启用该平台。',
   bluebubbles:
     '在支持 iMessage 的 Mac 上运行 BlueBubbles Server，开放 API 后填写服务地址和服务器密码。',
   homeassistant:
@@ -527,10 +547,10 @@ const PLATFORM_INTRO: Record<string, string> = {
   wecom_callback:
     '配置企业微信自建应用，开放回调地址，并填写企业 ID、secret、agent ID 和 AES key。',
   weixin:
-    '登录微信公众号平台，复制 AppID 和 Token，并把消息回调地址指向 Herbound。',
+    '登录微信公众号平台，复制 AppID 和 Token，并把消息回调地址指向 Deepseen。',
   qqbot: '在 QQ 开放平台（q.qq.com）注册应用，并复制 App ID 和 Client Secret。',
   api_server:
-    '把 Herbound 暴露为 OpenAI 兼容 API。设置认证密钥后，让 Open WebUI / LobeChat 等工具连接到对应 host:port。',
+    '把 Deepseen 暴露为 OpenAI 兼容 API。设置认证密钥后，让 Open WebUI / LobeChat 等工具连接到对应 host:port。',
   webhook:
     '运行一个可接收 HTTP POST 的服务，供 GitHub、GitLab 或自定义应用调用。使用密钥校验签名。'
 }

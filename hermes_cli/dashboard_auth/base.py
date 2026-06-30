@@ -58,7 +58,7 @@ class InvalidCodeError(Exception):
 class InvalidCredentialsError(Exception):
     """A username/password pair was rejected by a password provider.
 
-    Deprecated compatibility exception for legacy password providers. Herbound
+    Deprecated compatibility exception for legacy password providers. Deepseen
     no longer exposes the ``/auth/password-login`` route.
     """
 
@@ -105,7 +105,7 @@ class DashboardAuthProvider(ABC):
 
     Legacy password-provider compatibility:
       ``supports_password`` and ``complete_password_login`` remain on the
-      protocol so older plugins can import, but Herbound no longer renders a
+      protocol so older plugins can import, but Deepseen no longer renders a
       password-provider form or dispatches legacy password login. Product login
       goes through the FastAPI/JWT ``/api/auth/login`` endpoint.
     """
@@ -144,7 +144,7 @@ class DashboardAuthProvider(ABC):
     ) -> "Session":
         """Verify a username/password pair and mint a :class:`Session`.
 
-        Deprecated compatibility hook. Herbound no longer calls this from an
+        Deprecated compatibility hook. Deepseen no longer calls this from an
         HTTP route; product login is handled by the FastAPI/JWT auth module.
 
         The returned ``Session`` carries provider-minted opaque

@@ -26,15 +26,15 @@ const OPTIONS: ModeOption[] = [
   {
     mode: 'lite',
     title: '卸载桌面端和智能体，保留数据',
-    description: '移除桌面应用和 Herbound 智能体，但保留配置、对话和密钥，方便以后重新安装。',
-    consequence: '桌面端和 Herbound 智能体，配置、对话和密钥会保留',
+    description: '移除桌面应用和 Deepseen 智能体，但保留配置、对话和密钥，方便以后重新安装。',
+    consequence: '桌面端和 Deepseen 智能体，配置、对话和密钥会保留',
     needsAgent: true
   },
   {
     mode: 'full',
     title: '全部卸载',
     description: '移除桌面应用、智能体以及所有用户数据，包括配置、对话、定时任务、密钥和日志。',
-    consequence: '全部内容：桌面端、Herbound 智能体、配置、对话、密钥和日志',
+    consequence: '全部内容：桌面端、Deepseen 智能体、配置、对话、密钥和日志',
     needsAgent: true
   }
 ]
@@ -150,7 +150,7 @@ export function UninstallSection() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">卸载 Herbound</p>
+            <p className="text-sm font-medium">卸载 Deepseen</p>
             <p className="text-xs text-muted-foreground">
               请选择要移除的范围。应用会关闭并完成卸载，后续可重新运行安装程序恢复使用。
             </p>

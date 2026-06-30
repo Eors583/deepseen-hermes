@@ -121,15 +121,29 @@ import type { TitlebarTool } from './shell/titlebar-controls'
 import { useGroupRegistry } from './shell/use-group-registry'
 import { UpdatesOverlay } from './updates-overlay'
 
-const AgentsView = lazy(async () => ({ default: (await import('./agents')).AgentsView }))
-const ArtifactsView = lazy(async () => ({ default: (await import('./artifacts')).ArtifactsView }))
-const CommandCenterView = lazy(async () => ({ default: (await import('./command-center')).CommandCenterView }))
-const CronView = lazy(async () => ({ default: (await import('./cron')).CronView }))
-const DeepSeenRecreationView = lazy(async () => ({ default: (await import('./deepseen-recreation')).DeepSeenRecreationView }))
-const MessagingView = lazy(async () => ({ default: (await import('./messaging')).MessagingView }))
-const ProfilesView = lazy(async () => ({ default: (await import('./profiles')).ProfilesView }))
-const SettingsView = lazy(async () => ({ default: (await import('./settings')).SettingsView }))
-const SkillsView = lazy(async () => ({ default: (await import('./skills')).SkillsView }))
+const loadAgentsView = () => import('./agents')
+const loadArtifactsView = () => import('./artifacts')
+const loadCommandCenterView = () => import('./command-center')
+const loadCronView = () => import('./cron')
+const loadDeepSeenRecreationView = () => import('./deepseen-recreation')
+const loadDeepSeenAdsView = () => import('./deepseen-ads')
+const loadDeepSeenGeoView = () => import('./deepseen-geo')
+const loadMessagingView = () => import('./messaging')
+const loadProfilesView = () => import('./profiles')
+const loadSettingsView = () => import('./settings')
+const loadSkillsView = () => import('./skills')
+
+const AgentsView = lazy(async () => ({ default: (await loadAgentsView()).AgentsView }))
+const ArtifactsView = lazy(async () => ({ default: (await loadArtifactsView()).ArtifactsView }))
+const CommandCenterView = lazy(async () => ({ default: (await loadCommandCenterView()).CommandCenterView }))
+const CronView = lazy(async () => ({ default: (await loadCronView()).CronView }))
+const DeepSeenRecreationView = lazy(async () => ({ default: (await loadDeepSeenRecreationView()).DeepSeenRecreationView }))
+const DeepSeenAdsView = lazy(async () => ({ default: (await loadDeepSeenAdsView()).DeepSeenAdsView }))
+const DeepSeenGeoView = lazy(async () => ({ default: (await loadDeepSeenGeoView()).DeepSeenGeoView }))
+const MessagingView = lazy(async () => ({ default: (await loadMessagingView()).MessagingView }))
+const ProfilesView = lazy(async () => ({ default: (await loadProfilesView()).ProfilesView }))
+const SettingsView = lazy(async () => ({ default: (await loadSettingsView()).SettingsView }))
+const SkillsView = lazy(async () => ({ default: (await loadSkillsView()).SkillsView }))
 
 // Latest cron-job sessions surfaced in the collapsed "Cron jobs" section. The
 // Cron sessions are written by a background scheduler tick (the desktop
@@ -212,6 +226,30 @@ export function DesktopController() {
   const routeTokenRef = useRef(routeToken)
   routeTokenRef.current = routeToken
   const getRouteToken = useCallback(() => routeTokenRef.current, [])
+
+  useEffect(() => {
+    const preload = () => {
+      void loadMessagingView().then(module => module.preloadMessagingViewData()).catch(() => undefined)
+      void loadSkillsView().then(module => module.preloadSkillsViewData()).catch(() => undefined)
+      void loadDeepSeenRecreationView()
+      void loadDeepSeenAdsView()
+      void loadDeepSeenGeoView()
+      void loadArtifactsView()
+    }
+
+    const idle = (window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number })
+      .requestIdleCallback
+
+    if (idle) {
+      const id = idle(preload, { timeout: 1800 })
+      return () => {
+        ;(window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id)
+      }
+    }
+
+    const id = window.setTimeout(preload, 900)
+    return () => window.clearTimeout(id)
+  }, [])
 
   const {
     agentsOpen,
@@ -1055,6 +1093,22 @@ export function DesktopController() {
               </Suspense>
             }
             path="skills"
+          />
+          <Route
+            element={
+              <Suspense fallback={null}>
+                <DeepSeenAdsView />
+              </Suspense>
+            }
+            path="ads-diagnosis"
+          />
+          <Route
+            element={
+              <Suspense fallback={null}>
+                <DeepSeenGeoView />
+              </Suspense>
+            }
+            path="geo-optimization"
           />
           <Route
             element={

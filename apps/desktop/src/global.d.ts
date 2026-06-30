@@ -41,13 +41,25 @@ declare global {
       deepseenRequest: <T = unknown>(request: HermesDeepSeenRequest) => Promise<T>
       deepseenTaskStreamUrl?: (request: HermesDeepSeenTaskStreamRequest) => Promise<{ url: string }>
       deepseenUploadFile: <T = unknown>(request: HermesDeepSeenUploadRequest) => Promise<T>
+      deepseenAdDiagnosisFile: <T = unknown>(request: HermesDeepSeenAdDiagnosisRequest) => Promise<T>
       notify: (payload: HermesNotification) => Promise<boolean>
       requestMicrophoneAccess: () => Promise<boolean>
       readFileDataUrl: (filePath: string) => Promise<string>
       readFileText: (filePath: string) => Promise<HermesReadFileTextResult>
+      listGeneratedResults?: () => Promise<{
+        items: Array<{
+          kind: 'file' | 'image'
+          name: string
+          path: string
+          size: number
+          source: string
+          timestamp: number
+        }>
+      }>
       openSavedFile: (filePath: string) => Promise<{ error?: string; ok: boolean }>
       saveFileAs: (filePath: string) => Promise<{ canceled: boolean; path: string }>
       saveDataUrlAs: (dataUrl: string, name: string) => Promise<{ canceled: boolean; path: string }>
+      saveMarkdownPdfAs: (payload: { markdown: string; name: string }) => Promise<{ canceled: boolean; path: string }>
       showSavedFile: (filePath: string) => Promise<{ ok: boolean }>
       selectPaths: (options?: HermesSelectPathsOptions) => Promise<string[]>
       writeClipboard: (text: string) => Promise<boolean>
@@ -300,7 +312,7 @@ export interface DesktopConnectionTestResult {
 export interface DesktopAuthProvider {
   name: string
   displayName: string
-  // Deprecated compatibility field. Herbound desktop uses the FastAPI/JWT
+  // Deprecated compatibility field. Deepseen desktop uses the FastAPI/JWT
   // login path and does not expose provider password forms.
   supportsPassword?: boolean
 }
@@ -414,6 +426,15 @@ export interface HermesDeepSeenUploadRequest {
   profile?: string | null
   timeoutMs?: number
   type?: 'analyze' | 'avatar' | 'common' | 'competitor' | 'recreation' | 'video-analysis'
+}
+
+export interface HermesDeepSeenAdDiagnosisRequest {
+  authToken?: string
+  fields?: Record<string, string | number | boolean>
+  filePath: string
+  filename?: string
+  profile?: string | null
+  timeoutMs?: number
 }
 
 export interface HermesDeepSeenRequest {

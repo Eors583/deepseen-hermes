@@ -412,7 +412,7 @@ def _seed_default_skills(conn: Any) -> None:
     digest = __import__("hashlib").sha256(content.encode("utf-8")).hexdigest()
     display_name = "\u8de8\u5883 DeepSeen \u5206\u6790"
     description = (
-        "Herbound \u8de8\u5883\u573a\u666f\u5185\u7f6e DeepSeen \u5de5\u5177\u6280\u80fd\uff0c"
+        "Deepseen \u8de8\u5883\u573a\u666f\u5185\u7f6e DeepSeen \u5de5\u5177\u6280\u80fd\uff0c"
         "\u7528\u4e8e\u5546\u54c1\u3001\u7ade\u54c1\u3001\u8fbe\u4eba\u3001\u7d20\u6750\u3001"
         "\u56fe\u7247\u548c\u89c6\u9891\u751f\u6210\u5206\u6790\u3002"
     )

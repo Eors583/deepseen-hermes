@@ -56,7 +56,8 @@ const URL_RE = /https?:\/\/[^\s<>"')]+/g
 const PATH_RE = /(^|[\s("'`])((?:\/|~\/|\.\.?\/)[^\s"'`<>]+(?:\.[a-z0-9]{1,8})?)/gi
 const WINDOWS_PATH_RE = /^[a-z]:[\\/]/i
 const IMAGE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp)(?:\?.*)?$/i
-const FILE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp|pdf|txt|json|md|csv|zip|tar|gz|mp3|wav|mp4|mov)(?:\?.*)?$/i
+const FILE_EXT_RE =
+  /\.(?:png|jpe?g|gif|webp|svg|bmp|pdf|docx?|xlsx?|pptx?|txt|json|md|csv|zip|rar|7z|tar|gz|mp3|wav|mp4|mov)(?:\?.*)?$/i
 const KEY_HINT_RE = /(path|file|url|image|artifact|output|download|result|target)/i
 
 const ARTIFACT_TIME_FMT = new Intl.DateTimeFormat(undefined, {
@@ -330,6 +331,25 @@ export function collectArtifactsForSession(session: SessionInfo, messages: Sessi
   return Array.from(found.values())
 }
 
+function collectLocalGeneratedResults(): Promise<ArtifactRecord[]> {
+  if (!window.hermesDesktop?.listGeneratedResults) {
+    return Promise.resolve([])
+  }
+
+  return window.hermesDesktop.listGeneratedResults().then(result =>
+    result.items.map(item => ({
+      href: artifactHref(item.path),
+      id: `generated:${item.path}`,
+      kind: item.kind,
+      label: item.name || artifactLabel(item.path),
+      sessionId: '',
+      sessionTitle: '本机生成结果',
+      timestamp: item.timestamp || Date.now(),
+      value: item.path
+    }))
+  )
+}
+
 function formatArtifactTime(timestamp: number): string {
   return ARTIFACT_TIME_FMT.format(new Date(timestamp))
 }
@@ -409,7 +429,11 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     setRefreshing(true)
 
     try {
-      const sessions = (await listAllProfileSessions(30, 1)).sessions
+      const [sessionsResult, localResults] = await Promise.allSettled([
+        listAllProfileSessions(200, 1),
+        collectLocalGeneratedResults()
+      ])
+      const sessions = sessionsResult.status === 'fulfilled' ? sessionsResult.value.sessions : []
       const results = await Promise.allSettled(sessions.map(session => getSessionMessages(session.id, session.profile)))
       const nextArtifacts: ArtifactRecord[] = []
 
@@ -421,6 +445,16 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
         const session = sessions[index]
         nextArtifacts.push(...collectArtifactsForSession(session, result.value.messages))
       })
+
+      if (localResults.status === 'fulfilled') {
+        const seen = new Set(nextArtifacts.map(item => item.value))
+        for (const artifact of localResults.value) {
+          if (!seen.has(artifact.value)) {
+            nextArtifacts.push(artifact)
+            seen.add(artifact.value)
+          }
+        }
+      }
 
       setArtifacts(nextArtifacts.sort((left, right) => right.timestamp - left.timestamp))
     } catch (err) {
@@ -744,12 +778,14 @@ function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat }: 
           {artifact.sessionTitle} · {formatArtifactTime(artifact.timestamp)}
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          <Button onClick={() => onOpenChat(artifact.sessionId)} size="xs" type="button" variant="textStrong">
-            <FolderOpen className="size-3" />
-            {a.chat}
-          </Button>
-        </div>
+        {artifact.sessionId && (
+          <div className="flex flex-wrap gap-1.5">
+            <Button onClick={() => onOpenChat(artifact.sessionId)} size="xs" type="button" variant="textStrong">
+              <FolderOpen className="size-3" />
+              {a.chat}
+            </Button>
+          </div>
+        )}
       </div>
     </article>
   )
@@ -848,6 +884,19 @@ function LocationCell({ artifact }: { artifact: ArtifactRecord; ctx: CellCtx }) 
 }
 
 function SessionCell({ artifact, ctx }: { artifact: ArtifactRecord; ctx: CellCtx }) {
+  if (!artifact.sessionId) {
+    return (
+      <div className="flex h-full w-full min-w-0 items-center px-2.5 py-1.5 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-secondary)">
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate">{artifact.sessionTitle}</span>
+          <span className="truncate text-[0.6875rem] font-normal text-(--ui-text-tertiary)">
+            {formatArtifactTime(artifact.timestamp)}
+          </span>
+        </span>
+      </div>
+    )
+  }
+
   return (
     <ArtifactCellAction onClick={() => ctx.onOpenChat(artifact.sessionId)} title={artifact.sessionTitle}>
       <span className="flex min-w-0 flex-col">
